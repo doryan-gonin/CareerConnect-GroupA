@@ -1,0 +1,17 @@
+[project]
+name = "soen-341-group-a"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "thomas", email = "tom.laripo@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = []
+
+[project.scripts]
+soen-341-group-a = "soen_341_group_a:main"
+
+[build-system]
+requires = ["uv_build>=0.12.17,<0.13.0"]
+build-backend = "uv_build"
