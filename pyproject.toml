@@ -1,16 +1,22 @@
 [project]
-name = "soen-341-group-a"
+name = "backend"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
-    { name = "thomas", email = "tom.laripo@gmail.com" }
+    { name = "Thomas", email = "tom.laripo@gmail.com" }
 ]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "fastapi[standard]>=0.141.1",
+    "sqlmodel>=0.0.44",
+]
+
+[tool.uv]
+package = false
 
 [project.scripts]
-soen-341-group-a = "soen_341_group_a:main"
+backend = "backend:main"
 
 [build-system]
 requires = ["uv_build>=0.12.17,<0.13.0"]
