@@ -2,8 +2,9 @@
 name: User Story Template
 about: A template for both AI and human created user stories
 title: 'US-00: One Line Summary'
-labels: User Stories
+labels: userStories
 assignees: ''
+type: Feature
 
 ---
 
@@ -19,6 +20,11 @@ As a job seeker, I want to create an account so that I can access platform featu
 <!--- Do not modify the link -->
 This User Story was AI generated [(See prompt)](https://github.com/doryan-gonin/CareerConnect-GroupA/blob/main/SprintDeliverables/UserStories/AI/AI_US.md)
 This User Story was created by [Replace by your GitHub @]
+
+## Acceptance criteria
+<!--- Add the acceptance criteria of the feature linked to your user story -->
+1. Must pass tests
+2. Must solve the issues
 
 ## Tasks
 <!--- Add the tasks linked to your user story -->
