@@ -2,6 +2,7 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
+import bcrypt
 from backend.database import get_session
 from backend.models import User, UserCreate, UserResponse
 
@@ -16,14 +17,18 @@ def register_user(payload: UserCreate, session: Annotated[Session, Depends(get_s
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An account with this email already exists.")
 
-    # TODO: REPLACE THIS WITH ACTUAL PASSWORD HASHING LIKE SHA256
-    hashed_pw: str = f"hash_{payload.password}"
+    # Hash password
+    pw_bytes: bytes = payload.password.encode("utf-8")
+    pw_hashed: bytes = bcrypt.hashpw(pw_bytes, bcrypt.gensalt())
+
+    # Turn it back into a string to store it in the database
+    pw_hash_str: str = pw_hashed.decode("utf-8")
 
     new_user: User = User(
         first_name = payload.first_name,
         last_name = payload.last_name,
         email_address = payload.email_address,
-        password_hash = hashed_pw
+        password_hash = pw_hash_str
     )
 
     session.add(new_user)
