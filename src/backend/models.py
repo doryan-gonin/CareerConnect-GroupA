@@ -26,3 +26,7 @@ class UserResponse(SQLModel):
     id: int
     email_address: EmailStr
     created_at: datetime
+
+class UserLogin(SQLModel): # We don't need user's name for login
+    email_address: EmailStr
+    password: str

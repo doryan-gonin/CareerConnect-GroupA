@@ -36,7 +36,26 @@ def register_user(payload: UserCreate, session: Annotated[Session, Depends(get_s
     session.refresh(new_user)
     return new_user
 
-@router.get("/login")
-def login_user():
+@router.post("/login") # Logging in requires a POST request with email and password (GET stores info in URL so not secure)
+def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_session)]) -> User:
     # TODO: Implement login
+    # Cases:
+    # Existing Email and correct password --> 200 with JWT token
+    # Unknwon Email --> 401
+    # Existing Email and Incorrect Password --> 401
+    # Missing or malformed fields --> 422
+    # Invalid Email format --> 422
+
+    # User Lookup
+    user = session.exec(select(User).where(User.email_address == payload.email_address)).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.") # Generic 401 response
+
+    # bcrypt verification
+    if user:
+        if not bcrypt.checkpw(payload.password.encode("utf-8"), user.password_hashed.encode("utf_8")):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
+    
+    # JWT Generation and response
+
     return {"message": "Login placeholder"}
