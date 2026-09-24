@@ -57,5 +57,9 @@ def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_sessi
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
     
     # JWT Generation and response
+    # The secret MUST come from an environment variable and not be hardcoded
+    # We need to set a token expiration time (and in the future take care of refreshing the token while user is active)
 
     return {"message": "Login placeholder"}
+
+# Authentication dependency to verify the token is valid (used for other endpoints that need authentication)
