@@ -1,12 +1,34 @@
 # REGISTRATION AND LOGIN ENDPOINTS
+from datetime import datetime,timedelta, timezone
 from typing import Annotated
+
+import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jwt.exceptions import InvalidTokenError #Eventually TimeOutError too
 from sqlmodel import Session, select
 import bcrypt
 from backend.database import get_session
 from backend.models import User, UserCreate, UserResponse, UserLogin
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+
+# ----------------------------------------------------------------------------------------------
+SECRET_KEY = "VERY_SECRET_KEY" # Pinnacle of security (unhackable)
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15) # WHY ?
+
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+# ----------------------------------------------------------------------------------------------
 
 # Endpoint to create a new user
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)

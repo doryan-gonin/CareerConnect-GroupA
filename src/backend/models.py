@@ -1,5 +1,7 @@
 # SQLMODEL DATABASE TABLES
 
+from pyclbr import Class
+
 from pydantic import EmailStr
 from sqlmodel import SQLModel, Field
 from datetime import datetime
@@ -30,3 +32,11 @@ class UserResponse(SQLModel):
 class UserLogin(SQLModel): # We don't need user's name for login
     email_address: EmailStr
     password: str
+
+# TOKEN CLASSES
+class Token(SQLModel):
+    access_token: str
+    token_type: str
+
+class TokenData(SQLModel):
+    email_address: str | None = None
