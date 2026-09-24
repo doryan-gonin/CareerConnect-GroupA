@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 import bcrypt
 from backend.database import get_session
-from backend.models import User, UserCreate, UserResponse
+from backend.models import User, UserCreate, UserResponse, UserLogin
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -53,7 +53,7 @@ def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_sessi
 
     # bcrypt verification
     if user:
-        if not bcrypt.checkpw(payload.password.encode("utf-8"), user.password_hashed.encode("utf_8")):
+        if not bcrypt.checkpw(payload.password.encode("utf-8"), user.password_hash.encode("utf_8")):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
     
     # JWT Generation and response
