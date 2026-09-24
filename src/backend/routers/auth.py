@@ -51,8 +51,6 @@ def register_user(payload: UserCreate, session: Annotated[Session, Depends(get_s
     pw_hash_str: str = pw_hashed.decode("utf-8")
 
     new_user: User = User(
-        first_name = payload.first_name,
-        last_name = payload.last_name,
         email_address = payload.email_address,
         password_hash = pw_hash_str
     )

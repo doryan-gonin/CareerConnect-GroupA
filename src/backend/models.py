@@ -10,17 +10,21 @@ from datetime import datetime
 
 class User(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    first_name: str
-    last_name: str
     email_address: EmailStr = Field(unique=True, index=True, nullable=False)
     password_hash: str = Field(nullable=False)
     created_at: datetime = Field(default_factory=datetime.now)
 
+class Profile(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", unique=True, nullable=False)
+    first_name: str = Field(default="")
+    last_name: str = Field(default="")
+    resume_path: str | None = Field(default=None)
+    last_updated: datetime | None = Field(default=None)
+
 # REQUEST/RESPONSES SCHEMAS
 
 class UserCreate(SQLModel):
-    first_name: str
-    last_name: str
     email_address: EmailStr
     password: str
 
