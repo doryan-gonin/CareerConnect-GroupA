@@ -44,3 +44,16 @@ class Token(SQLModel):
 
 class TokenData(SQLModel):
     id: str | None = None
+
+# PROFILE CLASSES
+class ProfileUpdate(SQLModel):
+    first_name: str | None = "None"
+    last_name: str | None = "None"
+
+class ProfileResponse(SQLModel):
+    id: int
+    user_id: int
+    first_name: str
+    last_name: str
+    resume_path: str | None = None
+    last_update: datetime | None = None
