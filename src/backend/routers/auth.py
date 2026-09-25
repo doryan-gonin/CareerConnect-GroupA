@@ -13,6 +13,10 @@ from backend.models import User, UserCreate, UserResponse, UserLogin, Token, Tok
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
+# TODO: Refresh token while user is active (get a new one when the old one expires)
+# TODO: Add a logout endpoint that invalidates the token (blacklist?)
+# TODO: Add a real secret key using an environment variable
+# TODO: Keep track of failed attempts and block the user for a certain time
 # ----------------------------------------------------------------------------------------------
 SECRET_KEY = "VERY_SECRET_KEY" # Change to a real secret using environment variable in prod!
 ALGORITHM = "HS256"
@@ -60,14 +64,6 @@ def register_user(payload: UserCreate, session: Annotated[Session, Depends(get_s
 
 @router.post("/login", response_model=Token) # Logging in requires a POST request with email and password (GET stores info in URL so not secure)
 def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_session)]):
-    # TODO: Implement login
-    # Cases:
-    # Existing Email and correct password --> 200 with JWT token
-    # Unknwon Email --> 401
-    # Existing Email and Incorrect Password --> 401
-    # Missing or malformed fields --> 422
-    # Invalid Email format --> 422
-
     # User Lookup
     user = session.exec(select(User).where(User.email_address == payload.email_address)).first()
     if user is None:
@@ -85,10 +81,7 @@ def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_sessi
         data={"sub": str(user.id)}, # We use the ID as the email might change AND is PII
         expires_delta=access_token_expires)
     
-    # The secret MUST come from an environment variable and not be hardcoded
-    # When retrieving the user from the token, we need to convert ID back to int to query the DB
-    # TODO: Take care of refreshing the token while user is active
-
     return {"access_token": access_token, "token_type": "bearer"}
 
 # Authentication dependency to verify the token is valid (used for other endpoints that need authentication)
+# When retrieving the user from the token, we need to convert ID back to int to query the DB
