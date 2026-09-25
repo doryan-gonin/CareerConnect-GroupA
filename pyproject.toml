@@ -1,0 +1,25 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Thomas", email = "tom.laripo@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "bcrypt>=5.0.0",
+    "fastapi[standard]>=0.141.1",
+    "pyjwt>=2.15.0",
+    "sqlmodel>=0.0.44",
+]
+
+[tool.uv]
+package = false
+
+[project.scripts]
+backend = "backend:main"
+
+[build-system]
+requires = ["uv_build>=0.12.17,<0.13.0"]
+build-backend = "uv_build"
