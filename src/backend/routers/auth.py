@@ -4,17 +4,17 @@ from typing import Annotated
 
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError #Eventually TimeOutError too
 from sqlmodel import Session, select
 import bcrypt
 from backend.database import get_session
-from backend.models import User, UserCreate, UserResponse, UserLogin
+from backend.models import User, UserCreate, UserResponse, UserLogin, Token, TokenData
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 # ----------------------------------------------------------------------------------------------
-SECRET_KEY = "VERY_SECRET_KEY" # Pinnacle of security (unhackable)
+SECRET_KEY = "VERY_SECRET_KEY" # Change to a real secret using environment variable in prod!
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -23,7 +23,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15) # WHY ?
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -58,8 +58,8 @@ def register_user(payload: UserCreate, session: Annotated[Session, Depends(get_s
     session.refresh(new_user)
     return new_user
 
-@router.post("/login") # Logging in requires a POST request with email and password (GET stores info in URL so not secure)
-def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_session)]) -> User:
+@router.post("/login", response_model=Token) # Logging in requires a POST request with email and password (GET stores info in URL so not secure)
+def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_session)]):
     # TODO: Implement login
     # Cases:
     # Existing Email and correct password --> 200 with JWT token
@@ -70,18 +70,25 @@ def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_sessi
 
     # User Lookup
     user = session.exec(select(User).where(User.email_address == payload.email_address)).first()
-    if not user:
+    if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.") # Generic 401 response
 
     # bcrypt verification
     if user:
-        if not bcrypt.checkpw(payload.password.encode("utf-8"), user.password_hash.encode("utf_8")):
+        if not bcrypt.checkpw(payload.password.encode("utf-8"), user.password_hash.encode("utf-8")):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
     
     # JWT Generation and response
-    # The secret MUST come from an environment variable and not be hardcoded
-    # We need to set a token expiration time (and in the future take care of refreshing the token while user is active)
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    return {"message": "Login placeholder"}
+    access_token = create_access_token(
+        data={"sub": str(user.id)}, # We use the ID as the email might change AND is PII
+        expires_delta=access_token_expires)
+    
+    # The secret MUST come from an environment variable and not be hardcoded
+    # When retrieving the user from the token, we need to convert ID back to int to query the DB
+    # TODO: Take care of refreshing the token while user is active
+
+    return {"access_token": access_token, "token_type": "bearer"}
 
 # Authentication dependency to verify the token is valid (used for other endpoints that need authentication)

@@ -1,6 +1,6 @@
 # SQLMODEL DATABASE TABLES
 
-from pyclbr import Class
+from pyclbr import Class # Unnecessary import, leaving it in for now
 
 from pydantic import EmailStr
 from sqlmodel import SQLModel, Field
@@ -39,4 +39,4 @@ class Token(SQLModel):
     token_type: str
 
 class TokenData(SQLModel):
-    email_address: str | None = None
+    id: str | None = None
