@@ -39,7 +39,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 def register_user(payload: UserCreate, session: Annotated[Session, Depends(get_session)]) -> User:
 
     # Make sure user doesn't already exist
-    existing = session.exec(select(User).where(User.email_address == payload.email_address)).first()
+    existing = session.exec(select(User).where(User.email_address.lower() == payload.email_address.lower())).first()
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An account with this email already exists.")
 
@@ -51,7 +51,7 @@ def register_user(payload: UserCreate, session: Annotated[Session, Depends(get_s
     pw_hash_str: str = pw_hashed.decode("utf-8")
 
     new_user: User = User(
-        email_address = payload.email_address,
+        email_address = payload.email_address.lower(),
         password_hash = pw_hash_str
     )
 
@@ -63,7 +63,7 @@ def register_user(payload: UserCreate, session: Annotated[Session, Depends(get_s
 @router.post("/login", response_model=Token) # Logging in requires a POST request with email and password (GET stores info in URL so not secure)
 def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_session)]):
     # User Lookup
-    user = session.exec(select(User).where(User.email_address == payload.email_address)).first()
+    user = session.exec(select(User).where(User.email_address.lower() == payload.email_address.lower())).first()
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.") # Generic 401 response
 
