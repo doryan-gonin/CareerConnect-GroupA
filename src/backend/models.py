@@ -26,3 +26,10 @@ class UserResponse(SQLModel):
     id: int
     email_address: EmailStr
     created_at: datetime
+
+class ProfileResponse(SQLModel):
+    id: int
+    first_name: str
+    last_name: str
+    email_address: EmailStr
+    created_at: datetime
