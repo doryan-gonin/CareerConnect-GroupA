@@ -1,5 +1,7 @@
 # SQLMODEL DATABASE TABLES
 
+from pyclbr import Class # Unnecessary import, leaving it in for now
+
 from pydantic import EmailStr
 from sqlmodel import SQLModel, Field
 from datetime import datetime
@@ -8,17 +10,21 @@ from datetime import datetime
 
 class User(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    first_name: str
-    last_name: str
     email_address: EmailStr = Field(unique=True, index=True, nullable=False)
     password_hash: str = Field(nullable=False)
     created_at: datetime = Field(default_factory=datetime.now)
 
+class Profile(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", unique=True, nullable=False)
+    first_name: str = Field(default="")
+    last_name: str = Field(default="")
+    resume_path: str | None = Field(default=None)
+    last_updated: datetime | None = Field(default=None)
+
 # REQUEST/RESPONSES SCHEMAS
 
 class UserCreate(SQLModel):
-    first_name: str
-    last_name: str
     email_address: EmailStr
     password: str
 
@@ -26,3 +32,28 @@ class UserResponse(SQLModel):
     id: int
     email_address: EmailStr
     created_at: datetime
+
+class UserLogin(SQLModel): # We don't need user's name for login
+    email_address: EmailStr
+    password: str
+
+# TOKEN CLASSES
+class Token(SQLModel):
+    access_token: str
+    token_type: str
+
+class TokenData(SQLModel):
+    id: str | None = None
+
+# PROFILE CLASSES
+class ProfileUpdate(SQLModel):
+    first_name: str | None = "None"
+    last_name: str | None = "None"
+
+class ProfileResponse(SQLModel):
+    id: int
+    user_id: int
+    first_name: str
+    last_name: str
+    resume_path: str | None = None
+    last_update: datetime | None = None

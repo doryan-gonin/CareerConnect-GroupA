@@ -15,6 +15,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title = "CareerConnect", lifespan=lifespan)
 app.include_router(auth.router)
+app.include_router(profiles.router)
 
 @app.get("/")
 def read_root():
