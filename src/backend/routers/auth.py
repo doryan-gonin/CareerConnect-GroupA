@@ -11,14 +11,19 @@ import bcrypt
 from backend.database import get_session
 from backend.models import User, UserCreate, UserResponse, UserLogin, Token, TokenData
 
+import os
+from dotenv import load_detenv
+
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 # TODO: Refresh token while user is active (get a new one when the old one expires)
 # TODO: Add a logout endpoint that invalidates the token (blacklist?)
-# TODO: Add a real secret key using an environment variable
 # TODO: Keep track of failed attempts and block the user for a certain time
 # ----------------------------------------------------------------------------------------------
-SECRET_KEY = "VERY_SECRET_KEY" # Change to a real secret using environment variable in prod!
+load_dotenv()
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("JWTR_SECRET_KEY is not set. Creat a .env file (see. env.example).")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
