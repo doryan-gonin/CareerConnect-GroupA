@@ -11,6 +11,7 @@ from sqlmodel import Session, select
 
 from backend.database import get_session
 from backend.models import User, Profile, ProfileUpdate, ProfileResponse
+from backend.dependencies import get_current_user
 
 router = APIRouter(prefix="/api/profiles", tags=["Profiles"])
 
@@ -29,17 +30,17 @@ def get_or_create_profile(user_id: int, session: Session) -> Profile:
 
 # Get profile
 # CHANGE /{user_id} to /me or something when we have authentication to prevent getting the profile of any user
-@router.get("/{user_id}", response_model=ProfileResponse)
-def read_my_profile(user_id: int, session: Annotated[Session, Depends(get_session)]):
-    return get_or_create_profile(user_id, session)
+@router.get("/me", response_model=ProfileResponse)
+def read_my_profile(current_user: Annotated[User, Depends(get_current_user)], session: Annotated[Session, Depends(get_session)]):
+    return get_or_create_profile(current_user.id, session)
 
 # Update profile
 # CHANGE /{user_id} to /me when we have authentication, otherwise any user can change the profile of anyone,
 # which is funny but bad
-@router.put("/{user_id}", response_model=ProfileResponse)
-def update_profile(payload: ProfileUpdate, user_id: int, session: Annotated[Session, Depends(get_session)]):
+@router.put("/me", response_model=ProfileResponse)
+def update_profile(payload: ProfileUpdate, current_user: Annotated[User, Depends(get_current_user)], session: Annotated[Session, Depends(get_session)]):
 
-    profile: Profile = get_or_create_profile(user_id, session)
+    profile: Profile = get_or_create_profile(current_user.id, session)
 
     if payload.first_name is not None:
         profile.first_name = payload.first_name
@@ -55,20 +56,20 @@ def update_profile(payload: ProfileUpdate, user_id: int, session: Annotated[Sess
 # Upload resume
 # Change /{user_id} to /me otherwise bad things will happen, housing costs will go up, groceries will become unaffordable
 # and you will get holes in your socks
-@router.post("/{user_id}/resume", response_model=ProfileResponse)
-def upload_resume(file: Annotated[UploadFile, File(...)], user_id: int, session: Annotated[Session, Depends(get_session)]):
+@router.post("/me/resume", response_model=ProfileResponse)
+def upload_resume(file: Annotated[UploadFile, File(...)], current_user: Annotated[User, Depends(get_current_user)], session: Annotated[Session, Depends(get_session)]):
     # Enforce pdf
     if not file.filename.lower().endswith(".pdf") or file.content_type != "application/pdf":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only pdf files are allowed.")
 
     # Save file to disk
-    file_path: Path = UPLOAD_DIR / f"user_{user_id}_resume.pdf"
+    file_path: Path = UPLOAD_DIR / f"user_{current_user.id}_resume.pdf"
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
     # Update SQL profile
-    profile = get_or_create_profile(user_id, session)
+    profile = get_or_create_profile(current_user.id, session)
     profile.resume_path = str(file_path)
     profile.last_updated = datetime.now()
 
@@ -77,9 +78,9 @@ def upload_resume(file: Annotated[UploadFile, File(...)], user_id: int, session:
     return profile
 
 # Get resume
-@router.get("/{user_id}/resume")
-def download_resume(user_id: int, session: Annotated[Session, Depends(get_session)]):
-    profile = get_or_create_profile(user_id, session)
+@router.get("/me/resume")
+def download_resume(current_user: Annotated[User, Depends(get_current_user)], session: Annotated[Session, Depends(get_session)]):
+    profile = get_or_create_profile(current_user.id, session)
 
     if not profile.resume_path or not os.path.exists(profile.resume_path):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No resume found for this user.")
