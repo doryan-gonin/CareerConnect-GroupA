@@ -50,4 +50,8 @@ Recruiters can post openings, review applicants, and update candidate status. Th
 See the CareerConnect [Wiki Page](../../../wiki) (Work In Progress)
 
 ## Proposed features
-<!-- Add those when we're done with the meeting -->
+- Chat feature (recruiters can chat with applicants directly from the website)
+- Company Reviews (users can leave reviews on companies they worked for to help other job seekers)
+- Ghost Posting Prevention (after a long period of inactivity, a posting gets demoted to avoid having people apply for no reason)
+- AI interview Preparation (based on the posting you applied to, AI can help you get ready for your interview)
+- AI suggested postings (Job Seekers can get advice on which postings suit their profiles)
