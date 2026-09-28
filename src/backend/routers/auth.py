@@ -1,15 +1,16 @@
 # REGISTRATION AND LOGIN ENDPOINTS
 from datetime import datetime,timedelta, timezone
 from typing import Annotated
+import uuid
 
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jwt.exceptions import InvalidTokenError #Eventually TimeOutError too
 from sqlmodel import Session, select
 import bcrypt
 from backend.database import get_session
-from backend.models import User, UserCreate, UserResponse, UserLogin, Token, TokenData
+from backend.models import User, UserCreate, UserResponse, UserLogin, Token, TokenData, RevokedToken
 
 import os
 from dotenv import load_detenv
@@ -35,9 +36,42 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "jti": str(uuid.uuid4())})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+bearer_scheme = HTTPBearer()
+
+def get_token_payload(
+        credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer_scheme)],
+        session: Annotated[Session, Depends(get_session)],
+) -> dict:
+    error = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail = "Invalid or expired token.",
+        headers = {"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+    except InvalidTokenError: #this will cover bad signature AND expired
+        raise error
+
+    jti = payload.get("jti")
+    if jti is None:
+        raise error
+    revoked = session.exec(select(RevokedToken).where(RevokedToken.jti == jti)).first()
+    if revoked:
+        raise error
+    return payload
+
+def get_current_user(
+        payload: Annotated[dict, Depends(get_token_payload)],
+        session: Annotated[Session, Depends(get_session)]
+) -> User:
+    user = session.get(User, int(payload["sub"]))
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found.")
+    return user
 # ----------------------------------------------------------------------------------------------
 
 # Endpoint to create a new user
@@ -105,5 +139,28 @@ def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_sessi
     
     return {"access_token": access_token, "token_type": "bearer"}
 
-# Authentication dependency to verify the token is valid (used for other endpoints that need authentication)
-# When retrieving the user from the token, we need to convert ID back to int to query the DB
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(
+    payload: Annotated[dict, Depends(get_token_payload)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    session.add(RevokedToken(
+        jti=payload["jti"],
+        expires_at=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
+    ))
+    session.commit()
+
+
+@router.post("/refresh", response_model=Token)
+def refresh_token(
+    payload: Annotated[dict, Depends(get_token_payload)],
+    user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    # Revoke the old token, then hand out a fresh one
+    session.add(RevokedToken(
+        jti=payload["jti"],
+        expires_at=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
+    ))
+    session.commit()
+    return {"access_token": create_access_token(data={"sub": str(user.id)}), "token_type": "bearer"}

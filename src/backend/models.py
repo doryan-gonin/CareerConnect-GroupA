@@ -25,6 +25,12 @@ class Profile(SQLModel, table=True):
     resume_path: str | None = Field(default=None)
     last_updated: datetime | None = Field(default=None)
 
+class RevokedToken(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    jti: str = Field(unique=True, index=True, nullable=False)
+    expires_at: datetime
+
+
 # REQUEST/RESPONSES SCHEMAS
 
 class UserCreate(SQLModel):
