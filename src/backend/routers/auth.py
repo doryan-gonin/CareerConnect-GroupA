@@ -17,8 +17,6 @@ from dotenv import load_detenv
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
-# TODO: Refresh token while user is active (get a new one when the old one expires)
-# TODO: Add a logout endpoint that invalidates the token (blacklist?)
 # ----------------------------------------------------------------------------------------------
 load_dotenv()
 SECRET_KEY = os.getenv("JWT_SECRET_KEY")
@@ -76,6 +74,28 @@ def get_current_user(
 
 # Endpoint to create a new user
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+
+def validate_password_strength(password: str) -> None:
+    problems = []
+    if len(password) < 8:
+        problems.append("at least 8 characters")
+    if len(password.encode("utf-8")) > 72:
+        problems.append("no more than 72 bytes")
+    if not re.search(r"[A-Z]", password):
+        problems.append("an uppercase letter")
+    if not re.search(r"[a-z]", password):
+        problems.append("a lowercase letter")
+    if not re.search(r"\d", password):
+        problems.append("a number")
+    if not re.search(r"[^A-Za-z0-9]", password):
+        problems.append("a special character")
+
+    if problems:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must have: " + ", ".join(problems) + ".",
+        )
+
 def register_user(payload: UserCreate, session: Annotated[Session, Depends(get_session)]) -> User:
     # Normalize email
     clean_email = payload.email_address.strip().casefold()
@@ -85,6 +105,7 @@ def register_user(payload: UserCreate, session: Annotated[Session, Depends(get_s
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An account with this email already exists.")
 
+    validate_password_strength(payload.password)#will force the user to have a valid password
     # Hash password
     pw_bytes: bytes = payload.password.encode("utf-8")
     pw_hashed: bytes = bcrypt.hashpw(pw_bytes, bcrypt.gensalt())
