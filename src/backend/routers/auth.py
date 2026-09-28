@@ -6,12 +6,11 @@ import uuid
 
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jwt.exceptions import InvalidTokenError #Eventually TimeOutError too
 from sqlmodel import Session, select
 import bcrypt
 from backend.database import get_session
-from backend.models import User, UserCreate, UserResponse, UserLogin, Token, TokenData, RevokedToken
+from backend.models import User, UserCreate, UserResponse, UserLogin, Token, RevokedToken
+from backend.dependencies import get_current_user, get_token_payload
 
 import os
 from dotenv import load_dotenv
@@ -38,39 +37,6 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode.update({"exp": expire, "jti": str(uuid.uuid4())})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
-
-bearer_scheme = HTTPBearer()
-
-def get_token_payload(
-        credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer_scheme)],
-        session: Annotated[Session, Depends(get_session)],
-) -> dict:
-    error = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail = "Invalid or expired token.",
-        headers = {"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-    except InvalidTokenError: #this will cover bad signature AND expired
-        raise error
-
-    jti = payload.get("jti")
-    if jti is None:
-        raise error
-    revoked = session.exec(select(RevokedToken).where(RevokedToken.jti == jti)).first()
-    if revoked:
-        raise error
-    return payload
-
-def get_current_user(
-        payload: Annotated[dict, Depends(get_token_payload)],
-        session: Annotated[Session, Depends(get_session)]
-) -> User:
-    user = session.get(User, int(payload["sub"]))
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found.")
-    return user
 # ----------------------------------------------------------------------------------------------
 
 def validate_password_strength(password: str) -> None:
