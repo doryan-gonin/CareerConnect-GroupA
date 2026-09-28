@@ -13,6 +13,9 @@ class User(SQLModel, table=True):
     email_address: EmailStr = Field(unique=True, index=True, nullable=False)
     password_hash: str = Field(nullable=False)
     created_at: datetime = Field(default_factory=datetime.now)
+    failed_attempts: int = Field(default=0)
+    locked_until: datetime | None = Field(default=None)
+
 
 class Profile(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)

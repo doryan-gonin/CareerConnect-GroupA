@@ -18,14 +18,15 @@ router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 # TODO: Refresh token while user is active (get a new one when the old one expires)
 # TODO: Add a logout endpoint that invalidates the token (blacklist?)
-# TODO: Keep track of failed attempts and block the user for a certain time
 # ----------------------------------------------------------------------------------------------
 load_dotenv()
 SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 if not SECRET_KEY:
-    raise RuntimeError("JWTR_SECRET_KEY is not set. Creat a .env file (see. env.example).")
+    raise RuntimeError("JWT_SECRET_KEY is not set. Creat a .env file (see. env.example)")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+MAX_FAILED_ATTEMPTS = 5
+LOCKOUT_DURATION_MINUTES = 15
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
@@ -74,10 +75,26 @@ def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_sessi
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.") # Generic 401 response
 
+    #Locked out?
+    if user.locked_until and user.locked_until > datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Too many failed attempts. Try again later."
+        )
+
     # bcrypt verification
     if user:
         if not bcrypt.checkpw(payload.password.encode("utf-8"), user.password_hash.encode("utf-8")):
+            user.failed_attempts += 1
+            if user.failed_attempts >= MAX_FAILED_ATTEMPTS:
+                user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=LOCKOUT_DURATION_MINUTES)
+            session.commit()
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
+
+    # Success: reset counters
+    user.failed_attempts = 0
+    user.locked_until = None
+    session.commit()
     
     # JWT Generation and response
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
