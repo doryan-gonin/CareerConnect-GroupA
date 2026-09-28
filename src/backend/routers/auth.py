@@ -130,8 +130,8 @@ def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_sessi
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.") # Generic 401 response
 
-    #Locked out?
-    if user.locked_until and user.locked_until > datetime.now(timezone.utc):
+    # Locked out?
+    if user.locked_until and user.locked_until.replace(tzinfo=None) > datetime.now(timezone.utc).replace(tzinfo=None):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Too many failed attempts. Try again later."
