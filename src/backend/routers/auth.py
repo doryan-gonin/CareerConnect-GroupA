@@ -1,6 +1,7 @@
 # REGISTRATION AND LOGIN ENDPOINTS
 from datetime import datetime,timedelta, timezone
 from typing import Annotated
+import re
 import uuid
 
 import jwt
@@ -72,9 +73,6 @@ def get_current_user(
     return user
 # ----------------------------------------------------------------------------------------------
 
-# Endpoint to create a new user
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-
 def validate_password_strength(password: str) -> None:
     problems = []
     if len(password) < 8:
@@ -96,6 +94,8 @@ def validate_password_strength(password: str) -> None:
             detail="Password must have: " + ", ".join(problems) + ".",
         )
 
+# Endpoint to create a new user
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register_user(payload: UserCreate, session: Annotated[Session, Depends(get_session)]) -> User:
     # Normalize email
     clean_email = payload.email_address.strip().casefold()
