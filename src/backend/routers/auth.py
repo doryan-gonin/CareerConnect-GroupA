@@ -13,7 +13,7 @@ from backend.database import get_session
 from backend.models import User, UserCreate, UserResponse, UserLogin, Token, TokenData, RevokedToken
 
 import os
-from dotenv import load_detenv
+from dotenv import load_dotenv
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
