@@ -13,6 +13,9 @@ class User(SQLModel, table=True):
     email_address: EmailStr = Field(unique=True, index=True, nullable=False)
     password_hash: str = Field(nullable=False)
     created_at: datetime = Field(default_factory=datetime.now)
+    failed_attempts: int = Field(default=0)
+    locked_until: datetime | None = Field(default=None)
+
 
 class Profile(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -21,6 +24,12 @@ class Profile(SQLModel, table=True):
     last_name: str = Field(default="")
     resume_path: str | None = Field(default=None)
     last_updated: datetime | None = Field(default=None)
+
+class RevokedToken(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    jti: str = Field(unique=True, index=True, nullable=False)
+    expires_at: datetime
+
 
 # REQUEST/RESPONSES SCHEMAS
 

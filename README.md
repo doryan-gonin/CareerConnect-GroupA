@@ -19,7 +19,7 @@ journey
 ## Who are we ?
 - **Candys Eko** - Frontend
 - **Ron Rozenberg** - Frontend
-- **Vlad Shkuratov** - Backend
+- **Vlad Shkuratov** - Backend, Frontend
 - **Thomas Martel** - Backend, Database
 - **Doryan Gonin** - Scrum Master, Documentation, Backend
 
