@@ -62,6 +62,10 @@ def upload_resume(file: Annotated[UploadFile, File(...)], current_user: Annotate
     if not file.filename.lower().endswith(".pdf") or file.content_type != "application/pdf":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only pdf files are allowed.")
 
+    # Check if file size is bigger than 5 megabytes
+    if file.size > 5000000:
+        raise HTTPException(status_code=status.HTTP_413_CONTENT_TOO_LARGE, detail="Resume must be under 5 megabytes.")
+
     # Save file to disk
     file_path: Path = UPLOAD_DIR / f"user_{current_user.id}_resume.pdf"
 
