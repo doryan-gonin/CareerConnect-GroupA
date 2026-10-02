@@ -90,6 +90,10 @@ def upload_resume(file: Annotated[UploadFile, File(...)],
     # Check existing resumes count
     existing_resumes = session.exec(select(Resume).where(Resume.user_id == current_user.id)).all()
 
+    # Limit amout of resumes on an account to 5
+    if len(existing_resumes) >= 5:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User already has 5 (or more) resumes.")
+
     # First resume is automatically default
     is_first = len(existing_resumes) == 0
     should_be_default = is_first or make_default
