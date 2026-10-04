@@ -60,7 +60,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20" #Ideally would read the version in file
+          node-version-file: .src/frontend/.node-version #Ideally would read the version in file
           cache: "npm"
           cache-dependency-path: ./src/frontend/package-lock.json
 
