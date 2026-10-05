@@ -22,7 +22,7 @@ def set_sqlite_pragma(dbapi_connection: Connection, connection_record):
 
 # Create tables in database if they do not exist already.
 def init_db():
-    from backend import models # Importing models here ensures the models are registered before the tables are created
+    from src.backend import models # Importing models here ensures the models are registered before the tables are created
     SQLModel.metadata.create_all(engine)
 
 def get_session():
