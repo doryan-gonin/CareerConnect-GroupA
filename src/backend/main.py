@@ -1,8 +1,8 @@
 # ENTRYPOINT
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from backend.database import init_db
-from backend.routers import auth, profiles
+from src.backend.database import init_db # Absolute import to avoid PyTest errors
+from src.backend.routers import auth, profiles
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

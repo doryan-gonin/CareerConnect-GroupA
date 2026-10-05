@@ -39,9 +39,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras --dev
 
-      # Eventual test with pytest
-      - name: Run tests
-        run: uv run python -m py_compile src/backend/**/*.py
+      # PyTest testing
+      - name: Run PyTest
+        run: uv run pytest tests/ -v
+        env:
+          JWT_SECRET: "test_secret_key"
 
   # ---------------------------------------------------------------------------
   # FRONTEND -> Build and verify

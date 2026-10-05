@@ -10,9 +10,9 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from fastapi.responses import FileResponse
 from sqlmodel import Session, select
 
-from backend.database import get_session
-from backend.models import User, Profile, Resume, ProfileUpdate, ProfileResponse, ResumeReponse
-from backend.dependencies import get_current_user
+from src.backend.database import get_session
+from src.backend.models import User, Profile, Resume, ProfileUpdate, ProfileResponse, ResumeReponse
+from src.backend.dependencies import get_current_user
 
 router = APIRouter(prefix="/api/profiles", tags=["Profiles"])
 
