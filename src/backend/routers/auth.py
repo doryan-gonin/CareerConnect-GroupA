@@ -8,14 +8,14 @@ import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 import bcrypt
-from backend.database import get_session
-from backend.models import User, UserCreate, UserResponse, UserLogin, Token, RevokedToken
-from backend.dependencies import get_current_user, get_token_payload
+from src.backend.database import get_session
+from src.backend.models import User, UserCreate, UserResponse, UserLogin, Token, RevokedToken
+from src.backend.dependencies import get_current_user, get_token_payload
 
 import os
 from dotenv import load_dotenv
 
-router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+router = APIRouter(tags=["Authentication"])
 
 # ----------------------------------------------------------------------------------------------
 load_dotenv()

@@ -1,8 +1,8 @@
 # ENTRYPOINT
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from backend.database import init_db
-from backend.routers import auth, profiles
+from src.backend.database import init_db # Absolute import to avoid PyTest errors
+from src.backend.routers import auth, profiles
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -14,8 +14,8 @@ async def lifespan(app: FastAPI):
     # Code here runs once when server closes
 
 app = FastAPI(title = "CareerConnect", lifespan=lifespan)
-app.include_router(auth.router)
-app.include_router(profiles.router)
+app.include_router(auth.router, prefix="/api/auth")
+app.include_router(profiles.router, prefix="/api/profiles")
 
 @app.get("/")
 def read_root():
