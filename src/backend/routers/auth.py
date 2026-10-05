@@ -15,7 +15,7 @@ from src.backend.dependencies import get_current_user, get_token_payload
 import os
 from dotenv import load_dotenv
 
-router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+router = APIRouter(tags=["Authentication"])
 
 # ----------------------------------------------------------------------------------------------
 load_dotenv()

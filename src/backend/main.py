@@ -14,8 +14,8 @@ async def lifespan(app: FastAPI):
     # Code here runs once when server closes
 
 app = FastAPI(title = "CareerConnect", lifespan=lifespan)
-app.include_router(auth.router)
-app.include_router(profiles.router)
+app.include_router(auth.router, prefix="/api/auth")
+app.include_router(profiles.router, prefix="/api/profiles")
 
 @app.get("/")
 def read_root():
