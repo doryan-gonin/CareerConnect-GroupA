@@ -43,7 +43,7 @@ jobs:
       - name: Run PyTest
         run: uv run pytest tests/ -v
         env:
-          JWT_SECRET: "test_secret_key"
+          JWT_SECRET_KEY: "test_secret_key"
 
   # ---------------------------------------------------------------------------
   # FRONTEND -> Build and verify
