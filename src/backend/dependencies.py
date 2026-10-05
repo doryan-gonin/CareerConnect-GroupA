@@ -7,8 +7,8 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlmodel import Session, select
 
-from backend.database import get_session
-from backend.models import User, RevokedToken
+from src.backend.database import get_session
+from src.backend.models import User, RevokedToken
 
 load_dotenv()
 SECRET_KEY = os.getenv("JWT_SECRET_KEY")

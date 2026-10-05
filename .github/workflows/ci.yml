@@ -6,10 +6,6 @@ on:
     branches:
       - main
 
-  push:
-    branches:
-      - '*' # Temp testing for all pushes
-
 jobs:
   # Separating backend and frontend jobs allow parallel execution
   # ---------------------------------------------------------------------------
@@ -39,9 +35,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras --dev
 
-      # Eventual test with pytest
-      - name: Run tests
-        run: uv run python -m py_compile src/backend/**/*.py
+      # PyTest testing
+      - name: Run PyTest
+        run: uv run pytest tests/ -v
+        env:
+          JWT_SECRET_KEY: "test_secret_key"
 
   # ---------------------------------------------------------------------------
   # FRONTEND -> Build and verify
