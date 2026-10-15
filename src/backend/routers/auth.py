@@ -26,6 +26,8 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 MAX_FAILED_ATTEMPTS = 5
 LOCKOUT_DURATION_MINUTES = 15
+DUMMY_PASSWORD_HASH: bytes = bcrypt.hashpw(b"careerconnect_dummy", bcrypt.gensalt())
+
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
@@ -95,7 +97,7 @@ def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_sessi
     user = session.exec(select(User).where(User.email_address == payload.email_address.strip().casefold())).first()
     if user is None:
         # Prevent timing attacks by performing dummy bcrypt check
-        bcrypt.checkpw("dummy".encode("utf-8"), "dummy".encode("utf-8"))
+        bcrypt.checkpw("dummy".encode("utf-8"), DUMMY_PASSWORD_HASH)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.") # Generic 401 response
 
     # Locked out?

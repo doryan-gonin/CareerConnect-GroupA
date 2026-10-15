@@ -87,8 +87,8 @@ async def upload_resume(file: Annotated[UploadFile, File(...)],
     max_size = 5 * 1024 * 1024
     total_bytes = 0
 
-    # Read 1 byte at a time
-    while chunk := file.read(1024 * 1024):
+    # Read 1 megabyte at a time
+    while chunk := await file.read(1024 * 1024):
         total_bytes += len(chunk)
         if total_bytes > max_size:
             # FastAPI uses starlette which temporarily stores files > 1mb on disk to save RAM so closing the file deletes the temp file
