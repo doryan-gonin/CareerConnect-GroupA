@@ -74,7 +74,7 @@ def download_resume(resume_id: int, current_user: Annotated[User, Depends(get_cu
 
 # Upload resume
 @router.post("/me/resumes", response_model=ResumeReponse, status_code=status.HTTP_201_CREATED)
-def upload_resume(file: Annotated[UploadFile, File(...)],
+async def upload_resume(file: Annotated[UploadFile, File(...)],
                   current_user: Annotated[User, Depends(get_current_user)], 
                   session: Annotated[Session, Depends(get_session)],
                   make_default: bool = False):
@@ -84,8 +84,18 @@ def upload_resume(file: Annotated[UploadFile, File(...)],
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only pdf files are allowed.")
 
     # Check if file size is bigger than 5 megabytes
-    if file.size > 5000000:
-        raise HTTPException(status_code=status.HTTP_413_CONTENT_TOO_LARGE, detail="Resume must be under 5 megabytes.")
+    max_size = 5 * 1024 * 1024
+    total_bytes = 0
+
+    # Read 1 byte at a time
+    while chunk := file.read(1024 * 1024):
+        total_bytes += len(chunk)
+        if total_bytes > max_size:
+            # FastAPI uses starlette which temporarily stores files > 1mb on disk to save RAM so closing the file deletes the temp file
+            await file.close()
+            raise HTTPException(status_code=status.HTTP_413_CONTENT_TOO_LARGE, detail="Resume must be under 5 megabytes.")
+
+    await file.seek(0)
 
     # Check existing resumes count
     existing_resumes = session.exec(select(Resume).where(Resume.user_id == current_user.id)).all()
@@ -117,6 +127,8 @@ def upload_resume(file: Annotated[UploadFile, File(...)],
         file_path=str(file_path),
         is_default=should_be_default
     )
+
+    await file.close()
 
     session.add(new_resume)
     session.commit()
