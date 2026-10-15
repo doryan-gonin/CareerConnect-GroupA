@@ -85,5 +85,4 @@ class ProfileResponse(SQLModel):
     user_id: int
     first_name: str
     last_name: str
-    resume_path: str | None = None
-    last_update: datetime | None = None
+    last_updated: datetime | None = None
