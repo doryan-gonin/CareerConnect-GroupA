@@ -14,7 +14,7 @@ from src.backend.database import get_session
 from src.backend.models import User, Profile, Resume, ProfileUpdate, ProfileResponse, ResumeReponse
 from src.backend.dependencies import get_current_user
 
-router = APIRouter(prefix="/api/profiles", tags=["Profiles"])
+router = APIRouter(tags=["Profiles"])
 
 UPLOAD_DIR: Path = Path("uploads/resumes")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
