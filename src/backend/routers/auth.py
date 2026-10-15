@@ -8,9 +8,9 @@ import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 import bcrypt
-from src.backend.database import get_session
-from src.backend.models import User, UserCreate, UserResponse, UserLogin, Token, RevokedToken
-from src.backend.dependencies import get_current_user, get_token_payload
+from backend.database import get_session
+from backend.models import User, UserCreate, UserResponse, UserLogin, Token, RevokedToken
+from backend.dependencies import get_current_user, get_token_payload
 
 import os
 from dotenv import load_dotenv
@@ -26,6 +26,8 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 MAX_FAILED_ATTEMPTS = 5
 LOCKOUT_DURATION_MINUTES = 15
+DUMMY_PASSWORD_HASH: bytes = bcrypt.hashpw(b"careerconnect_dummy", bcrypt.gensalt())
+
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
@@ -94,6 +96,8 @@ def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_sessi
     # User Lookup
     user = session.exec(select(User).where(User.email_address == payload.email_address.strip().casefold())).first()
     if user is None:
+        # Prevent timing attacks by performing dummy bcrypt check
+        bcrypt.checkpw("dummy".encode("utf-8"), DUMMY_PASSWORD_HASH)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.") # Generic 401 response
 
     # Locked out?

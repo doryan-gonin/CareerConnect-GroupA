@@ -4,9 +4,9 @@ from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.pool import StaticPool
 
-from src.backend.main import app
-from src.backend.database import get_session
-from src.backend.models import User
+from backend.main import app
+from backend.database import get_session
+from backend.models import User
 
 # Creates an in-memory DB with static pool to ensure the same connection
 sqlite_url = "sqlite://"
