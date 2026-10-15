@@ -2,8 +2,8 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.backend.database import init_db # Absolute import to avoid PyTest errors
-from src.backend.routers import auth, profiles
+from backend.database import init_db
+from backend.routers import auth, profiles
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
