@@ -94,6 +94,8 @@ def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_sessi
     # User Lookup
     user = session.exec(select(User).where(User.email_address == payload.email_address.strip().casefold())).first()
     if user is None:
+        # Prevent timing attacks by performing dummy bcrypt check
+        bcrypt.checkpw("dummy".encode("utf-8"), "dummy".encode("utf-8"))
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.") # Generic 401 response
 
     # Locked out?
