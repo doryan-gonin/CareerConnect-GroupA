@@ -77,8 +77,8 @@ class TokenData(SQLModel):
 
 # PROFILE CLASSES
 class ProfileUpdate(SQLModel):
-    first_name: str | None = "None"
-    last_name: str | None = "None"
+    first_name: str | None = None
+    last_name: str | None = None
 
 class ProfileResponse(SQLModel):
     id: int
