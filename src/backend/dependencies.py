@@ -50,7 +50,12 @@ def get_current_user(
     if user_id is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject.")
 
-    user = session.get(User, int(user_id))
+    # Wrap int(user_id) in a try except block in case the user_id is not an integer
+    try:
+        user = session.get(User, int(user_id))
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject.")
+
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found.")
     return user
