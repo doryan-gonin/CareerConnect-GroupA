@@ -24,6 +24,7 @@ This document details all remaining issues, architectural defects, security enha
    - [6.3 Orphaned 1-Byte File `frontend` in Project Root](#63-orphaned-1-byte-file-frontend-in-project-root)
    - [6.4 Typo in Model Name `ResumeReponse`](#64-typo-in-model-name-resumereponse)
    - [6.5 Unbounded Growth of `RevokedToken` Table](#65-unbounded-growth-of-revokedtoken-table)
+   - [6.6 Recruiter Inactive Job Visibility & Reactivation](#66-recruiter-inactive-job-visibility--reactivation)
 
 ---
 
@@ -419,3 +420,15 @@ This document details all remaining issues, architectural defects, security enha
       session.exec(delete(RevokedToken).where(RevokedToken.expires_at < now))
       session.commit()
   ```
+
+---
+
+### 6.6 Recruiter Inactive Job Visibility & Reactivation
+- **Issue**:
+  Currently, `GET /api/jobs/{job_id}` and `GET /api/jobs` return `404 Not Found` or filter out postings where `is_active == False` to prevent job seekers from viewing closed or draft positions. However, recruiters who authored those postings need visibility into their own inactive postings so they can review historical submissions and reactivate them (`is_active = True`) without needing to recreate the posting from scratch.
+- **Where to fix**:
+  - `src/backend/routers/jobs.py` (`get_job_by_id` and adding `GET /api/jobs/recruiter/my-postings`).
+- **The Fix**:
+  1. In `GET /api/jobs/{job_id}`, check if the requesting user is the authenticated `recruiter_id`; if so, allow returning the job even when `is_active == False`.
+  2. Implement a dedicated recruiter endpoint `GET /api/jobs/recruiter/my-postings` that returns both active and inactive jobs owned by the logged-in user.
+  3. Ensure `PUT /api/jobs/{job_id}` allows the owner to toggle `is_active` back to `True` for reactivation.
