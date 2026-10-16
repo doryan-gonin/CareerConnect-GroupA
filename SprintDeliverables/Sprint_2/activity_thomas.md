@@ -1,6 +1,6 @@
 # Sprint 2 Contribution & Activity Log
 
-* **Team Member**: Thomas Laripo
+* **Team Member**: Thomas Martel
 * **Role**: Backend Developer
 * **Project**: CareerConnect (SOEN 341 - Fall 2026)
 * **Sprint**: Sprint 2
