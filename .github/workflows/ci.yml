@@ -39,7 +39,7 @@ jobs:
       - name: Run PyTest
         run: uv run pytest tests/ -v
         env:
-          JWT_SECRET_KEY: "test_secret_key"
+          JWT_SECRET_KEY: "1f91d2f49e54c31f330db929c0a58e52" #This is at dummy test key, can be pushed safely
 
   # ---------------------------------------------------------------------------
   # FRONTEND -> Build and verify
