@@ -51,6 +51,25 @@
 * **Reflection**: Using AI significantly streamlined the process of auditing fragmented commits and translating them into clear, professional sprint milestones linked to user stories and deliverables. It helped ensure all mandatory rubric items were covered.
 * **Responsible Person**: Thomas Martel
 
+### Entry 2: Feature 2 — Job Search, Filtering, and Listing Backend Implementation
+* **Task ID / Title**: US-04: Feature 2 — Job Search, Multi-Filter, and Listing Backend Implementation
+* **Purpose of AI Use**: Architecture design, schema definition, query implementation, and development utility generation.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `f5e8e5d0-5e27-4d58-8902-dae3acf27a35`). Full prompt and summary maintained in project workspace session.
+* **AI-Suggested Content**: 
+  - Designed the `Job` database table and schemas (`JobCreate`, `JobUpdate`, `JobResponse`, `JobListResponse`) in `src/backend/models.py`.
+  - Introduced typed `JobSchedule` (Full-time, Part-time) and `JobType` (Permanent, Temporary, Contract, Seasonal, Internship) `str, Enum` classes, along with an optional weekly hours range (`min_hours_per_week`, `max_hours_per_week`).
+  - Created `src/backend/routers/jobs.py` featuring multi-criteria search (keyword across title, company, description; location; category; salary; hours; schedule; type) with pagination and authenticated CRUD endpoints.
+  - Mounted `/api/jobs` router into `src/backend/main.py`.
+  - Documented future recruiter inactive job visibility & reactivation in `FIXES.md` (item 6.6).
+  - Developed the idempotent seed script `utility/seedjobs.py` with 15 realistic job postings and a demo recruiter account, and updated the `Makefile` with `make seed` and `make seed-reset`.
+* **Validation**: 
+  - Verified SQLModel and Pydantic schema validation for enum values and optional fields.
+  - Confirmed query logic using SQLModel `col().ilike()` and `or_` conditions.
+  - Verified import paths and package structure across `models.py`, `jobs.py`, and `utility/seedjobs.py`.
+* **Decision**: Accepted and modified before use (adjusted naming of `JobSchedule` vs `JobType` to reflect schedule commitment vs contract nature, structured hours as an optional range, and relocated the seed utility to `utility/` outside `src/`).
+* **Reflection**: AI accelerated generating boilerplate query logic and varied sample data. Developer intervention ensured proper architectural boundaries (keeping utility scripts out of `src/`) and intuitive domain terminology.
+* **Responsible Person**: Thomas Martel
+
 ---
 
 <!-- Future AI interactions should be appended below this line -->
