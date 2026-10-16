@@ -43,6 +43,7 @@ def client():
     # Clears override after the test
     app.dependency_overrides.clear()
 
+# ---------------------------------- Users -------------------------------------
 @pytest.fixture
 def test_user():
     # Creates a test user in the database for testing
@@ -85,6 +86,7 @@ def second_user():
             "password": plain_password
         }
 
+# ---------------------------------- Resumes -----------------------------------
 @pytest.fixture
 def add_resumes_for_user(test_user, tmp_path):
     resumes = []
@@ -110,18 +112,23 @@ def add_resumes_for_user(test_user, tmp_path):
 
     return resumes
 
+# ----------------------------------- Jobs -------------------------------------
+# It is important to note that test_user in this case is the recruiter
+# Since we are testing in an isolated environment, we can use the same user for 
+# both recruiter and applicant roles
+# Further tests will make sure that this isn't possible in the real-world
 @pytest.fixture
-def test_jobs():
+def test_jobs(test_user):
     jobs = []
     with Session(engine) as session:
         for i in range(5):
             job = Job(
-                recruiter_id = i + 1,
+                recruiter_id = test_user["id"],
                 title = f"Job Title {i + 1}",
                 company_name = f"Company {i + 1}",
                 description = f"Description for job {i + 1}",
                 location = f"Location {i + 1}",
-                category = "Engineering",
+                category = "Design" if i == 4 else "Engineering",
                 job_type = JobType.PERMANENT,
                 job_schedule = JobSchedule.FULL_TIME,
                 min_hours_per_week = 40,
@@ -139,3 +146,22 @@ def test_jobs():
             session.refresh(job)
 
     return jobs
+
+@pytest.fixture
+def inactive_job(test_user):
+    with Session(engine) as session:
+        job = Job(
+            recruiter_id=test_user["id"],
+            title="Inactive Job",
+            company_name="Inactive Company",
+            description="This job should not be visible in search results.",
+            location="Inactive Location",
+            category="Engineering",
+            job_type=JobType.PERMANENT,
+            job_schedule=JobSchedule.FULL_TIME,
+            is_active=False,
+        )
+        session.add(job)
+        session.commit()
+        session.refresh(job)
+        return job
