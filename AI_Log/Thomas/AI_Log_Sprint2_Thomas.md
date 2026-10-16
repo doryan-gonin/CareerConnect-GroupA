@@ -93,6 +93,24 @@
 
 <!-- Future AI interactions should be appended below this line -->
 
+### Entry 4: Feature 3 — Job Application Submission & Tracking Backend Implementation
+* **Task ID / Title**: US-05: Feature 3 — Job Application Submission and Tracking Backend Implementation
+* **Purpose of AI Use**: Architecture planning, database schema design, edge-case vulnerability analysis, and API endpoint implementation.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `a007eadf-242e-4ac9-992e-6aba80f6469b`). Full prompt and summary maintained in project workspace session.
+* **AI-Suggested Content**: 
+  - Designed the `Application` database table with compound unique constraint `(job_id, applicant_id)` and typed `ApplicationStatus` enum (`Applied`, `Under Review`, `Interview`, `Offered`, `Rejected`).
+  - Authored Pydantic request and response schemas including `ApplicationDetailResponse` which joins job details and resume information into single response cards for the candidate tracking dashboard.
+  - Implemented `POST /api/jobs/{job_id}/apply` supporting optional cover letters, automatic resume resolution (validating specified resume ID vs falling back to user's default/latest resume), recruiter self-application prevention, and duplicate application prevention (`409 Conflict`).
+  - Created `src/backend/routers/applications.py` providing candidate application listing with status filtering (`GET /api/applications/me`), single application retrieval (`GET /api/applications/{id}`), candidate application withdrawal (`DELETE /api/applications/{id}`), and recruiter status updates (`PATCH /api/applications/{id}/status`).
+  - Analyzed the resume deletion edge case (where deleting a resume from a profile breaks active applications and foreign keys) and authored Item 4.7 in `FIXES.md` documenting snapshotting and soft-delete retention solutions.
+* **Validation**: 
+  - Performed code review of SQLModel foreign key declarations, unique constraints, and router endpoint error codes.
+  - Confirmed router registration in `src/backend/main.py`.
+  - Audited documentation alignment with Sprint 2 project guidelines.
+* **Decision**: Accepted and modified before use (designated apply endpoint as `POST /api/jobs/{job_id}/apply`, ensured optional cover letter support, added candidate withdrawal capability, omitted automated test writing in favor of manual testing, and documented the resume deletion lifecycle in `FIXES.md`).
+* **Reflection**: Collaborative planning with AI helped anticipate complex domain constraints early—such as race conditions in multi-resume resolution, self-application prevention, and file retention upon resume deletion—producing clean, maintainable backend code ready for frontend integration.
+* **Responsible Person**: Thomas Martel
+
 ---
 
 ## Appendix: Extended Prompts & Responses (Optional)

@@ -4,7 +4,7 @@
 * **Role**: Backend Developer
 * **Project**: CareerConnect (SOEN 341 - Fall 2026)
 * **Sprint**: Sprint 2
-* **Total Estimated Time Spent**: ~6.8 Hours
+* **Total Estimated Time Spent**: ~8.3 Hours
 
 ---
 
@@ -39,6 +39,9 @@
 | **10** | **Job Data Models, Enums & Schemas (US-04 / Feature 2)**<br>Architected and implemented the `Job` database table in SQLModel with typed `JobSchedule` (Full-time, Part-time) and `JobType` (Permanent, Contract, Temporary, Seasonal, Internship) enums, optional weekly hours range (`min_hours_per_week`, `max_hours_per_week`), salary range, and associated Pydantic request/response schemas. | 30 min | • File: `src/backend/models.py`<br>• Issue: [US-04 (Issue #23)](https://github.com/doryan-gonin/CareerConnect-GroupA/issues/23) |
 | **11** | **Job Search, Multi-Filter & Listing API Router (US-04 / Feature 2)**<br>Built dedicated `src/backend/routers/jobs.py` router implementing public case-insensitive keyword search (across title, company, description), multi-criteria filtering (location, category, schedule, type, salary, hours), pagination metadata, detailed job retrieval (404 for inactive), authenticated posting creation, owner editing, and soft deletion. Registered router in `main.py` and documented recruiter inactive visibility in `FIXES.md` (6.6). | 30 min | • Files: `src/backend/routers/jobs.py`, `src/backend/main.py`<br>• Document: `FIXES.md` |
 | **12** | **Database Seeding Utility & Developer Tooling (Feature 2)**<br>Developed standalone idempotent seeding script `utility/seedjobs.py` creating an automated demo recruiter account (`recruiter@careerconnect.com`) and populating 15 realistic job postings with diverse categories, locations, schedules, and tech keywords for frontend integration and TA lab demos. Added `make seed` and `make seed-reset` to `Makefile`. | 30 min | • Files: `utility/seedjobs.py`, `Makefile` |
+| **13** | **Application Data Models & Status Progression Architecture (Feature 3)**<br>Architected SQLModel database table `Application` with unique constraint `(job_id, applicant_id)`, foreign key relationships linking candidate, job, and resume, and typed `ApplicationStatus` enum (`Applied`, `Under Review`, `Interview`, `Offered`, `Rejected`). Authored request and response schemas including `ApplicationDetailResponse` for unified candidate tracking cards. | 30 min | • File: `src/backend/models.py` |
+| **14** | **Job Application Submission & Candidate Tracking API (Feature 3)**<br>Implemented `POST /api/jobs/{job_id}/apply` with resume auto-resolution (explicit resume ID validation vs. default resume fallback), recruiter self-application prevention, and duplicate application rejection (`409 Conflict`). Built dedicated router `src/backend/routers/applications.py` with candidate tracking (`GET /api/applications/me` with status filtering), individual application retrieval (`GET /api/applications/{id}`), candidate withdrawal (`DELETE /api/applications/{id}`), and recruiter status update endpoint (`PATCH /api/applications/{id}/status`). Mounted router in `src/backend/main.py`. | 45 min | • Files: `src/backend/routers/jobs.py`, `src/backend/routers/applications.py`, `src/backend/main.py` |
+| **15** | **Resume Deletion & Application Immutability Analysis (Feature 3)**<br>Analyzed critical data retention and foreign key constraints when users delete resumes attached to active applications. Documented problem breakdown, risk analysis, and 3 resolution strategies (snapshotting vs soft-deletion vs deletion guard) in `FIXES.md` (Item 4.7). | 15 min | • Document: `FIXES.md` |
 
 ---
 
@@ -53,11 +56,12 @@
   * [Issue #75: Bug Fixing](https://github.com/doryan-gonin/CareerConnect-GroupA/issues/75)
   * [Issue #23: US-04: Job Search and Filtering Capabilities](https://github.com/doryan-gonin/CareerConnect-GroupA/issues/23)
 * **Source Code & Routers**:
-  * `src/backend/models.py`: Added `Job` table, `JobType`, `JobSchedule` enums, and job schemas.
-  * `src/backend/routers/jobs.py`: Complete search, multi-filter, pagination, and CRUD API.
-  * `src/backend/main.py`: Mounted `/api/jobs` router.
+  * `src/backend/models.py`: Added `Job`, `Application` tables, `JobType`, `JobSchedule`, `ApplicationStatus` enums, and full request/response schemas.
+  * `src/backend/routers/jobs.py`: Complete search, multi-filter, pagination, job CRUD, and `POST /{job_id}/apply` endpoint.
+  * `src/backend/routers/applications.py`: Full candidate application tracking (`/me`), single application retrieval, candidate application withdrawal, and recruiter status progression.
+  * `src/backend/main.py`: Mounted `/api/jobs` and `/api/applications` routers.
 * **Testing & Developer Utilities**:
   * `utility/seedjobs.py`: Idempotent database seeder with 15 realistic job postings and demo recruiter.
   * `Makefile`: Added `make seed` and `make seed-reset` commands.
 * **Documentation**:
-  * `FIXES.md`: Comprehensive backend audit and architectural improvement document (including Item 6.6).
+  * `FIXES.md`: Comprehensive backend audit and architectural improvement document (including Items 6.6 and 4.7).
