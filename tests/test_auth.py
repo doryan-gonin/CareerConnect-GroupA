@@ -11,8 +11,6 @@ class TestLogin:
         # Send the request to the endpoint
         response = client.post("/api/auth/login", json=payload)
 
-        print(response.json()) #Temp debugging
-
         # Verify proper backend response
         assert response.status_code == 200
         assert "access_token" in response.json()
