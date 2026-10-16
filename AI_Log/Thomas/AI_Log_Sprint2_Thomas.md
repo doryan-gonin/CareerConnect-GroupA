@@ -21,7 +21,7 @@
 ### Standard Entry Template
 ```markdown
 ### Entry [X]: [Task ID / Title]
-* **Task ID / Title**: [Short description or GitHub issue ID, e.g., US-03.01 / Issue #66]
+* **Task ID / Title**: [Short description]
 * **Purpose of AI Use**: [Brainstorming / Requirements Analysis / Coding / Debugging / Testing / Documentation / Review]
 * **Chat Link or Prompt/Response**: [Link to conversation or reference to Appendix item]
 * **AI-Suggested Content**: [Concise summary of what the AI proposed, suggested, or generated]
@@ -52,7 +52,7 @@
 * **Responsible Person**: Thomas Martel
 
 ### Entry 2: Feature 2 — Job Search, Filtering, and Listing Backend Implementation
-* **Task ID / Title**: US-04: Feature 2 — Job Search, Multi-Filter, and Listing Backend Implementation
+* **Task ID / Title**: Feature 2 — Job Search, Multi-Filter, and Listing Backend Implementation
 * **Purpose of AI Use**: Architecture design, schema definition, query implementation, and development utility generation.
 * **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `f5e8e5d0-5e27-4d58-8902-dae3acf27a35`). Full prompt and summary maintained in project workspace session.
 * **AI-Suggested Content**: 
@@ -92,6 +92,24 @@
 ---
 
 <!-- Future AI interactions should be appended below this line -->
+
+### Entry 4: Feature 3 — Job Application Submission & Tracking Backend Implementation
+* **Task ID / Title**: Feature 3 — Job Application Submission and Tracking Backend Implementation
+* **Purpose of AI Use**: Architecture planning, database schema design, edge-case vulnerability analysis, and API endpoint implementation.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `a007eadf-242e-4ac9-992e-6aba80f6469b`). Full prompt and summary maintained in project workspace session.
+* **AI-Suggested Content**: 
+  - Designed the `Application` database table with compound unique constraint `(job_id, applicant_id)` and typed `ApplicationStatus` enum (`Applied`, `Under Review`, `Interview`, `Offered`, `Rejected`).
+  - Authored Pydantic request and response schemas including `ApplicationDetailResponse` which joins job details and resume information into single response cards for the candidate tracking dashboard.
+  - Implemented `POST /api/jobs/{job_id}/apply` supporting optional cover letters, automatic resume resolution (validating specified resume ID vs falling back to user's default/latest resume), recruiter self-application prevention, and duplicate application prevention (`409 Conflict`).
+  - Created `src/backend/routers/applications.py` providing candidate application listing with status filtering (`GET /api/applications/me`), single application retrieval (`GET /api/applications/{id}`), candidate application withdrawal (`DELETE /api/applications/{id}`), and recruiter status updates (`PATCH /api/applications/{id}/status`).
+  - Analyzed the resume deletion edge case (where deleting a resume from a profile breaks active applications and foreign keys) and authored Item 4.7 in `FIXES.md` documenting snapshotting and soft-delete retention solutions.
+* **Validation**: 
+  - Authored and executed an in-memory 12-point automated verification script (`scratch/test_feature3.py`) testing all application endpoints, default resume resolution, duplicate rejection (409), self-application guards (400), candidate tracking queries, recruiter status progression (Applied -> Under Review -> Interview -> Offered), authorization isolation (403), and candidate withdrawal (12/12 passed).
+  - Executed existing pytest suite (`tests/test_auth.py`, `tests/test_profile.py`), ensuring 100% regression pass (20/20 passed).
+  - Formulated manual verification testing checklist via interactive FastAPI Swagger documentation (`http://127.0.0.1:8000/docs`) simulating candidate and recruiter interactions.
+* **Decision**: Accepted and modified before use (designated apply endpoint as `POST /api/jobs/{job_id}/apply`, ensured optional cover letter support, added candidate withdrawal capability, omitted automated test writing in favor of manual testing, and documented the resume deletion lifecycle in `FIXES.md`).
+* **Reflection**: Collaborative planning and scratch test execution with AI helped anticipate complex domain constraints early—such as race conditions in multi-resume resolution, self-application prevention, and file retention upon resume deletion—producing thoroughly verified backend endpoints ready for frontend integration and peer test authoring.
+* **Responsible Person**: Thomas Martel
 
 ---
 

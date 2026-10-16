@@ -14,6 +14,7 @@ This document details all remaining issues, architectural defects, security enha
    - [4.4 Non-Atomic File Operations & Orphaned Files](#44-non-atomic-file-operations--orphaned-files)
    - [4.5 Race Conditions in Resume Count & Default Status](#45-race-conditions-in-resume-count--default-status)
    - [4.6 Missing Profile Creation on User Registration](#46-missing-profile-creation-on-user-registration)
+   - [4.7 Resume Deletion vs. Active Application Retention](#47-resume-deletion-vs-active-application-retention)
 3. [Testing & Database Infrastructure](#3-testing--database-infrastructure)
    - [5.1 Test Suite Lifespan Modifying Development Database](#51-test-suite-lifespan-modifying-development-database)
    - [5.2 Foreign Keys Disabled in Test In-Memory Database](#52-foreign-keys-disabled-in-test-in-memory-database)
@@ -277,6 +278,25 @@ This document details all remaining issues, architectural defects, security enha
   session.commit()
   session.refresh(new_user)
   ```
+
+---
+
+### 4.7 Resume Deletion vs. Active Application Retention
+- **Issue**:
+  When a candidate submits an application, it references `resume_id` (`Application.resume_id -> Resume.id`). If the candidate later goes to `/api/profiles/me/resumes/{resume_id}` and deletes that resume:
+  1. **Foreign Key Integrity / Deletion Block**: Currently `delete_resume` executes `session.delete(resume)`. With SQLite foreign key constraints enabled (`PRAGMA foreign_keys=ON;`), this operation raises an `IntegrityError` if the foreign key restricts deletion, or cascades/sets null depending on schema configuration.
+  2. **Recruiter Data Loss & Broken Links**: `delete_resume` executes `os.remove(resume.file_path)` on disk. Once deleted from disk, any recruiter attempting to review or download the applicant's resume for an active job application encounters a missing file / 404 error.
+- **Where to fix**:
+  - `src/backend/routers/profiles.py` (`delete_resume`)
+  - `src/backend/routers/jobs.py` (`apply_to_job`)
+  - `src/backend/models.py` (`Application`, `Resume`)
+- **The Fix Options**:
+  1. **Option A (Application Snapshotting — Recommended)**:
+     When an application is submitted, create an immutable copy of the resume PDF into an archive directory (e.g. `uploads/applications/app_{id}_{filename}.pdf`) and link the application record to this frozen snapshot. If the user deletes or replaces their profile resume later, the recruiter's received copy remains intact and unaffected.
+  2. **Option B (Soft-Delete / Archive on Profile Resumes)**:
+     Add `is_archived: bool = False` or `is_deleted: bool = False` to `Resume`. When a user deletes a resume from their profile, mark `is_archived = True` instead of executing `os.remove()` and `session.delete()`. It is hidden from the candidate's active list, but preserved on disk for recruiters.
+  3. **Option C (Active Application Deletion Guard)**:
+     In `delete_resume`, query `select(Application).where(Application.resume_id == resume_id)`. If active applications exist, reject the deletion with `HTTP 400 Bad Request` ("Cannot delete a resume attached to active job applications. Withdraw the applications first or upload an updated resume.").
 
 ---
 

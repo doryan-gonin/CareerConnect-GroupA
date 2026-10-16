@@ -1,6 +1,6 @@
 import math
 from typing import Annotated, List
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from sqlmodel import Session, select, col, or_, func
 
 from backend.database import get_session
@@ -13,6 +13,11 @@ from backend.models import (
     JobUpdate,
     JobResponse,
     JobListResponse,
+    Resume,
+    Application,
+    ApplicationStatus,
+    ApplicationCreate,
+    ApplicationResponse,
 )
 from backend.dependencies import get_current_user
 
@@ -216,3 +221,105 @@ def delete_job(
     job.is_active = False
     session.commit()
     return {"message": "Job posting deactivated successfully."}
+
+
+@router.post("/{job_id}/apply", response_model=ApplicationResponse, status_code=status.HTTP_201_CREATED)
+def apply_to_job(
+    job_id: int,
+    session: Annotated[Session, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    payload: Annotated[ApplicationCreate | None, Body()] = None,
+):
+    """
+    Submit an application to an active job posting.
+    - Resolves resume: uses specified resume_id if valid, otherwise falls back to the user's default resume.
+    - Prevents self-application by the recruiter who created the posting.
+    - Prevents duplicate applications for the same job by the same user.
+    """
+    job = session.get(Job, job_id)
+    if not job or not job.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job posting not found or is no longer active.",
+        )
+
+    if job.recruiter_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Recruiters cannot apply to their own job postings.",
+        )
+
+    # Check for duplicate application
+    existing = session.exec(
+        select(Application).where(
+            Application.job_id == job_id,
+            Application.applicant_id == current_user.id,
+        )
+    ).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="You have already applied to this job posting.",
+        )
+
+    # Resolve resume
+    target_resume_id: int | None = None
+    if payload and payload.resume_id is not None:
+        target_resume = session.exec(
+            select(Resume).where(
+                Resume.id == payload.resume_id,
+                Resume.user_id == current_user.id,
+            )
+        ).first()
+        if not target_resume:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Specified resume not found on your profile.",
+            )
+        target_resume_id = target_resume.id
+    else:
+        # Fall back to user's default resume, or the most recent resume
+        default_resume = session.exec(
+            select(Resume).where(
+                Resume.user_id == current_user.id,
+                Resume.is_default == True,
+            )
+        ).first()
+        if not default_resume:
+            default_resume = session.exec(
+                select(Resume)
+                .where(Resume.user_id == current_user.id)
+                .order_by(Resume.uploaded_at.desc())
+            ).first()
+
+        if not default_resume:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You must upload a resume before applying for a job.",
+            )
+        target_resume_id = default_resume.id
+
+    cover_letter = payload.cover_letter if payload else None
+
+    application = Application(
+        job_id=job_id,
+        applicant_id=current_user.id,
+        resume_id=target_resume_id,
+        cover_letter=cover_letter,
+        status=ApplicationStatus.APPLIED,
+    )
+    session.add(application)
+    session.commit()
+    session.refresh(application)
+
+    return ApplicationResponse(
+        id=application.id,
+        job_id=application.job_id,
+        applicant_id=application.applicant_id,
+        resume_id=application.resume_id,
+        cover_letter=application.cover_letter,
+        status=application.status,
+        applied_at=application.applied_at,
+        updated_at=application.updated_at,
+        message="Application submitted successfully.",
+    )

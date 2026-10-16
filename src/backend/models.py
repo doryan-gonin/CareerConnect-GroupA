@@ -4,6 +4,7 @@ from pyclbr import Class # Unnecessary import, leaving it in for now
 
 from enum import Enum
 from pydantic import EmailStr
+from sqlalchemy import UniqueConstraint
 from sqlmodel import SQLModel, Field, Relationship
 from typing import List
 from datetime import datetime
@@ -21,6 +22,13 @@ class JobType(str, Enum):
     SEASONAL = "Seasonal"
     INTERNSHIP = "Internship"
 
+class ApplicationStatus(str, Enum):
+    APPLIED = "Applied"
+    UNDER_REVIEW = "Under Review"
+    INTERVIEW = "Interview"
+    OFFERED = "Offered"
+    REJECTED = "Rejected"
+
 # TABLES
 
 class User(SQLModel, table=True):
@@ -34,6 +42,7 @@ class User(SQLModel, table=True):
     profile: Profile = Relationship(back_populates="user")
     resumes: List[Resume] = Relationship(back_populates="user")
     posted_jobs: List["Job"] = Relationship(back_populates="recruiter")
+    applications: List["Application"] = Relationship(back_populates="applicant")
 
 
 class Profile(SQLModel, table=True):
@@ -79,6 +88,24 @@ class Job(SQLModel, table=True):
     posted_at: datetime = Field(default_factory=datetime.now)
 
     recruiter: User | None = Relationship(back_populates="posted_jobs")
+    applications: List["Application"] = Relationship(back_populates="job")
+
+
+class Application(SQLModel, table=True):
+    __table_args__ = (UniqueConstraint("job_id", "applicant_id", name="uq_job_applicant"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    job_id: int = Field(foreign_key="job.id", index=True, nullable=False)
+    applicant_id: int = Field(foreign_key="user.id", index=True, nullable=False)
+    resume_id: int | None = Field(default=None, foreign_key="resume.id", index=True)
+    cover_letter: str | None = Field(default=None)
+    status: ApplicationStatus = Field(default=ApplicationStatus.APPLIED, index=True, nullable=False)
+    applied_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime | None = Field(default=None)
+
+    job: Job | None = Relationship(back_populates="applications")
+    applicant: User | None = Relationship(back_populates="applications")
+    resume: Resume | None = Relationship()
 
 # REQUEST/RESPONSES SCHEMAS
 
@@ -173,3 +200,40 @@ class JobListResponse(SQLModel):
     page: int
     limit: int
     total_pages: int
+
+# APPLICATION CLASSES
+
+class ApplicationCreate(SQLModel):
+    resume_id: int | None = None
+    cover_letter: str | None = None
+
+class ApplicationResponse(SQLModel):
+    id: int
+    job_id: int
+    applicant_id: int
+    resume_id: int | None = None
+    cover_letter: str | None = None
+    status: ApplicationStatus
+    applied_at: datetime
+    updated_at: datetime | None = None
+    message: str | None = None
+
+class ApplicationDetailResponse(SQLModel):
+    id: int
+    job_id: int
+    applicant_id: int
+    resume_id: int | None = None
+    resume_name: str | None = None
+    cover_letter: str | None = None
+    status: ApplicationStatus
+    applied_at: datetime
+    updated_at: datetime | None = None
+    job_title: str
+    company_name: str
+    location: str
+    category: str
+    job_type: JobType
+    job_schedule: JobSchedule
+
+class ApplicationStatusUpdate(SQLModel):
+    status: ApplicationStatus
