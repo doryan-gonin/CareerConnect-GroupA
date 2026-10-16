@@ -3,10 +3,11 @@ import bcrypt
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.pool import StaticPool
+import datetime
 
 from backend.main import app
 from backend.database import get_session
-from backend.models import User, Resume
+from backend.models import User, Resume, Job, JobType, JobSchedule
 
 # Creates an in-memory DB with static pool to ensure the same connection
 sqlite_url = "sqlite://"
@@ -108,3 +109,33 @@ def add_resumes_for_user(test_user, tmp_path):
             session.refresh(resume)
 
     return resumes
+
+@pytest.fixture
+def test_jobs():
+    jobs = []
+    with Session(engine) as session:
+        for i in range(5):
+            job = Job(
+                recruiter_id = i + 1,
+                title = f"Job Title {i + 1}",
+                company_name = f"Company {i + 1}",
+                description = f"Description for job {i + 1}",
+                location = f"Location {i + 1}",
+                category = "Engineering",
+                job_type = JobType.PERMANENT,
+                job_schedule = JobSchedule.FULL_TIME,
+                min_hours_per_week = 40,
+                max_hours_per_week = 40,
+                salary_min = 50000 + i * 1000,
+                salary_max = 70000 + i * 1000,
+                posted_at = datetime.datetime.now()
+            )
+
+            session.add(job)
+            jobs.append(job)
+
+        session.commit()
+        for job in jobs:
+            session.refresh(job)
+
+    return jobs
