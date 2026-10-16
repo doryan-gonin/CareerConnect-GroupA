@@ -21,7 +21,7 @@
 ### Standard Entry Template
 ```markdown
 ### Entry [X]: [Task ID / Title]
-* **Task ID / Title**: [Short description or GitHub issue ID, e.g., US-03.01 / Issue #66]
+* **Task ID / Title**: [Short description]
 * **Purpose of AI Use**: [Brainstorming / Requirements Analysis / Coding / Debugging / Testing / Documentation / Review]
 * **Chat Link or Prompt/Response**: [Link to conversation or reference to Appendix item]
 * **AI-Suggested Content**: [Concise summary of what the AI proposed, suggested, or generated]
