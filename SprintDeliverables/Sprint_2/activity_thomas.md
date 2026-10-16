@@ -4,7 +4,7 @@
 * **Role**: Backend Developer
 * **Project**: CareerConnect (SOEN 341 - Fall 2026)
 * **Sprint**: Sprint 2
-* **Total Estimated Time Spent**: ~8.3 Hours
+* **Total Estimated Time Spent**: ~8.9 Hours
 
 ---
 
@@ -42,6 +42,7 @@
 | **13** | **Application Data Models & Status Progression Architecture (Feature 3)**<br>Architected SQLModel database table `Application` with unique constraint `(job_id, applicant_id)`, foreign key relationships linking candidate, job, and resume, and typed `ApplicationStatus` enum (`Applied`, `Under Review`, `Interview`, `Offered`, `Rejected`). Authored request and response schemas including `ApplicationDetailResponse` for unified candidate tracking cards. | 30 min | • File: `src/backend/models.py` |
 | **14** | **Job Application Submission & Candidate Tracking API (Feature 3)**<br>Implemented `POST /api/jobs/{job_id}/apply` with resume auto-resolution (explicit resume ID validation vs. default resume fallback), recruiter self-application prevention, and duplicate application rejection (`409 Conflict`). Built dedicated router `src/backend/routers/applications.py` with candidate tracking (`GET /api/applications/me` with status filtering), individual application retrieval (`GET /api/applications/{id}`), candidate withdrawal (`DELETE /api/applications/{id}`), and recruiter status update endpoint (`PATCH /api/applications/{id}/status`). Mounted router in `src/backend/main.py`. | 45 min | • Files: `src/backend/routers/jobs.py`, `src/backend/routers/applications.py`, `src/backend/main.py` |
 | **15** | **Resume Deletion & Application Immutability Analysis (Feature 3)**<br>Analyzed critical data retention and foreign key constraints when users delete resumes attached to active applications. Documented problem breakdown, risk analysis, and 3 resolution strategies (snapshotting vs soft-deletion vs deletion guard) in `FIXES.md` (Item 4.7). | 15 min | • Document: `FIXES.md` |
+| **16** | **Feature 3 Automated & Manual Validation Suite**<br>Authored and executed in-memory automated integration testing suite validating all 12 Feature 3 operational paths (submission, auto-resume resolution, duplicate detection, recruiter self-apply prevention, status filtering, recruiter status lifecycle progression, and withdrawal). Executed full regression testing against existing auth and profile suites (20/20 passed), and performed manual end-to-end verification via interactive Swagger UI. | 35 min | • Document: `AI_Log/Thomas/AI_Log_Sprint2_Thomas.md` |
 
 ---
 

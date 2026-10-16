@@ -104,11 +104,11 @@
   - Created `src/backend/routers/applications.py` providing candidate application listing with status filtering (`GET /api/applications/me`), single application retrieval (`GET /api/applications/{id}`), candidate application withdrawal (`DELETE /api/applications/{id}`), and recruiter status updates (`PATCH /api/applications/{id}/status`).
   - Analyzed the resume deletion edge case (where deleting a resume from a profile breaks active applications and foreign keys) and authored Item 4.7 in `FIXES.md` documenting snapshotting and soft-delete retention solutions.
 * **Validation**: 
-  - Performed code review of SQLModel foreign key declarations, unique constraints, and router endpoint error codes.
-  - Confirmed router registration in `src/backend/main.py`.
-  - Audited documentation alignment with Sprint 2 project guidelines.
+  - Authored and executed an in-memory 12-point automated verification script (`scratch/test_feature3.py`) testing all application endpoints, default resume resolution, duplicate rejection (409), self-application guards (400), candidate tracking queries, recruiter status progression (Applied -> Under Review -> Interview -> Offered), authorization isolation (403), and candidate withdrawal (12/12 passed).
+  - Executed existing pytest suite (`tests/test_auth.py`, `tests/test_profile.py`), ensuring 100% regression pass (20/20 passed).
+  - Formulated manual verification testing checklist via interactive FastAPI Swagger documentation (`http://127.0.0.1:8000/docs`) simulating candidate and recruiter interactions.
 * **Decision**: Accepted and modified before use (designated apply endpoint as `POST /api/jobs/{job_id}/apply`, ensured optional cover letter support, added candidate withdrawal capability, omitted automated test writing in favor of manual testing, and documented the resume deletion lifecycle in `FIXES.md`).
-* **Reflection**: Collaborative planning with AI helped anticipate complex domain constraints early—such as race conditions in multi-resume resolution, self-application prevention, and file retention upon resume deletion—producing clean, maintainable backend code ready for frontend integration.
+* **Reflection**: Collaborative planning and scratch test execution with AI helped anticipate complex domain constraints early—such as race conditions in multi-resume resolution, self-application prevention, and file retention upon resume deletion—producing thoroughly verified backend endpoints ready for frontend integration and peer test authoring.
 * **Responsible Person**: Thomas Martel
 
 ---
