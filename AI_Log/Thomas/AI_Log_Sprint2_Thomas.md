@@ -52,7 +52,7 @@
 * **Responsible Person**: Thomas Martel
 
 ### Entry 2: Feature 2 — Job Search, Filtering, and Listing Backend Implementation
-* **Task ID / Title**: US-04: Feature 2 — Job Search, Multi-Filter, and Listing Backend Implementation
+* **Task ID / Title**: Feature 2 — Job Search, Multi-Filter, and Listing Backend Implementation
 * **Purpose of AI Use**: Architecture design, schema definition, query implementation, and development utility generation.
 * **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `f5e8e5d0-5e27-4d58-8902-dae3acf27a35`). Full prompt and summary maintained in project workspace session.
 * **AI-Suggested Content**: 
@@ -94,7 +94,7 @@
 <!-- Future AI interactions should be appended below this line -->
 
 ### Entry 4: Feature 3 — Job Application Submission & Tracking Backend Implementation
-* **Task ID / Title**: US-05: Feature 3 — Job Application Submission and Tracking Backend Implementation
+* **Task ID / Title**: Feature 3 — Job Application Submission and Tracking Backend Implementation
 * **Purpose of AI Use**: Architecture planning, database schema design, edge-case vulnerability analysis, and API endpoint implementation.
 * **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `a007eadf-242e-4ac9-992e-6aba80f6469b`). Full prompt and summary maintained in project workspace session.
 * **AI-Suggested Content**: 
