@@ -28,7 +28,7 @@
 * **Validation**: [How the output was verified, e.g., manual review, running pytest suite, git diff check, comparison against sprint guidelines]
 * **Decision**: [Accepted | Modified before use | Rejected]
 * **Reflection**: [Brief reflection on what was learned and whether the AI assistance was useful]
-* **Responsible Person**: Thomas Laripo
+* **Responsible Person**: Thomas Martel
 ```
 
 ---
@@ -49,7 +49,7 @@
   - Reviewed the generated activity log against the official Sprint 2 evaluation rubric criteria.
 * **Decision**: Accepted and modified before use (reviewed the structured `.md` log, verified the commit SHAs and PR URLs, and removed the initial `.txt` draft in favor of the markdown deliverable).
 * **Reflection**: Using AI significantly streamlined the process of auditing fragmented commits and translating them into clear, professional sprint milestones linked to user stories and deliverables. It helped ensure all mandatory rubric items were covered.
-* **Responsible Person**: Thomas Laripo
+* **Responsible Person**: Thomas Martel
 
 ---
 

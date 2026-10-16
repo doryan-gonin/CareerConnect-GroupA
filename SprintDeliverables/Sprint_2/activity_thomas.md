@@ -8,6 +8,21 @@
 
 ---
 
+## Instructions for AI Assistants and Contributors
+
+> **Note for AI assistants**: Whenever helping Thomas with tasks (features, bug fixes, refactoring, tests, or documentation) during Sprint 2:
+> 1. Append a new numbered entry to the `Detailed Activity Breakdown` table (or update existing related entries if consolidating work).
+> 2. Ensure each entry includes a clear activity description, realistic estimated time spent, and exact links to commits, PRs, issues, or documentation.
+> 3. Update the `Total Estimated Time Spent` in the metadata header at the top of this document.
+> 4. Keep the `Summary of Deliverables & Artifacts Contributed` section at the bottom up-to-date with any new PRs, issues, or documents.
+
+### Row Template for Activity Table
+```markdown
+| **[#]** | **[Activity Title]**<br>[Detailed description of what was done, architecture decisions, or problem solved.] | [X] hrs / min | • Commit: [`[hash]`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/[full_hash])<br>• [PR #[num]: [PR Title]](https://github.com/doryan-gonin/CareerConnect-GroupA/pull/[num]) |
+```
+
+---
+
 ## Detailed Activity Breakdown
 
 | # | Activity / Description | Time Spent | References & Links |
