@@ -9,7 +9,7 @@ on:
 jobs:
   # Separating backend and frontend jobs allow parallel execution
   # ---------------------------------------------------------------------------
-  # BACKEND -> Build, Lint (TODO: Test)
+  # BACKEND -> Build, Lint, Test
   # ---------------------------------------------------------------------------
   backend:
     name: Backend
@@ -35,7 +35,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras --dev
 
-      # PyTest testing
+      # PyTest testing --> Auth, Profile, Resume
       - name: Run PyTest
         run: uv run pytest tests/ -v
         env:
