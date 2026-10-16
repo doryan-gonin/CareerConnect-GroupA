@@ -70,6 +70,25 @@
 * **Reflection**: AI accelerated generating boilerplate query logic and varied sample data. Developer intervention ensured proper architectural boundaries (keeping utility scripts out of `src/`) and intuitive domain terminology.
 * **Responsible Person**: Thomas Martel
 
+### Entry 3: Comprehensive Backend Code Audit, Security/Data Bug Fixes & Import Refactoring
+* **Task ID / Title**: Comprehensive Backend Code Audit, Security/Data Bug Fixes & Import Refactoring
+* **Purpose of AI Use**: Code review, bug identification, security analysis, testing, architecture refactoring, and documentation.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `9dbbde45-0919-46cf-b68b-54bde2b22119`). Full prompt and summary maintained in project workspace session.
+* **AI-Suggested Content**: 
+  - Conducted a comprehensive audit of the backend repository, identifying critical issues: double router prefix on profiles causing 404 errors, literal string `"None"` defaults in `ProfileUpdate` overwriting SQLite fields, schema mismatches in `ProfileResponse`, unhandled 500 errors on invalid JWT `sub` claims, missing CORS middleware, and user enumeration timing attack vulnerabilities on `/api/auth/login`.
+  - Formulated step-by-step solutions for each issue, and authored `FIXES.md` in the project root documenting backlog items (3.3 onwards) including PDF magic-byte validation, access/refresh token distinction, timezone unification, and transactional file cleanup.
+  - Identified two runtime exceptions during initial patch implementation: missing `await` on `file.read()` (`TypeError: object of type 'coroutine' has no len()`) and an invalid dummy salt in `bcrypt.checkpw()` (`ValueError: Invalid salt`), providing the working fixes for both.
+  - Built an automated 10-point test verification script covering CORS preflight, profile CRUD, safe JWT parsing, timing dummy checks, and chunked resume streaming size limits.
+  - Refactored project imports from `src.backend.*` to `backend.*`, removed `src/__init__.py`, and updated `pyproject.toml` (`pythonpath = ["src"]`) to resolve `fastapi-cli` discovery errors (`ModuleNotFoundError: No module named 'src'`) so `make backend-dev` launches cleanly as `backend.main:app`.
+  - Drafted a structured GitHub Issue documenting all resolved bugs and verification steps.
+* **Validation**: 
+  - Executed existing `pytest tests/` test suite (6/6 passing).
+  - Authored and executed an in-memory integration verification suite (`verify_fixes.py`) validating CORS preflights, profile CRUD, safe JWT parsing, timing dummy checks, and async resume stream size rejection (10/10 passing).
+  - Verified local dev server execution (`make backend-dev`) launching `backend.main:app` cleanly on `http://127.0.0.1:8000`.
+* **Decision**: Accepted and modified before use (collaboratively reviewed each bug report, applied fixes iteratively, verified automated test results, agreed on standardizing the package layout to `backend.*`, and reviewed the drafted GitHub issue).
+* **Reflection**: Pair programming with the AI for code review was highly effective in spotting subtle runtime exceptions (such as unawaited coroutines and bcrypt salt format requirements) and edge-case data corruption bugs that standard unit tests had missed. The audit significantly hardened the security, data integrity, and developer experience of the backend.
+* **Responsible Person**: Thomas Martel
+
 ---
 
 <!-- Future AI interactions should be appended below this line -->
@@ -86,3 +105,12 @@
   1. Explanation of Sprint 2 individual submittables based on project guideline documents.
   2. Consolidation and formatting of Git commits, PRs, and issues into an official activity log.
   3. Initialization of the AI Usage Log with reusable structure for subsequent sprint entries.
+
+### Appendix 2: Context for Entry 3
+* **Context**: Backend code audit, security vulnerability identification, runtime bug remediation, and import architecture refactoring.
+* **Key Queries**:
+  1. Backend code audit identifying current bugs, security flaws, and architectural problems.
+  2. Diagnostic review of initial bug fixes catching runtime `TypeError` and `ValueError: Invalid salt`.
+  3. Creation of `FIXES.md` detailing remaining backlog improvements.
+  4. Integration testing and debugging of `fastapi dev` `ModuleNotFoundError: No module named 'src'`.
+  5. Refactoring to standard `backend.*` namespace layout and drafting a GitHub Issue.
