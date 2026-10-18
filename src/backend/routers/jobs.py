@@ -9,6 +9,8 @@ from backend.models import (
     Job,
     JobType,
     JobSchedule,
+    JobSortBy,
+    JobSortOrder,
     JobCreate,
     JobUpdate,
     JobResponse,
@@ -23,7 +25,6 @@ from backend.dependencies import get_current_user
 
 router = APIRouter(tags=["Jobs"])
 
-
 @router.get("", response_model=JobListResponse)
 def list_jobs(
     session: Annotated[Session, Depends(get_session)],
@@ -37,6 +38,8 @@ def list_jobs(
     max_hours: int | None = Query(default=None, ge=0, description="Maximum hours per week"),
     page: int = Query(default=1, ge=1, description="Page number"),
     limit: int = Query(default=20, ge=1, le=100, description="Items per page"),
+    sort_by: JobSortBy = Query(default=JobSortBy.POSTED_AT, description="Field to sort by (e.g. posted_at, salary)"),
+    sort_order: JobSortOrder = Query(default=JobSortOrder.DESC, description="Sort order: asc or desc"),
 ):
     """
     Search and filter active job opportunities with pagination.
@@ -96,15 +99,35 @@ def list_jobs(
     count_statement = select(func.count()).select_from(Job).where(*conditions)
     total_count = session.exec(count_statement).one()
 
-    # Paginated data query
+    # Pagination and sorting
+    sort_columns = {
+        JobSortBy.POSTED_AT: Job.posted_at,
+        JobSortBy.SALARY_MAX: Job.salary_max,
+        JobSortBy.SALARY_MIN: Job.salary_min,
+        JobSortBy.HOURS_MAX: Job.max_hours_per_week,
+    }
+
+    sort_column = sort_columns[sort_by]
+
+    # nullslast() ensures job without the selected field are pushed to the end
+    # The tie-breaker ensures jobs with the same criterias don't jump between pages
+    if sort_order == JobSortOrder.ASC:
+        primary_order = col(sort_column).asc().nullslast()
+        tie_breaker = col(Job.id).asc()
+    else:
+        primary_order = col(sort_column).desc().nullslast()
+        tie_breaker = col(Job.id).desc()
+
+    # Paginate only AFTER sorting
     offset = (page - 1) * limit
     jobs_statement = (
         select(Job)
         .where(*conditions)
-        .order_by(col(Job.posted_at).desc())
+        .order_by(primary_order, tie_breaker)
         .offset(offset)
         .limit(limit)
     )
+
     jobs = session.exec(jobs_statement).all()
 
     total_pages = math.ceil(total_count / limit) if total_count > 0 else 0

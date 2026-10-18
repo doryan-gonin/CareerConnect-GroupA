@@ -20,7 +20,17 @@ class JobType(str, Enum):
     TEMPORARY = "Temporary"
     CONTRACT = "Contract"
     SEASONAL = "Seasonal"
-    INTERNSHIP = "Internship"
+    INTERNSHIP = "Internship"  
+
+class JobSortBy(str, Enum):
+    POSTED_AT = "posted_at"
+    SALARY_MAX = "salary_max"
+    SALARY_MIN = "salary_min"
+    HOURS_MAX = "max_hours_per_week"
+
+class JobSortOrder(str, Enum):
+    ASC = "asc"
+    DESC = "desc"
 
 class ApplicationStatus(str, Enum):
     APPLIED = "Applied"
