@@ -20,8 +20,8 @@ This document details all remaining issues, architectural defects, security enha
    - [5.2 Foreign Keys Disabled in Test In-Memory Database](#52-foreign-keys-disabled-in-test-in-memory-database)
    - [5.3 Missing Test Coverage (Profiles, Resumes, Lockout, Revocation)](#53-missing-test-coverage-profiles-resumes-lockout-revocation)
 4. [Frontend-Backend Integration & Code Cleanup](#4-frontend-backend-integration--code-cleanup)
-   - [6.1 Frontend Logout Does Not Revoke Token on Backend](#61-frontend-logout-does-not-revoke-token-on-backend)
-   - [6.2 Frontend Password Rules Missing 72-Byte Limit](#62-frontend-password-rules-missing-72-byte-limit)
+   - [6.1 Frontend Logout Does Not Revoke Token on Backend [FIXED]](#61-frontend-logout-does-not-revoke-token-on-backend-fixed)
+   - [6.2 Frontend Password Rules Missing 72-Byte Limit [FIXED]](#62-frontend-password-rules-missing-72-byte-limit-fixed)
    - [6.3 Orphaned 1-Byte File `frontend` in Project Root](#63-orphaned-1-byte-file-frontend-in-project-root)
    - [6.4 Typo in Model Name `ResumeReponse`](#64-typo-in-model-name-resumereponse)
    - [6.5 Unbounded Growth of `RevokedToken` Table](#65-unbounded-growth-of-revokedtoken-table)
@@ -364,7 +364,8 @@ This document details all remaining issues, architectural defects, security enha
 
 ## 4. Frontend-Backend Integration & Code Cleanup
 
-### 6.1 Frontend Logout Does Not Revoke Token on Backend
+### 6.1 Frontend Logout Does Not Revoke Token on Backend [FIXED]
+- **Status**: ✅ Fixed (Implemented `logoutUser` in `src/frontend/src/api/auth.js` and integrated with `handleLogout` in `src/frontend/src/App.jsx`)
 - **Issue**:
   `handleLogout` in `src/frontend/src/App.jsx` simply deletes `accessToken` from `localStorage`. It never calls `POST /api/auth/logout`. The JWT remains valid on the server until expiration.
 - **Where to fix**:
@@ -386,7 +387,8 @@ This document details all remaining issues, architectural defects, security enha
 
 ---
 
-### 6.2 Frontend Password Rules Missing 72-Byte Limit
+### 6.2 Frontend Password Rules Missing 72-Byte Limit [FIXED]
+- **Status**: ✅ Fixed (Added 72-byte limit rule using `TextEncoder` in `src/frontend/src/utils/passwordRules.js`)
 - **Issue**:
   `src/backend/routers/auth.py:46-47` rejects passwords greater than 72 bytes due to bcrypt's internal limit. However, `src/frontend/src/utils/passwordRules.js` does not check this constraint, allowing users to submit passwords that are immediately rejected by the server.
 - **Where to fix**:
