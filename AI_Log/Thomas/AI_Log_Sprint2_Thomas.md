@@ -111,6 +111,24 @@
 * **Reflection**: Collaborative planning and scratch test execution with AI helped anticipate complex domain constraints early—such as race conditions in multi-resume resolution, self-application prevention, and file retention upon resume deletion—producing thoroughly verified backend endpoints ready for frontend integration and peer test authoring.
 * **Responsible Person**: Thomas Martel
 
+### Entry 5: Sprint 1 & 2 Frontend Gap Analysis & Auth Hardening (Feature 1)
+* **Task ID / Title**: Sprint 1 & 2 Frontend Gap Analysis & Auth Hardening (Feature 1)
+* **Purpose of AI Use**: Requirements analysis, sprint catch-up planning, frontend coding, security hardening, and validation.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `85099794-8505-4f52-b85b-a6ec15501aef`). Full prompt and summary maintained in project workspace session.
+* **AI-Suggested Content**: 
+  - Performed a full gap analysis comparing the SOEN 341 project deliverables for Sprint 1 & 2 against the repository code, identifying that while the backend was complete, the frontend was missing profile views, resume management, job search, application flows, and recruiter controls.
+  - Developed a comprehensive, feature-by-feature implementation plan (`sprint1_frontend_plan.md`) to systematically catch up on Sprint 1 frontend deliverables.
+  - Added the 72-byte password length validation rule in `src/frontend/src/utils/passwordRules.js` to prevent bcrypt client/server mismatches (`FIXES.md` Item 6.2).
+  - Implemented `logoutUser` in `src/frontend/src/api/auth.js` dispatching authenticated requests to `POST /api/auth/logout` to properly record tokens in `RevokedToken` on the backend (`FIXES.md` Item 6.1).
+  - Updated `src/frontend/src/App.jsx` to await server revocation before purging client storage on logout.
+* **Validation**: 
+  - Ran `npm run build` in `src/frontend`, verifying clean compilation with Vite (0 build errors).
+  - Ran `npm run lint` (`oxlint`) across the frontend codebase, confirming 0 warnings and 0 errors across 9 files.
+  - Verified silent error handling so network unreachable conditions do not block client logout.
+* **Decision**: Accepted (reviewed code changes, verified build output, and applied modifications directly to `passwordRules.js`, `auth.js`, and `App.jsx`).
+* **Reflection**: Breaking down the missing deliverables into a feature-by-feature plan and addressing auth edge cases first ensures our session state and security validations are aligned with backend expectations before building the profile and resume interfaces.
+* **Responsible Person**: Thomas Martel
+
 ---
 
 ## Appendix: Extended Prompts & Responses (Optional)
@@ -132,3 +150,11 @@
   3. Creation of `FIXES.md` detailing remaining backlog improvements.
   4. Integration testing and debugging of `fastapi dev` `ModuleNotFoundError: No module named 'src'`.
   5. Refactoring to standard `backend.*` namespace layout and drafting a GitHub Issue.
+
+### Appendix 3: Context for Entry 5
+* **Context**: Sprint 1 and 2 frontend requirements audit, roadmap planning, and implementation of Feature 1 authentication hardening.
+* **Key Queries**:
+  1. Frontend gap analysis based on course guidelines and existing backend capabilities.
+  2. Construction of a structured, feature-by-feature implementation plan for Sprint 1 frontend.
+  3. Client-side password rule enforcement for bcrypt's 72-byte limit.
+  4. Integration of server-side token revocation on logout (`POST /api/auth/logout`).

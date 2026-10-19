@@ -4,7 +4,7 @@
 * **Role**: Backend Developer
 * **Project**: CareerConnect (SOEN 341 - Fall 2026)
 * **Sprint**: Sprint 2
-* **Total Estimated Time Spent**: ~8.9 Hours
+* **Total Estimated Time Spent**: ~9.5 Hours
 
 ---
 
@@ -43,6 +43,7 @@
 | **14** | **Job Application Submission & Candidate Tracking API (Feature 3)**<br>Implemented `POST /api/jobs/{job_id}/apply` with resume auto-resolution (explicit resume ID validation vs. default resume fallback), recruiter self-application prevention, and duplicate application rejection (`409 Conflict`). Built dedicated router `src/backend/routers/applications.py` with candidate tracking (`GET /api/applications/me` with status filtering), individual application retrieval (`GET /api/applications/{id}`), candidate withdrawal (`DELETE /api/applications/{id}`), and recruiter status update endpoint (`PATCH /api/applications/{id}/status`). Mounted router in `src/backend/main.py`. | 45 min | • Files: `src/backend/routers/jobs.py`, `src/backend/routers/applications.py`, `src/backend/main.py` |
 | **15** | **Resume Deletion & Application Immutability Analysis (Feature 3)**<br>Analyzed critical data retention and foreign key constraints when users delete resumes attached to active applications. Documented problem breakdown, risk analysis, and 3 resolution strategies (snapshotting vs soft-deletion vs deletion guard) in `FIXES.md` (Item 4.7). | 15 min | • Document: `FIXES.md` |
 | **16** | **Feature 3 Automated & Manual Validation Suite**<br>Authored and executed in-memory automated integration testing suite validating all 12 Feature 3 operational paths (submission, auto-resume resolution, duplicate detection, recruiter self-apply prevention, status filtering, recruiter status lifecycle progression, and withdrawal). Executed full regression testing against existing auth and profile suites (20/20 passed), and performed manual end-to-end verification via interactive Swagger UI. | 35 min | • Document: `AI_Log/Thomas/AI_Log_Sprint2_Thomas.md` |
+| **17** | **Sprint 1 & 2 Frontend Gap Analysis & Auth Hardening (Feature 1)**<br>Audited missing frontend deliverables against project specifications. Added 72-byte bcrypt password validation rule in `passwordRules.js` (`FIXES.md` Item 6.2). Implemented `logoutUser` in `src/frontend/src/api/auth.js` calling `POST /api/auth/logout` with Bearer token authentication to properly blacklist JWTs in the database upon logout (`FIXES.md` Item 6.1). Updated `App.jsx` to await server revocation before clearing client storage, and verified production build and oxlint validation. | 35 min | • Files: `src/frontend/src/utils/passwordRules.js`, `src/frontend/src/api/auth.js`, `src/frontend/src/App.jsx`<br>• Document: `FIXES.md` (Items 6.1, 6.2) |
 
 ---
 
@@ -61,8 +62,12 @@
   * `src/backend/routers/jobs.py`: Complete search, multi-filter, pagination, job CRUD, and `POST /{job_id}/apply` endpoint.
   * `src/backend/routers/applications.py`: Full candidate application tracking (`/me`), single application retrieval, candidate application withdrawal, and recruiter status progression.
   * `src/backend/main.py`: Mounted `/api/jobs` and `/api/applications` routers.
+  * `src/frontend/src/utils/passwordRules.js`: Added 72-byte limit rule matching backend bcrypt validation.
+  * `src/frontend/src/api/auth.js`: Added `logoutUser` function for server-side JWT revocation.
+  * `src/frontend/src/App.jsx`: Integrated asynchronous server-side token revocation on logout.
 * **Testing & Developer Utilities**:
   * `utility/seedjobs.py`: Idempotent database seeder with 15 realistic job postings and demo recruiter.
   * `Makefile`: Added `make seed` and `make seed-reset` commands.
-* **Documentation**:
+* **Documentation & Planning**:
   * `FIXES.md`: Comprehensive backend audit and architectural improvement document (including Items 6.6 and 4.7).
+  * `sprint1_frontend_plan.md`: Comprehensive feature-by-feature implementation plan for Sprint 1 frontend catch-up.
