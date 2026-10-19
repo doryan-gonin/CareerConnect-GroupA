@@ -49,3 +49,17 @@ export function loginUser(emailAddress, password) {
     password,
   })
 }
+
+export async function logoutUser(token) {
+  if (!token) return
+  try {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  } catch {
+    // Silently handle network errors so client logout isn't blocked
+  }
+}

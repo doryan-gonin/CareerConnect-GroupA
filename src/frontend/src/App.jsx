@@ -2,6 +2,7 @@ import { useState } from 'react'
 import LoggedInScreen from './components/LoggedInScreen'
 import LoginForm from './components/LoginForm'
 import SignupForm from './components/SignupForm'
+import { logoutUser } from './api/auth'
 
 const TOKEN_STORAGE_KEY = 'accessToken'
 
@@ -23,7 +24,11 @@ function App() {
     setView('loggedIn')
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    const token = localStorage.getItem(TOKEN_STORAGE_KEY)
+    if (token) {
+      await logoutUser(token)
+    }
     localStorage.removeItem(TOKEN_STORAGE_KEY)
     setSignupSuccessMessage('')
     setView('login')
