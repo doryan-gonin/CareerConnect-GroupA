@@ -29,27 +29,63 @@ def get_or_create_profile(user_id: int, session: Session) -> Profile:
         session.refresh(profile)
     return profile
 
+def build_profile_response(profile: Profile, user: User) -> ProfileResponse:
+    return ProfileResponse(
+        id=profile.id,
+        user_id=profile.user_id,
+        first_name=profile.first_name,
+        last_name=profile.last_name,
+        phone=profile.phone,
+        location=profile.location,
+        bio=profile.bio,
+        education=profile.education,
+        skills=profile.skills,
+        linkedin_url=profile.linkedin_url,
+        github_url=profile.github_url,
+        email=str(user.email_address),
+        last_update=profile.last_updated,
+    )
+
+
 # Get profile
 @router.get("/me", response_model=ProfileResponse)
-def read_my_profile(current_user: Annotated[User, Depends(get_current_user)], session: Annotated[Session, Depends(get_session)]):
-    return get_or_create_profile(current_user.id, session)
+def read_my_profile(
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)]
+):
+    profile = get_or_create_profile(current_user.id, session)
+
+    return build_profile_response(profile, current_user)
+
 
 # Update profile
 @router.put("/me", response_model=ProfileResponse)
-def update_profile(payload: ProfileUpdate, current_user: Annotated[User, Depends(get_current_user)], session: Annotated[Session, Depends(get_session)]):
+def update_profile(
+    payload: ProfileUpdate,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)]
+):
+    profile = get_or_create_profile(current_user.id, session)
 
-    profile: Profile = get_or_create_profile(current_user.id, session)
+    # Update only fields provided in the request
+    updates = payload.model_dump(
+        exclude_unset=True,
+        exclude_none=True
+    )
 
-    if payload.first_name is not None:
-        profile.first_name = payload.first_name
-    if payload.last_name is not None:
-        profile.last_name = payload.last_name
+    for field, value in updates.items():
+        setattr(profile, field, value)
 
+    # Record the last modification time
     profile.last_updated = datetime.now()
 
+    # Save changes to the database
+    session.add(profile)
     session.commit()
     session.refresh(profile)
-    return profile
+
+    return build_profile_response(profile, current_user)
+
 
 
 # ----------------
