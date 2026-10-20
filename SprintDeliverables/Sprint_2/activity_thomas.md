@@ -4,7 +4,7 @@
 * **Role**: Backend Developer
 * **Project**: CareerConnect (SOEN 341 - Fall 2026)
 * **Sprint**: Sprint 2
-* **Total Estimated Time Spent**: ~9.5 Hours
+* **Total Estimated Time Spent**: ~10.0 Hours
 
 ---
 
@@ -44,6 +44,7 @@
 | **15** | **Resume Deletion & Application Immutability Analysis (Feature 3)**<br>Analyzed critical data retention and foreign key constraints when users delete resumes attached to active applications. Documented problem breakdown, risk analysis, and 3 resolution strategies (snapshotting vs soft-deletion vs deletion guard) in `FIXES.md` (Item 4.7). | 15 min | • Document: `FIXES.md` |
 | **16** | **Feature 3 Automated & Manual Validation Suite**<br>Authored and executed in-memory automated integration testing suite validating all 12 Feature 3 operational paths (submission, auto-resume resolution, duplicate detection, recruiter self-apply prevention, status filtering, recruiter status lifecycle progression, and withdrawal). Executed full regression testing against existing auth and profile suites (20/20 passed), and performed manual end-to-end verification via interactive Swagger UI. | 35 min | • Document: `AI_Log/Thomas/AI_Log_Sprint2_Thomas.md` |
 | **17** | **Sprint 1 & 2 Frontend Gap Analysis & Auth Hardening (Feature 1)**<br>Audited missing frontend deliverables against project specifications. Added 72-byte bcrypt password validation rule in `passwordRules.js` (`FIXES.md` Item 6.2). Implemented `logoutUser` in `src/frontend/src/api/auth.js` calling `POST /api/auth/logout` with Bearer token authentication to properly blacklist JWTs in the database upon logout (`FIXES.md` Item 6.1). Updated `App.jsx` to await server revocation before clearing client storage, and verified production build and oxlint validation. | 35 min | • Files: `src/frontend/src/utils/passwordRules.js`, `src/frontend/src/api/auth.js`, `src/frontend/src/App.jsx`<br>• Document: `FIXES.md` (Items 6.1, 6.2) |
+| **18** | **Authenticated App Shell & Navigation Layout (Feature 3)**<br>Created dedicated `src/frontend/src/components/Navbar.jsx` with CareerConnect branding, candidate portal indicator, and responsive logout action. Refactored `src/frontend/src/App.jsx` to detach authenticated views from the narrow login card into a full-width dashboard container (`max-w-6xl`), and modernized `LoggedInScreen.jsx` with a welcome banner and structured slots for upcoming profile and resume modules. Verified production build and 0 oxlint warnings. | 30 min | • Files: `src/frontend/src/components/Navbar.jsx`, `src/frontend/src/components/LoggedInScreen.jsx`, `src/frontend/src/App.jsx` |
 
 ---
 
@@ -65,6 +66,8 @@
   * `src/frontend/src/utils/passwordRules.js`: Added 72-byte limit rule matching backend bcrypt validation.
   * `src/frontend/src/api/auth.js`: Added `logoutUser` function for server-side JWT revocation.
   * `src/frontend/src/App.jsx`: Integrated asynchronous server-side token revocation on logout.
+  * `src/frontend/src/components/Navbar.jsx`: Top navigation bar with branding, portal badge, and logout trigger.
+  * `src/frontend/src/components/LoggedInScreen.jsx`: Candidate dashboard container with welcome banner and card slots.
 * **Testing & Developer Utilities**:
   * `utility/seedjobs.py`: Idempotent database seeder with 15 realistic job postings and demo recruiter.
   * `Makefile`: Added `make seed` and `make seed-reset` commands.
