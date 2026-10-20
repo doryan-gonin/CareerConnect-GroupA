@@ -162,6 +162,22 @@
 * **Reflection**: Encapsulating all profile and resume network requests in a dedicated, decoupled client module allows upcoming UI components (ProfileSection and ResumeSection) to stay focused on presentation and user interactions.
 * **Responsible Person**: Thomas Martel
 
+### Entry 8: Sprint 1 Frontend — Candidate Profile & Resume Management UI (Features 4 & 5)
+* **Task ID / Title**: Sprint 1 Frontend — Candidate Profile & Resume Management UI (Features 4 & 5)
+* **Purpose of AI Use**: Frontend UI component development, client-side validation, state management, and build verification.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `85099794-8505-4f52-b85b-a6ec15501aef`). Full prompt and summary maintained in project workspace session.
+* **AI-Suggested Content**: 
+  - Created `src/frontend/src/components/ProfileSection.jsx` providing profile viewing and inline editing of candidate first and last names with server persistence via `/api/profiles/me`.
+  - Built `src/frontend/src/components/ResumeSection.jsx` implementing client-side validation for PDF format and 5MB size ceiling, maximum 5-resume quota indicator, file upload with default resume toggle, resume listing with Default badges, default switching (`PATCH /default`), in-browser PDF download, and deletion with confirmation.
+  - Replaced dashboard placeholders in `src/frontend/src/components/LoggedInScreen.jsx` with a responsive two-column grid housing both components.
+  - Refactored component lifecycle effects to ensure zero `oxlint` warnings regarding cascading render state updates.
+* **Validation**: 
+  - Executed `npm run build` in `src/frontend`, verifying clean compilation with Vite (0 build errors).
+  - Executed `npm run lint` (`oxlint`) across the frontend codebase, confirming 0 warnings and 0 errors across 13 files.
+* **Decision**: Accepted (reviewed component layout, tested client validations, and confirmed clean build).
+* **Reflection**: Building the profile and resume management interfaces together allowed for a coherent dashboard experience, fulfilling the core Sprint 1 demonstration features with robust client-side validation matching backend constraints.
+* **Responsible Person**: Thomas Martel
+
 ---
 
 ## Appendix: Extended Prompts & Responses (Optional)
@@ -207,3 +223,11 @@
   2. Multipart form data resume upload with default flag query param.
   3. Binary blob download handling via browser URL object creation.
   4. Linter and build verification with oxlint and Vite.
+
+### Appendix 6: Context for Entry 8
+* **Context**: Implementation of Sprint 1 Features 4 and 5 covering candidate profile editing and multi-resume file management.
+* **Key Queries**:
+  1. Profile view and edit form component with loading states and error feedback.
+  2. Multi-resume management interface with 5MB client-side check, 5-file quota counter, and default resume toggle.
+  3. Safe effect lifecycle handling to eliminate React Compiler cascading render warnings.
+  4. Integration into the dashboard shell and verification via oxlint and Vite build.
