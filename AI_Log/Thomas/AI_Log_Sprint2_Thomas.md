@@ -145,6 +145,23 @@
 * **Reflection**: Separating authenticated app shell layout from unauthenticated auth forms provides a clean foundation for subsequent profile and resume views while maintaining clean navigation and token state.
 * **Responsible Person**: Thomas Martel
 
+### Entry 7: Sprint 1 Frontend — Profile & Resume API Client Layer (Feature 2)
+* **Task ID / Title**: Sprint 1 Frontend — Profile & Resume API Client Layer (Feature 2)
+* **Purpose of AI Use**: API client architecture, error handling normalization, and frontend verification.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `85099794-8505-4f52-b85b-a6ec15501aef`). Full prompt and summary maintained in project workspace session.
+* **AI-Suggested Content**: 
+  - Designed and created `src/frontend/src/api/profiles.js` implementing typed, error-handled fetch wrappers for profile read/update (`/api/profiles/me`) and multi-resume management (`/api/profiles/me/resumes`).
+  - Added support for dynamic multipart `FormData` uploads with default resume toggling (`POST /me/resumes?make_default=true`).
+  - Implemented client-side binary blob streaming and automated browser object URL creation for downloading resumes (`GET /me/resumes/{id}`).
+  - Added default resume switching (`PATCH /me/resumes/{id}/default`) and deletion (`DELETE /me/resumes/{id}`).
+  - Standardized error extraction across standard JSON error responses and FastAPI 422 validation errors.
+* **Validation**: 
+  - Executed `npm run build` in `src/frontend`, verifying clean compilation with Vite (0 build errors).
+  - Executed `npm run lint` (`oxlint`) across the frontend codebase, confirming 0 warnings and 0 errors across 11 files.
+* **Decision**: Accepted (reviewed API wrappers, error parsing, and verified build output).
+* **Reflection**: Encapsulating all profile and resume network requests in a dedicated, decoupled client module allows upcoming UI components (ProfileSection and ResumeSection) to stay focused on presentation and user interactions.
+* **Responsible Person**: Thomas Martel
+
 ---
 
 ## Appendix: Extended Prompts & Responses (Optional)
@@ -182,3 +199,11 @@
   2. Full-width dashboard layout restructuring in `App.jsx`.
   3. Transformation of `LoggedInScreen.jsx` into a modular dashboard container.
   4. Build and linter verification with Vite and oxlint.
+
+### Appendix 5: Context for Entry 7
+* **Context**: Implementation of Feature 2 profile and resume API client module connecting frontend UI with backend endpoints.
+* **Key Queries**:
+  1. API client module design for profile retrieval and update endpoints.
+  2. Multipart form data resume upload with default flag query param.
+  3. Binary blob download handling via browser URL object creation.
+  4. Linter and build verification with oxlint and Vite.
