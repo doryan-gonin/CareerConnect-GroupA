@@ -6,7 +6,7 @@ This document details all remaining issues, architectural defects, security enha
 1. [Security & Authentication](#1-security--authentication)
    - [3.3 File Validation Bypass & Filename Sanitization](#33-file-validation-bypass--filename-sanitization)
    - [3.4 Missing Token Type Distinction (Access vs. Refresh)](#34-missing-token-type-distinction-access-vs-refresh)
-   - [3.5 Duplicated Configuration and Credentials](#35-duplicated-configuration-and-credentials)
+   - [3.5 Duplicated Configuration and Credentials [FIXED]](#35-duplicated-configuration-and-credentials-fixed)
 2. [Data Integrity, Concurrency & Lifecycle](#2-data-integrity-concurrency--lifecycle)
    - [4.1 Timezone Inconsistencies (Naive vs. UTC Datetimes)](#41-timezone-inconsistencies-naive-vs-utc-datetimes)
    - [4.2 Account Re-lockout Bug After Lockout Duration Expires](#42-account-re-lockout-bug-after-lockout-duration-expires)
@@ -80,7 +80,8 @@ This document details all remaining issues, architectural defects, security enha
 
 ---
 
-### 3.5 Duplicated Configuration and Credentials
+### 3.5 Duplicated Configuration and Credentials [FIXED]
+- **Status**: ✅ Fixed (Created `src/backend/config.py` and centralized configuration and environment loading across `dependencies.py`, `routers/auth.py`, `database.py`, and `routers/profiles.py`)
 - **Issue**:
   `SECRET_KEY`, `ALGORITHM`, and `load_dotenv()` are copy-pasted across `src/backend/dependencies.py` and `src/backend/routers/auth.py` (with a typo in `auth.py`: `"Creat a .env file"`). If settings or keys change, they can fall out of sync.
 - **Where to fix**:

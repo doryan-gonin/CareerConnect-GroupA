@@ -1,21 +1,14 @@
-import os
 from typing import Annotated
-from dotenv import load_dotenv
 import jwt
 from jwt.exceptions import InvalidTokenError
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlmodel import Session, select
 
+from backend.config import SECRET_KEY, ALGORITHM
 from backend.database import get_session
 from backend.models import User, RevokedToken
 
-load_dotenv()
-SECRET_KEY = os.getenv("JWT_SECRET_KEY")
-if not SECRET_KEY:
-    raise RuntimeError("JWT_SECRET_KEY is not set. Create a .env file.")
-
-ALGORITHM = "HS256"
 bearer_scheme = HTTPBearer()
 
 def get_token_payload(

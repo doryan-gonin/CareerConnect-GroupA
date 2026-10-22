@@ -11,21 +11,17 @@ import bcrypt
 from backend.database import get_session
 from backend.models import User, UserCreate, UserResponse, UserLogin, Token, RevokedToken
 from backend.dependencies import get_current_user, get_token_payload
-
-import os
-from dotenv import load_dotenv
+from backend.config import (
+    SECRET_KEY,
+    ALGORITHM,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    MAX_FAILED_ATTEMPTS,
+    LOCKOUT_DURATION_MINUTES,
+)
 
 router = APIRouter(tags=["Authentication"])
 
 # ----------------------------------------------------------------------------------------------
-load_dotenv()
-SECRET_KEY = os.getenv("JWT_SECRET_KEY")
-if not SECRET_KEY:
-    raise RuntimeError("JWT_SECRET_KEY is not set. Creat a .env file (see. env.example)")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-MAX_FAILED_ATTEMPTS = 5
-LOCKOUT_DURATION_MINUTES = 15
 DUMMY_PASSWORD_HASH: bytes = bcrypt.hashpw(b"careerconnect_dummy", bcrypt.gensalt())
 
 
