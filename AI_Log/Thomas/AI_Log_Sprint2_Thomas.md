@@ -178,6 +178,38 @@
 * **Reflection**: Building the profile and resume management interfaces together allowed for a coherent dashboard experience, fulfilling the core Sprint 1 demonstration features with robust client-side validation matching backend constraints.
 * **Responsible Person**: Thomas Martel
 
+### Entry 9: Issue 3.5 Backend Audit — Centralized Configuration & Credentials Refactoring
+* **Task ID / Title**: Issue 3.5 Backend Audit — Centralized Configuration & Credentials Refactoring
+* **Purpose of AI Use**: Code architecture refactoring, security audit remediation, configuration deduplication, and automated unit testing.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `05b31338-3ec3-45cc-8039-9a316624f151`). Full prompt and summary maintained in project workspace session.
+* **AI-Suggested Content**: 
+  - Formulated a multi-step action plan to resolve Issue 3.5 ("Duplicated Configuration and Credentials") in `FIXES.md`.
+  - Created `src/backend/config.py` anchoring project root via `BASE_DIR = Path(__file__).resolve().parent.parent.parent`, cleanly loading `.env`, and centralizing `SECRET_KEY`, `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`, `MAX_FAILED_ATTEMPTS`, `LOCKOUT_DURATION_MINUTES`, `DATABASE_URL`, and `UPLOAD_DIR`.
+  - Refactored `dependencies.py`, `routers/auth.py`, `database.py`, and `routers/profiles.py` to eliminate duplicated `load_dotenv()` invocations and replace hardcoded or relative paths with centralized config imports.
+  - Implemented unit tests in `tests/test_config.py` verifying configuration constants and ensuring `RuntimeError` is raised when `JWT_SECRET_KEY` is missing.
+  - Updated `FIXES.md` to document the completed fix in Section 3.5 and the Table of Contents.
+* **Validation**: 
+  - Executed `uv run pytest tests/ -v`, verifying all 35 tests passed (including the new configuration tests).
+  - Validated clean `git diff` confirming backward compatibility and deduplication across all 4 consuming modules.
+* **Decision**: Accepted (reviewed plan, authorized execution, and confirmed passing test suite).
+* **Reflection**: Centralizing environment and credential configuration resolved copy-pasted boilerplate, fixed a typo in the missing-key exception message, and eliminated fragile relative paths for database storage and resume uploads.
+* **Responsible Person**: Thomas Martel
+
+### Entry 10: Developer Tooling — Makefile Multi-Service & Test Automation
+* **Task ID / Title**: Developer Tooling — Makefile Multi-Service & Test Automation
+* **Purpose of AI Use**: Build automation, process orchestration, developer experience, and test suite execution.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `05b31338-3ec3-45cc-8039-9a316624f151`). Full prompt and summary maintained in project workspace session.
+* **AI-Suggested Content**: 
+  - Expanded `Makefile` with dedicated `frontend` / `frontend-dev` targets executing `npm --prefix src/frontend run dev`.
+  - Implemented a unified `dev` target with bash signal trapping (`trap 'kill 0' INT TERM`) that runs both FastAPI and Vite servers concurrently in the background and guarantees clean termination of both child process trees on `Ctrl+C`.
+  - Added `test` / `tests` targets executing `uv run pytest tests/ -v` for one-command test execution.
+* **Validation**: 
+  - Tested `make test`, successfully running the full 35-test pytest suite.
+  - Performed dry-run verification (`make -n dev backend-dev frontend-dev test seed seed-reset`) confirming correct command and argument generation.
+* **Decision**: Accepted (verified process concurrency, signal trapping, and target execution).
+* **Reflection**: Adding a one-command dual-server runner (`make dev`) with robust signal handling significantly improves local developer experience and team onboarding, while `make test` aligns local testing commands with CI.
+* **Responsible Person**: Thomas Martel
+
 ---
 
 ## Appendix: Extended Prompts & Responses (Optional)
@@ -231,3 +263,18 @@
   2. Multi-resume management interface with 5MB client-side check, 5-file quota counter, and default resume toggle.
   3. Safe effect lifecycle handling to eliminate React Compiler cascading render warnings.
   4. Integration into the dashboard shell and verification via oxlint and Vite build.
+
+### Appendix 7: Context for Entry 9
+* **Context**: Remediation of Issue 3.5 from `FIXES.md` covering duplicated credential and configuration loading.
+* **Key Queries**:
+  1. Audit of `SECRET_KEY`, `ALGORITHM`, and `load_dotenv()` duplications across backend modules.
+  2. Construction of a structured plan of action for approval.
+  3. Creation of `src/backend/config.py` and refactoring of `dependencies.py`, `auth.py`, `database.py`, and `profiles.py`.
+  4. Unit test creation in `tests/test_config.py` and updating `FIXES.md`.
+
+### Appendix 8: Context for Entry 10
+* **Context**: Enhancing project `Makefile` to support independent frontend running, concurrent dual-service startup, and unit test execution.
+* **Key Queries**:
+  1. Configuration of npm script execution from repository root via `--prefix src/frontend`.
+  2. Concurrency and signal trapping pattern (`trap 'kill 0' INT TERM`) in Make to prevent orphaned node/python background processes.
+  3. Integration of `make test` for running `uv run pytest tests/ -v`.
