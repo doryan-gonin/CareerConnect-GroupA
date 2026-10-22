@@ -4,7 +4,7 @@ SHELL := /bin/bash
 
 # Run both backend and frontend concurrently
 dev:
-	@trap 'kill 0' INT TERM; $(MAKE) backend-dev & $(MAKE) frontend-dev & wait
+	$(MAKE) -j2 backend-dev frontend-dev
 
 # Backend development server
 backend-dev:
