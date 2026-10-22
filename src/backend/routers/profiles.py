@@ -13,11 +13,9 @@ from sqlmodel import Session, select
 from backend.database import get_session
 from backend.models import User, Profile, Resume, ProfileUpdate, ProfileResponse, ResumeReponse
 from backend.dependencies import get_current_user
+from backend.config import UPLOAD_DIR
 
 router = APIRouter(tags=["Profiles"])
-
-UPLOAD_DIR: Path = Path("uploads/resumes")
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # Helper to ensure user has a profile
 def get_or_create_profile(user_id: int, session: Session) -> Profile:

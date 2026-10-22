@@ -4,7 +4,7 @@
 * **Role**: Backend Developer
 * **Project**: CareerConnect (SOEN 341 - Fall 2026)
 * **Sprint**: Sprint 2
-* **Total Estimated Time Spent**: ~11.1 Hours
+* **Total Estimated Time Spent**: ~11.8 Hours
 
 ---
 
@@ -47,6 +47,8 @@
 | **18** | **Authenticated App Shell & Navigation Layout (Feature 3)**<br>Created dedicated `src/frontend/src/components/Navbar.jsx` with CareerConnect branding, candidate portal indicator, and responsive logout action. Refactored `src/frontend/src/App.jsx` to detach authenticated views from the narrow login card into a full-width dashboard container (`max-w-5xl`), and modernized `LoggedInScreen.jsx` with a clean dashboard structure and card slots for profile and resume modules. Verified production build and 0 oxlint warnings. | 30 min | • Files: `src/frontend/src/components/Navbar.jsx`, `src/frontend/src/components/LoggedInScreen.jsx`, `src/frontend/src/App.jsx` |
 | **19** | **Profile & Multi-Resume API Client Integration Layer (Feature 2)**<br>Architected and implemented `src/frontend/src/api/profiles.js` providing typed, error-handled fetch wrappers for profile read/update (`/api/profiles/me`) and multi-resume management (`/api/profiles/me/resumes`). Added support for multipart `FormData` uploads with default resume toggling, resume downloading via in-browser blob URLs, default resume switching (`PATCH /default`), and deletion. Verified production build and 0 oxlint warnings. | 20 min | • File: `src/frontend/src/api/profiles.js` |
 | **20** | **Candidate Profile & Multi-Resume Management Frontend Implementation (Features 4 & 5)**<br>Built `ProfileSection.jsx` allowing candidates to view and edit their first and last name with inline loading and persistence via `/api/profiles/me`. Developed `ResumeSection.jsx` providing file upload with client-side 5MB cap check and PDF validation, dynamic 5-resume quota tracking, resume listing with Default badges, default resume switching (`PATCH /default`), in-browser PDF downloading, and deletion. Integrated both components into `LoggedInScreen.jsx` with a responsive two-column layout. Verified production build and 0 oxlint warnings. | 45 min | • Files: `src/frontend/src/components/ProfileSection.jsx`, `src/frontend/src/components/ResumeSection.jsx`, `src/frontend/src/components/LoggedInScreen.jsx` |
+| **21** | **Backend Configuration & Credentials Centralization (FIXES.md Issue 3.5)**<br>Created unified configuration module `src/backend/config.py` anchoring paths to root directory (`BASE_DIR`) and standardizing `.env` loading. Centralized `SECRET_KEY`, `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`, `MAX_FAILED_ATTEMPTS`, `LOCKOUT_DURATION_MINUTES`, `DATABASE_URL`, and `UPLOAD_DIR`. Refactored `dependencies.py`, `routers/auth.py`, `database.py`, and `routers/profiles.py` to eliminate duplicated code and decouple relative directory paths. Authored configuration unit test suite in `tests/test_config.py` and updated `FIXES.md`. | 25 min | • Files: `src/backend/config.py`, `src/backend/dependencies.py`, `src/backend/routers/auth.py`, `src/backend/database.py`, `src/backend/routers/profiles.py`, `tests/test_config.py`<br>• Document: `FIXES.md` (Item 3.5) |
+| **22** | **Developer Tooling & Makefile Automation Expansion**<br>Expanded project `Makefile` to streamline local development workflows. Added `make frontend`/`make frontend-dev` for independent Vite dev server execution, `make dev` with bash process signal trapping (`trap 'kill 0' INT TERM`) running both backend and frontend concurrently with clean termination on Ctrl+C, and `make test`/`make tests` running the full pytest test suite with verbose reporting. | 15 min | • File: `Makefile` |
 
 ---
 
@@ -61,9 +63,12 @@
   * [Issue #75: Bug Fixing](https://github.com/doryan-gonin/CareerConnect-GroupA/issues/75)
   * [Issue #23: US-04: Job Search and Filtering Capabilities](https://github.com/doryan-gonin/CareerConnect-GroupA/issues/23)
 * **Source Code & Routers**:
+  * `src/backend/config.py`: Unified configuration, environment variable loading, and credential management module.
   * `src/backend/models.py`: Added `Job`, `Application` tables, `JobType`, `JobSchedule`, `ApplicationStatus` enums, and full request/response schemas.
   * `src/backend/routers/jobs.py`: Complete search, multi-filter, pagination, job CRUD, and `POST /{job_id}/apply` endpoint.
   * `src/backend/routers/applications.py`: Full candidate application tracking (`/me`), single application retrieval, candidate application withdrawal, and recruiter status progression.
+  * `src/backend/routers/auth.py` & `src/backend/dependencies.py`: Refactored to consume centralized `SECRET_KEY`, `ALGORITHM`, and lockout parameters from `config.py`.
+  * `src/backend/database.py` & `src/backend/routers/profiles.py`: Refactored to consume absolute `DATABASE_URL` and `UPLOAD_DIR` from `config.py`.
   * `src/backend/main.py`: Mounted `/api/jobs` and `/api/applications` routers.
   * `src/frontend/src/utils/passwordRules.js`: Added 72-byte limit rule matching backend bcrypt validation.
   * `src/frontend/src/api/auth.js`: Added `logoutUser` function for server-side JWT revocation.
@@ -74,8 +79,9 @@
   * `src/frontend/src/components/ProfileSection.jsx`: Candidate profile view and editing interface.
   * `src/frontend/src/components/ResumeSection.jsx`: Multi-resume upload, listing, default switching, download, and deletion interface.
 * **Testing & Developer Utilities**:
+  * `tests/test_config.py`: Unit test suite verifying configuration constants and missing credential validation.
   * `utility/seedjobs.py`: Idempotent database seeder with 15 realistic job postings and demo recruiter.
-  * `Makefile`: Added `make seed` and `make seed-reset` commands.
+  * `Makefile`: Multi-service dev runner (`make dev`), frontend dev (`make frontend`/`make frontend-dev`), unit testing (`make test`/`make tests`), and database seeding (`make seed`/`make seed-reset`).
 * **Documentation & Planning**:
-  * `FIXES.md`: Comprehensive backend audit and architectural improvement document (including Items 6.6 and 4.7).
+  * `FIXES.md`: Comprehensive backend audit and architectural improvement document (including Items 3.5 [FIXED], 6.1 [FIXED], 6.2 [FIXED], 6.6, and 4.7).
   * `sprint1_frontend_plan.md`: Comprehensive feature-by-feature implementation plan for Sprint 1 frontend catch-up.
