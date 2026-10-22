@@ -2,16 +2,18 @@ import { useState } from 'react'
 import LoggedInScreen from './components/LoggedInScreen'
 import LoginForm from './components/LoginForm'
 import SignupForm from './components/SignupForm'
+import Navbar from './components/Navbar'
+import { logoutUser } from './api/auth'
 
 const TOKEN_STORAGE_KEY = 'accessToken'
 
-// "view" is the tiny bit of state that swaps between the three screens.
-// No router library needed for just three screens.
 function App() {
+  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_STORAGE_KEY) || '')
   const [view, setView] = useState(() =>
     localStorage.getItem(TOKEN_STORAGE_KEY) ? 'loggedIn' : 'login',
   )
   const [signupSuccessMessage, setSignupSuccessMessage] = useState('')
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   function handleSignedUp() {
     setSignupSuccessMessage('Account created! You can now log in.')
@@ -19,14 +21,35 @@ function App() {
   }
 
   function handleLoggedIn(accessToken) {
+    setToken(accessToken)
     localStorage.setItem(TOKEN_STORAGE_KEY, accessToken)
     setView('loggedIn')
   }
 
-  function handleLogout() {
-    localStorage.removeItem(TOKEN_STORAGE_KEY)
-    setSignupSuccessMessage('')
-    setView('login')
+  async function handleLogout() {
+    setIsLoggingOut(true)
+    try {
+      if (token) {
+        await logoutUser(token)
+      }
+    } finally {
+      localStorage.removeItem(TOKEN_STORAGE_KEY)
+      setToken('')
+      setSignupSuccessMessage('')
+      setIsLoggingOut(false)
+      setView('login')
+    }
+  }
+
+  if (view === 'loggedIn') {
+    return (
+      <div className="min-h-screen bg-gray-50 text-gray-900">
+        <Navbar onLogout={handleLogout} isLoggingOut={isLoggingOut} />
+        <main className="mx-auto max-w-5xl px-4 py-8">
+          <LoggedInScreen token={token} onLogout={handleLogout} />
+        </main>
+      </div>
+    )
   }
 
   return (
@@ -48,7 +71,6 @@ function App() {
             }}
           />
         )}
-        {view === 'loggedIn' && <LoggedInScreen onLogout={handleLogout} />}
       </div>
     </div>
   )

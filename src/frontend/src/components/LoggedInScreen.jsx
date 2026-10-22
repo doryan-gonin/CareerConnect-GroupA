@@ -1,17 +1,23 @@
-// Placeholder screen shown after a successful login, until real
-// dashboard/profile pages exist.
-function LoggedInScreen({ onLogout }) {
+import ProfileSection from './ProfileSection'
+import ResumeSection from './ResumeSection'
+
+// Authenticated dashboard screen for managing profile and documents
+function LoggedInScreen({ token }) {
   return (
-    <div className="flex flex-col items-center gap-4 text-center">
-      <h1 className="text-2xl font-semibold text-gray-900">You're logged in 🎉</h1>
-      <p className="text-gray-600">This is a placeholder home screen.</p>
-      <button
-        type="button"
-        onClick={onLogout}
-        className="rounded-md bg-gray-900 px-4 py-2 font-medium text-white transition hover:bg-gray-700"
-      >
-        Log out
-      </button>
+    <div className="flex flex-col gap-6">
+      {/* Page Title */}
+      <div>
+        <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+        <p className="text-sm text-gray-600">
+          Manage your personal profile and uploaded resumes.
+        </p>
+      </div>
+
+      {/* Grid for Profile & Resumes */}
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+        <ProfileSection token={token} />
+        <ResumeSection token={token} />
+      </div>
     </div>
   )
 }

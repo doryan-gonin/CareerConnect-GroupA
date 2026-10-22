@@ -111,6 +111,73 @@
 * **Reflection**: Collaborative planning and scratch test execution with AI helped anticipate complex domain constraints early—such as race conditions in multi-resume resolution, self-application prevention, and file retention upon resume deletion—producing thoroughly verified backend endpoints ready for frontend integration and peer test authoring.
 * **Responsible Person**: Thomas Martel
 
+### Entry 5: Sprint 1 & 2 Frontend Gap Analysis & Auth Hardening (Feature 1)
+* **Task ID / Title**: Sprint 1 & 2 Frontend Gap Analysis & Auth Hardening (Feature 1)
+* **Purpose of AI Use**: Requirements analysis, sprint catch-up planning, frontend coding, security hardening, and validation.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `85099794-8505-4f52-b85b-a6ec15501aef`). Full prompt and summary maintained in project workspace session.
+* **AI-Suggested Content**: 
+  - Performed a full gap analysis comparing the SOEN 341 project deliverables for Sprint 1 & 2 against the repository code, identifying that while the backend was complete, the frontend was missing profile views, resume management, job search, application flows, and recruiter controls.
+  - Developed a comprehensive, feature-by-feature implementation plan (`sprint1_frontend_plan.md`) to systematically catch up on Sprint 1 frontend deliverables.
+  - Added the 72-byte password length validation rule in `src/frontend/src/utils/passwordRules.js` to prevent bcrypt client/server mismatches (`FIXES.md` Item 6.2).
+  - Implemented `logoutUser` in `src/frontend/src/api/auth.js` dispatching authenticated requests to `POST /api/auth/logout` to properly record tokens in `RevokedToken` on the backend (`FIXES.md` Item 6.1).
+  - Updated `src/frontend/src/App.jsx` to await server revocation before purging client storage on logout.
+* **Validation**: 
+  - Ran `npm run build` in `src/frontend`, verifying clean compilation with Vite (0 build errors).
+  - Ran `npm run lint` (`oxlint`) across the frontend codebase, confirming 0 warnings and 0 errors across 9 files.
+  - Verified silent error handling so network unreachable conditions do not block client logout.
+* **Decision**: Accepted (reviewed code changes, verified build output, and applied modifications directly to `passwordRules.js`, `auth.js`, and `App.jsx`).
+* **Reflection**: Breaking down the missing deliverables into a feature-by-feature plan and addressing auth edge cases first ensures our session state and security validations are aligned with backend expectations before building the profile and resume interfaces.
+* **Responsible Person**: Thomas Martel
+
+### Entry 6: Sprint 1 Frontend — Authenticated App Shell & Navigation Layout (Feature 3)
+* **Task ID / Title**: Sprint 1 Frontend — Authenticated App Shell & Navigation Layout (Feature 3)
+* **Purpose of AI Use**: UI design, component architecture, state management, and verification.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `85099794-8505-4f52-b85b-a6ec15501aef`). Full prompt and summary maintained in project workspace session.
+* **AI-Suggested Content**: 
+  - Designed and implemented `src/frontend/src/components/Navbar.jsx` with CareerConnect branding, candidate portal indicator, user status pill, and responsive logout button with loading indicator.
+  - Refactored `src/frontend/src/App.jsx` to detach authenticated views from the narrow login card into a full-width dashboard container (`max-w-6xl`) with sticky navbar shell, maintaining the centered modal for login and registration.
+  - Transformed `src/frontend/src/components/LoggedInScreen.jsx` into a structured candidate dashboard with welcome gradient banner and card slots for upcoming profile and resume modules.
+  - Resolved `oxlint` unused prop warnings by standardizing parameter signatures.
+* **Validation**: 
+  - Executed `npm run build` in `src/frontend`, verifying clean compilation with Vite (0 build errors).
+  - Executed `npm run lint` (`oxlint`) across the frontend codebase, confirming 0 warnings and 0 errors across 10 files.
+* **Decision**: Accepted (reviewed component styles, verified build output, and applied modifications directly to `Navbar.jsx`, `LoggedInScreen.jsx`, and `App.jsx`).
+* **Reflection**: Separating authenticated app shell layout from unauthenticated auth forms provides a clean foundation for subsequent profile and resume views while maintaining clean navigation and token state.
+* **Responsible Person**: Thomas Martel
+
+### Entry 7: Sprint 1 Frontend — Profile & Resume API Client Layer (Feature 2)
+* **Task ID / Title**: Sprint 1 Frontend — Profile & Resume API Client Layer (Feature 2)
+* **Purpose of AI Use**: API client architecture, error handling normalization, and frontend verification.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `85099794-8505-4f52-b85b-a6ec15501aef`). Full prompt and summary maintained in project workspace session.
+* **AI-Suggested Content**: 
+  - Designed and created `src/frontend/src/api/profiles.js` implementing typed, error-handled fetch wrappers for profile read/update (`/api/profiles/me`) and multi-resume management (`/api/profiles/me/resumes`).
+  - Added support for dynamic multipart `FormData` uploads with default resume toggling (`POST /me/resumes?make_default=true`).
+  - Implemented client-side binary blob streaming and automated browser object URL creation for downloading resumes (`GET /me/resumes/{id}`).
+  - Added default resume switching (`PATCH /me/resumes/{id}/default`) and deletion (`DELETE /me/resumes/{id}`).
+  - Standardized error extraction across standard JSON error responses and FastAPI 422 validation errors.
+* **Validation**: 
+  - Executed `npm run build` in `src/frontend`, verifying clean compilation with Vite (0 build errors).
+  - Executed `npm run lint` (`oxlint`) across the frontend codebase, confirming 0 warnings and 0 errors across 11 files.
+* **Decision**: Accepted (reviewed API wrappers, error parsing, and verified build output).
+* **Reflection**: Encapsulating all profile and resume network requests in a dedicated, decoupled client module allows upcoming UI components (ProfileSection and ResumeSection) to stay focused on presentation and user interactions.
+* **Responsible Person**: Thomas Martel
+
+### Entry 8: Sprint 1 Frontend — Candidate Profile & Resume Management UI (Features 4 & 5)
+* **Task ID / Title**: Sprint 1 Frontend — Candidate Profile & Resume Management UI (Features 4 & 5)
+* **Purpose of AI Use**: Frontend UI component development, client-side validation, state management, and build verification.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `85099794-8505-4f52-b85b-a6ec15501aef`). Full prompt and summary maintained in project workspace session.
+* **AI-Suggested Content**: 
+  - Created `src/frontend/src/components/ProfileSection.jsx` providing profile viewing and inline editing of candidate first and last names with server persistence via `/api/profiles/me`.
+  - Built `src/frontend/src/components/ResumeSection.jsx` implementing client-side validation for PDF format and 5MB size ceiling, maximum 5-resume quota indicator, file upload with default resume toggle, resume listing with Default badges, default switching (`PATCH /default`), in-browser PDF download, and deletion with confirmation.
+  - Replaced dashboard placeholders in `src/frontend/src/components/LoggedInScreen.jsx` with a responsive two-column grid housing both components.
+  - Refactored component lifecycle effects to ensure zero `oxlint` warnings regarding cascading render state updates.
+* **Validation**: 
+  - Executed `npm run build` in `src/frontend`, verifying clean compilation with Vite (0 build errors).
+  - Executed `npm run lint` (`oxlint`) across the frontend codebase, confirming 0 warnings and 0 errors across 13 files.
+* **Decision**: Accepted (reviewed component layout, tested client validations, and confirmed clean build).
+* **Reflection**: Building the profile and resume management interfaces together allowed for a coherent dashboard experience, fulfilling the core Sprint 1 demonstration features with robust client-side validation matching backend constraints.
+* **Responsible Person**: Thomas Martel
+
 ---
 
 ## Appendix: Extended Prompts & Responses (Optional)
@@ -132,3 +199,35 @@
   3. Creation of `FIXES.md` detailing remaining backlog improvements.
   4. Integration testing and debugging of `fastapi dev` `ModuleNotFoundError: No module named 'src'`.
   5. Refactoring to standard `backend.*` namespace layout and drafting a GitHub Issue.
+
+### Appendix 3: Context for Entry 5
+* **Context**: Sprint 1 and 2 frontend requirements audit, roadmap planning, and implementation of Feature 1 authentication hardening.
+* **Key Queries**:
+  1. Frontend gap analysis based on course guidelines and existing backend capabilities.
+  2. Construction of a structured, feature-by-feature implementation plan for Sprint 1 frontend.
+  3. Client-side password rule enforcement for bcrypt's 72-byte limit.
+  4. Integration of server-side token revocation on logout (`POST /api/auth/logout`).
+
+### Appendix 4: Context for Entry 6
+* **Context**: Implementation of Feature 3 authenticated app shell, top navigation bar, and candidate dashboard container.
+* **Key Queries**:
+  1. Component design for `Navbar.jsx` with branding and logout trigger.
+  2. Full-width dashboard layout restructuring in `App.jsx`.
+  3. Transformation of `LoggedInScreen.jsx` into a modular dashboard container.
+  4. Build and linter verification with Vite and oxlint.
+
+### Appendix 5: Context for Entry 7
+* **Context**: Implementation of Feature 2 profile and resume API client module connecting frontend UI with backend endpoints.
+* **Key Queries**:
+  1. API client module design for profile retrieval and update endpoints.
+  2. Multipart form data resume upload with default flag query param.
+  3. Binary blob download handling via browser URL object creation.
+  4. Linter and build verification with oxlint and Vite.
+
+### Appendix 6: Context for Entry 8
+* **Context**: Implementation of Sprint 1 Features 4 and 5 covering candidate profile editing and multi-resume file management.
+* **Key Queries**:
+  1. Profile view and edit form component with loading states and error feedback.
+  2. Multi-resume management interface with 5MB client-side check, 5-file quota counter, and default resume toggle.
+  3. Safe effect lifecycle handling to eliminate React Compiler cascading render warnings.
+  4. Integration into the dashboard shell and verification via oxlint and Vite build.
