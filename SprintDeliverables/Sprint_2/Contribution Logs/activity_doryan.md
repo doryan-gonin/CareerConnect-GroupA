@@ -47,3 +47,5 @@
 | **34** | Write Sprint2 Summary Report                          | 1.5 hr     | Project           |               |  #74       | 25/10/26  |
 | **35** | Review code, wrongful PRs, issues and more            | 1.5 hr     | Project           | #99/100/101   |  #97/82    | 26/10/26  |
 | **36** | Re-write report for last minutes changes              | 1.0 hr     | Project           |               |            | 26/10/26  |
+| **37** | Create sub-issue to log errors (for #82)              | 15 min     | Project           |               |  #102      | 26/10/26  |
+| **38** | Add relevant comment on PR (for #82)                                      | 05 min     | Project           |      #99      |  #102      | 26/10/26  |
