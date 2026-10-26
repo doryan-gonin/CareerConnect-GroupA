@@ -21,8 +21,8 @@ journey
 - **Candys Eko** - Frontend
 - **Ron Rozenberg** - Frontend
 - **Vlad Shkuratov** - Frontend
-- **Thomas Martel** - Backend, Database, testing
-- **Doryan Gonin** - Scrum Master, Documentation, Backend, CI, testing
+- **Thomas Martel** - Backend, Database, Testing, Frontend
+- **Doryan Gonin** - Scrum Master, Documentation, Backend, CI, Testing
 
 Our team's workflow is detailed in our [Wiki Page](../../../wiki)
 
