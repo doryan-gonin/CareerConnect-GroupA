@@ -4,7 +4,7 @@
 * **Role**: ScrumMaster - Documentation - Testing - Backend
 * **Project**: CareerConnect (SOEN 341 - Fall 2026)
 * **Sprint**: Sprint 2
-* **Time Spent**: ~21 hours
+* **Time Spent**: ~23.5 hours
 
 ---
 
@@ -45,3 +45,5 @@
 | **32** | Re-organize repo docs structure                       | 10 min     | Project           |               |            | 25/10/26  |
 | **33** | Format and upload personal AI log                     | 20 min     | Project           |               |            | 25/10/26  |
 | **34** | Write Sprint2 Summary Report                          | 1.5 hr     | Project           |               |  #74       | 25/10/26  |
+| **35** | Review code, wrongful PRs, issues and more            | 1.5 hr     | Project           | #99/100/101   |  #97/82    | 26/10/26  |
+| **36** | Re-write report for last minutes changes              | 1.0 hr     | Project           |               |            | 26/10/26  |
