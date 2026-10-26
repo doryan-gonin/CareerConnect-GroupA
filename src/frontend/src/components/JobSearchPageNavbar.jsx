@@ -18,6 +18,8 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, userEmail = '', o
         setJobSchedule('Schedule')
         setJobType('Job Type')
         setOrder('')
+        setLocation('')
+        setKeyWord('')
         setOrderDisplay('Order')
         setJobs([])
     }
@@ -207,10 +209,6 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, userEmail = '', o
                                 </div>
                             )}
                         </div>
-
-
-
-
                     </form>
                     <button
                         className="rounded-full border border-gray-300 px-4 py-2 text-sm hover:bg-purple-50"
