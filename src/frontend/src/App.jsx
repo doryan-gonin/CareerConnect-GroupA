@@ -3,6 +3,7 @@ import LoggedInScreen from './components/LoggedInScreen'
 import LoginForm from './components/LoginForm'
 import SignupForm from './components/SignupForm'
 import Navbar from './components/Navbar'
+import JobSearchPage from './components/JobSearchPage'
 import { logoutUser } from './api/auth'
 
 const TOKEN_STORAGE_KEY = 'accessToken'
@@ -41,7 +42,11 @@ function App() {
     }
   }
 
-  if (view === 'loggedIn') {
+  if (import.meta.env.DEV && window.location.pathname === '/job-search-preview') {
+    return <JobSearchPage/>
+  }
+
+    if (view === 'loggedIn') {
     return (
       <div className="min-h-screen bg-gray-50 text-gray-900">
         <Navbar onLogout={handleLogout} isLoggingOut={isLoggingOut} />
