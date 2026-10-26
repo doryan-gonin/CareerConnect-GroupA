@@ -1,13 +1,13 @@
-import  {useState} from 'react'
+import { useState } from 'react'
+import { searchJobs } from '../api/jobs'
 
-function JobSearchPageNavbar({ onLogout, isLoggingOut = false, userEmail = '', onJobsLoaded}) {
+function JobSearchPageNavbar({ onLogout, isLoggingOut = false, userEmail = '', onJobsLoaded, onNavigateDashboard }) {
     const [keyword, setKeyWord] = useState('')
-    const [jobs, setJobs] = useState('')
     const [error, setError] = useState('')
     const [isScheduleOpen, setIsScheduleOpen] = useState(false)
     const [isJobTypeOpen, setIsJobTypeOpen] = useState(false)
     const [isOrderOpen, setIsOrderOpen] = useState(false)
-    const [category, setCategory] = useState('Category')
+    const [category, setCategory] = useState('')
     const [jobSchedule, setJobSchedule] = useState('Schedule')
     const [jobType, setJobType] = useState('Job Type')
     const [orderDisplay, setOrderDisplay] = useState('Order')
@@ -20,45 +20,34 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, userEmail = '', o
         setOrder('')
         setLocation('')
         setKeyWord('')
+        setCategory('')
         setOrderDisplay('Order')
-        setJobs([])
+        setError('')
+        onJobsLoaded([])
     }
 
     async function handleSearch(event){
         event.preventDefault()
+        setError('')
         try{
-            let url = `/api/jobs?keyword=${encodeURIComponent(keyword)}&location=${encodeURIComponent(location)}`
-
-            if (jobSchedule !== 'Schedule') {
-                url += `&job_schedule=${encodeURIComponent(jobSchedule)}`
-            }
-
-            if (jobType !== 'Job Type') {
-                url += `&job_type=${encodeURIComponent(jobType)}`
-            }
-
-            if (order !== '') {
-                url += `&sort_order=${encodeURIComponent(order)}`
-            }
-
-            const response = await fetch(url)
-
-            if(!response.ok){
-                throw new Error('Jobs not loaded')
-            }
-
-            const data = await response.json()
-            console.log(data)
+            const data = await searchJobs({
+                keyword,
+                location,
+                category,
+                jobType: jobType !== 'Job Type' ? jobType : undefined,
+                jobSchedule: jobSchedule !== 'Schedule' ? jobSchedule : undefined,
+                sortOrder: order || undefined,
+            })
             onJobsLoaded(data.jobs)
-        } catch (error){
-            console.error('Search failed:', error)
-            setError(error.message)
+        } catch (err){
+            onJobsLoaded([])
+            setError(err.message)
         }
     }
 
     return (
         <header className="border-b border-gray-200 bg-white">
-            <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
+            <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3 px-4 py-3">
                 {/* Brand */}
                 <div className="flex items-center gap-2">
          <span className="text-xl font-bold text-gray-900">
@@ -66,11 +55,11 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, userEmail = '', o
          </span>
                 </div>
                 {/* User & Logout */}
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                     {userEmail && (
                         <span className="text-sm text-gray-600">{userEmail}</span>
                     )}
-                    <form onSubmit={handleSearch}>
+                    <form onSubmit={handleSearch} className="flex flex-wrap items-center gap-2">
                         <button type="submit" hidden>Search</button>
                         <input
                             type="text"
@@ -85,6 +74,14 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, userEmail = '', o
                             placeholder="City, province, or remote"
                             value={location}
                             onChange={(event) => setLocation(event.target.value)}
+                            className="rounded-full border border-gray-300 px-4 py-2 w-60 text-sm"
+                        />
+
+                        <input
+                            type="text"
+                            placeholder="Category (e.g. Software, Design)"
+                            value={category}
+                            onChange={(event) => setCategory(event.target.value)}
                             className="rounded-full border border-gray-300 px-4 py-2 w-60 text-sm"
                         />
 
@@ -214,10 +211,18 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, userEmail = '', o
                         className="rounded-full border border-gray-300 px-4 py-2 text-sm hover:bg-purple-50"
                         type="button"
                         onClick={handleReset}
-                        className="rounded-full border border-gray-300 px-4 py-2 text-sm hover:bg-purple-50"
                     >
                         Reset
                     </button>
+                    {onNavigateDashboard && (
+                        <button
+                            type="button"
+                            onClick={onNavigateDashboard}
+                            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                        >
+                            Dashboard
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={onLogout}
@@ -227,6 +232,11 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, userEmail = '', o
                         {isLoggingOut ? 'Logging out…' : 'Log out'}
                     </button>
                 </div>
+                {error && (
+                    <p className="w-full rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                        {error}
+                    </p>
+                )}
             </div>
         </header>
     )
@@ -234,4 +244,3 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, userEmail = '', o
 
 
 export default JobSearchPageNavbar
-

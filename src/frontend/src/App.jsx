@@ -42,14 +42,21 @@ function App() {
     }
   }
 
-  if (import.meta.env.DEV && window.location.pathname === '/job-search-preview') {
-    return <JobSearchPage/>
+  if (view === 'jobSearch') {
+    return (
+      <JobSearchPage
+        token={token}
+        onLogout={handleLogout}
+        isLoggingOut={isLoggingOut}
+        onNavigateDashboard={() => setView('loggedIn')}
+      />
+    )
   }
 
-    if (view === 'loggedIn') {
+  if (view === 'loggedIn') {
     return (
       <div className="min-h-screen bg-gray-50 text-gray-900">
-        <Navbar onLogout={handleLogout} isLoggingOut={isLoggingOut} />
+        <Navbar onLogout={handleLogout} isLoggingOut={isLoggingOut} onBrowseJobs={() => setView('jobSearch')} />
         <main className="mx-auto max-w-5xl px-4 py-8">
           <LoggedInScreen token={token} onLogout={handleLogout} />
         </main>

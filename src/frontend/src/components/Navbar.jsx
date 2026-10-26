@@ -1,4 +1,4 @@
-function Navbar({ onLogout, isLoggingOut = false, userEmail = '' }) {
+function Navbar({ onLogout, isLoggingOut = false, userEmail = '', onBrowseJobs }) {
   return (
     <header className="border-b border-gray-200 bg-white">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
@@ -13,6 +13,16 @@ function Navbar({ onLogout, isLoggingOut = false, userEmail = '' }) {
         <div className="flex items-center gap-4">
           {userEmail && (
             <span className="text-sm text-gray-600">{userEmail}</span>
+          )}
+
+          {onBrowseJobs && (
+            <button
+              type="button"
+              onClick={onBrowseJobs}
+              className="text-sm font-medium text-purple-600 hover:underline"
+            >
+              Browse Jobs
+            </button>
           )}
 
           <button
