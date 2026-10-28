@@ -2,7 +2,7 @@ import { useState } from 'react'
 import JobSearchPageNavbar from './JobSearchPageNavbar'
 import { applyToJob } from '../api/jobs'
 
-function JobSearchPage({ token, userEmail, onLogout, isLoggingOut, onNavigateDashboard }) {
+function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard }) {
     const [jobs, setJobs] = useState([])
     const [selectedJob, setSelectedJob] = useState(null)
     const [isApplying, setIsApplying] = useState(false)
@@ -31,15 +31,14 @@ function JobSearchPage({ token, userEmail, onLogout, isLoggingOut, onNavigateDas
     }
 
     return (
-        <div>
+        <div className="min-h-screen bg-gray-50 text-gray-900">
             <JobSearchPageNavbar
                 onJobsLoaded={setJobs}
-                userEmail={userEmail}
                 onLogout={onLogout}
                 isLoggingOut={isLoggingOut}
                 onNavigateDashboard={onNavigateDashboard}
             />
-            <div className="mx-auto flex max-w-6xl gap-6 px-20 py-6">
+            <div className="mx-auto flex max-w-5xl gap-6 px-4 py-8">
                 <div className="flex flex-col gap-3">
                     {jobs.length === 0 && (
                         <p className="text-sm text-gray-500">Search for a job above to see results.</p>

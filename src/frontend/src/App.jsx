@@ -56,7 +56,11 @@ function App() {
   if (view === 'loggedIn') {
     return (
       <div className="min-h-screen bg-gray-50 text-gray-900">
-        <Navbar onLogout={handleLogout} isLoggingOut={isLoggingOut} onBrowseJobs={() => setView('jobSearch')} />
+        <Navbar
+          onLogout={handleLogout}
+          isLoggingOut={isLoggingOut}
+          onBrowseJobs={() => setView('jobSearch')}
+        />
         <main className="mx-auto max-w-5xl px-4 py-8">
           <LoggedInScreen token={token} onLogout={handleLogout} />
         </main>
