@@ -26,6 +26,17 @@ This document details all remaining issues, architectural defects, security enha
    - [6.4 Typo in Model Name `ResumeReponse`](#64-typo-in-model-name-resumereponse)
    - [6.5 Unbounded Growth of `RevokedToken` Table](#65-unbounded-growth-of-revokedtoken-table)
    - [6.6 Recruiter Inactive Job Visibility & Reactivation](#66-recruiter-inactive-job-visibility--reactivation)
+5. [Job Search Frontend Deficiencies & UX Enhancements](#5-job-search-frontend-deficiencies--ux-enhancements)
+   - [7.1 Empty State UI & Feedback](#71-empty-state-ui--feedback)
+   - [7.2 Automatic & Explicit Filter Application](#72-automatic--explicit-filter-application)
+   - [7.3 Reset Filter Action & Search Query Refresh](#73-reset-filter-action--search-query-refresh)
+   - [7.4 Dropdown Menu Dismissal & Outside-Click Handling](#74-dropdown-menu-dismissal--outside-click-handling)
+   - [7.5 Category Selector Dropdown](#75-category-selector-dropdown)
+   - [7.6 Selected Job Persistence on Query and Reset](#76-selected-job-persistence-on-query-and-reset)
+   - [7.7 Fullscreen & Dedicated Job Posting View](#77-fullscreen--dedicated-job-posting-view)
+   - [7.8 Dynamic Return Order (Salary & Hours Sorting)](#78-dynamic-return-order-salary--hours-sorting)
+   - [7.9 Top Navbar Layout & UI Consistency](#79-top-navbar-layout--ui-consistency)
+   - [7.10 Pagination & Multi-Page Search Results](#710-pagination--multi-page-search-results)
 
 ---
 
@@ -455,3 +466,133 @@ This document details all remaining issues, architectural defects, security enha
   1. In `GET /api/jobs/{job_id}`, check if the requesting user is the authenticated `recruiter_id`; if so, allow returning the job even when `is_active == False`.
   2. Implement a dedicated recruiter endpoint `GET /api/jobs/recruiter/my-postings` that returns both active and inactive jobs owned by the logged-in user.
   3. Ensure `PUT /api/jobs/{job_id}` allows the owner to toggle `is_active` back to `True` for reactivation.
+
+---
+
+## 5. Job Search Frontend Deficiencies & UX Enhancements
+
+### 7.1 Empty State UI & Feedback
+- **Issue**:
+  When users navigate to the job search page initially, `jobs.length === 0` renders the message `"Search for a job above to see results."`. When a user submits a search query that yields zero matches, the UI renders the exact same initial string. There is no visual feedback indicating that a search was conducted and yielded no matching positions.
+- **Where to fix**:
+  - `src/frontend/src/components/JobSearchPage.jsx`
+  - `src/frontend/src/components/JobSearchPageNavbar.jsx`
+- **The Fix**:
+  1. Track search execution state (e.g. `hasSearched: boolean` or loading/searched status).
+  2. Distinguish the initial welcome state ("Find your next opportunity by keyword, location, or category above") from the empty result state ("No jobs found matching your criteria. Try adjusting your search or clearing filters.").
+
+---
+
+### 7.2 Automatic & Explicit Filter Application
+- **Issue**:
+  Clicking options in dropdown filters (Job Type, Schedule, Order) updates internal React state variables (`jobType`, `jobSchedule`, `order`) but does not execute a search. The form submit button is marked `hidden` (`<button type="submit" hidden>Search</button>`), preventing users from clicking to search. Users are forced to manually enter one of the text inputs and press Enter to trigger the query.
+- **Where to fix**:
+  - `src/frontend/src/components/JobSearchPageNavbar.jsx`
+- **The Fix**:
+  1. Render a visible, primary-styled "Search" button next to the input fields.
+  2. Automatically trigger a new search when an option in any dropdown is selected, providing immediate reactive filtering.
+
+---
+
+### 7.3 Reset Filter Action & Search Query Refresh
+- **Issue**:
+  The "Reset" button executes `handleReset`, which clears local filter state and invokes `onJobsLoaded([])`. Instead of clearing the active filters and fetching the default list of all active jobs, it wipes out all displayed listings, returning the user to the unsearched empty state.
+- **Where to fix**:
+  - `src/frontend/src/components/JobSearchPageNavbar.jsx`
+- **The Fix**:
+  1. Have `handleReset` restore all filters to their blank/default values and trigger an immediate search query (`searchJobs({})`), populating the page with all current active jobs.
+  2. Clear any currently selected job card when filters are reset.
+
+---
+
+### 7.4 Dropdown Menu Dismissal & Outside-Click Handling
+- **Issue**:
+  When an option in a dropdown menu (Job Type, Schedule, Order) is clicked, the selection handler updates the label and value, but fails to set the menu's open state to `false` (`setIsJobTypeOpen(false)`, etc.). Furthermore, there is no document-level click listener to close open menus when clicking elsewhere. Menus stay stuck open until the user clicks the menu button again.
+- **Where to fix**:
+  - `src/frontend/src/components/JobSearchPageNavbar.jsx`
+- **The Fix**:
+  1. Explicitly close the active dropdown when an item is selected (`setIsJobTypeOpen(false)`).
+  2. Implement an outside-click handler (via a `ref` and `useEffect` listener on `mousedown`/`pointerdown`) to automatically dismiss any open dropdown menu when clicking anywhere outside.
+
+---
+
+### 7.5 Category Selector Dropdown
+- **Issue**:
+  The job category is currently a freeform text input (`<input type="text" placeholder="Category (e.g. Software, Design)" />`). Because users do not know the exact nomenclature of categories in the database (e.g., "Engineering", "Design", "Product", "Marketing"), misspellings and mismatches cause valid jobs to be missed.
+- **Where to fix**:
+  - `src/frontend/src/components/JobSearchPageNavbar.jsx`
+- **The Fix**:
+  Replace the text input with a structured dropdown menu listing known job categories (e.g., All Categories, Engineering, Design, Product, Finance, Marketing, Sales, Customer Support, Human Resources, Operations, Other). Selecting a category updates the filter and applies the search.
+
+---
+
+### 7.6 Selected Job Persistence on Query and Reset
+- **Issue**:
+  In `JobSearchPage.jsx`, `selectedJob` is retained in component state across searches and resets. If a user selects a job posting and then runs a new search that returns different results (or clicks Reset), the details card of the previously selected job remains displayed in the right pane, despite no longer matching or being present in the current results list.
+- **Where to fix**:
+  - `src/frontend/src/components/JobSearchPage.jsx`
+- **The Fix**:
+  Reset `selectedJob` to `null` whenever a new search or reset is executed (`onJobsLoaded`), or ensure `selectedJob` is cleared if its ID does not exist in the newly loaded jobs list.
+
+---
+
+### 7.7 Fullscreen & Dedicated Job Posting View
+- **Issue**:
+  Job postings can only be previewed in a constrained half-width side panel. There is no fullscreen or dedicated view to inspect comprehensive details, full descriptions, requirements, and application status comfortably.
+- **Where to fix**:
+  - `src/frontend/src/components/JobSearchPage.jsx`
+  - Dedicated component `src/frontend/src/components/JobDetailModal.jsx` or full-page view
+- **The Fix**:
+  1. Add an "Expand" / "Fullscreen" action to the job preview panel.
+  2. Implement a full-screen modal or dedicated full-width view that shows complete job specifications, company info, salary ranges, work hours, and application submission status.
+
+---
+
+### 7.8 Dynamic Return Order (Salary & Hours Sorting)
+- **Issue**:
+  The backend `GET /api/jobs` endpoint supports sorting by multiple fields via `sort_by` (`posted_at`, `salary_max`, `salary_min`, `max_hours_per_week`) and `sort_order` (`asc`, `desc`). However, `src/frontend/src/api/jobs.js` does not accept or pass `sort_by`, and the frontend dropdown only offers "By Newest" and "By Oldest". Sorting by compensation or work hours is completely unavailable to users.
+- **Where to fix**:
+  - `src/frontend/src/api/jobs.js`
+  - `src/frontend/src/components/JobSearchPageNavbar.jsx`
+- **The Fix**:
+  1. Update `searchJobs` in `jobs.js` to accept `sortBy` and pass `sort_by` in query parameters.
+  2. Expand the Order dropdown in `JobSearchPageNavbar.jsx` to include:
+     - Newest First (`posted_at` desc)
+     - Oldest First (`posted_at` asc)
+     - Highest Salary (`salary_max` desc)
+     - Lowest Salary (`salary_min` asc)
+     - Most Hours / Week (`max_hours_per_week` desc)
+     - Fewest Hours / Week (`max_hours_per_week` asc)
+
+---
+
+### 7.9 Top Navbar Layout & UI Consistency
+- **Issue**:
+  `JobSearchPageNavbar.jsx` is visually inconsistent with the rest of the application:
+  1. `Navbar.jsx` uses `justify-between` with brand on the left and user email + navigation on the right; `JobSearchPageNavbar.jsx` lumps brand, inputs, filters, and logout into a crowded left-aligned row.
+  2. In `Navbar.jsx`, navigation is a styled text link ("Browse Jobs"), whereas in `JobSearchPageNavbar.jsx`, "Dashboard" is styled as a gray button.
+  3. Pill buttons (`rounded-full`) in search clash with square/rounded-md elements elsewhere.
+  4. In `App.jsx`, `userEmail` is not passed to `<JobSearchPage />`, causing the user's email to disappear when browsing jobs.
+- **Where to fix**:
+  - `src/frontend/src/App.jsx`
+  - `src/frontend/src/components/JobSearchPageNavbar.jsx`
+  - `src/frontend/src/components/Navbar.jsx`
+- **The Fix**:
+  1. Pass `userEmail={userEmail}` to `<JobSearchPage />` in `App.jsx`.
+  2. Align the top navigation bar layout with `Navbar.jsx` (Brand on left, user email, "Dashboard" link, and "Log out" button on right).
+  3. Position search and filter controls in a dedicated, cohesive filter bar directly beneath the main navbar.
+
+---
+
+### 7.10 Pagination & Multi-Page Search Results
+- **Issue**:
+  The backend endpoint `GET /api/jobs` enforces pagination with a default limit of 20 (`limit=20`) and returns `JobListResponse(jobs, total, page, limit, total_pages)`. The frontend API ignores `page` and `limit`, and `JobSearchPageNavbar` extracts only `data.jobs`, discarding `total`, `page`, and `total_pages`. No pagination controls exist in `JobSearchPage.jsx`, meaning any results beyond the first 20 are completely inaccessible.
+- **Where to fix**:
+  - `src/frontend/src/api/jobs.js`
+  - `src/frontend/src/components/JobSearchPageNavbar.jsx`
+  - `src/frontend/src/components/JobSearchPage.jsx`
+- **The Fix**:
+  1. Update `searchJobs` to accept `page` and `limit`.
+  2. Pass pagination state (`page`, `total`, `totalPages`, `onPageChange`) to `JobSearchPage`.
+  3. Render pagination controls (Previous/Next buttons, page numbers, and "Showing X of Y jobs") beneath the results list.
+
