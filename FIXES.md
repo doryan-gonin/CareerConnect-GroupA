@@ -37,6 +37,7 @@ This document details all remaining issues, architectural defects, security enha
    - [7.8 Dynamic Return Order (Salary & Hours Sorting) [FIXED]](#78-dynamic-return-order-salary--hours-sorting-fixed)
    - [7.9 Top Navbar Layout & UI Consistency [FIXED]](#79-top-navbar-layout--ui-consistency-fixed)
    - [7.10 Pagination & Multi-Page Search Results](#710-pagination--multi-page-search-results)
+   - [7.11 Page Separation & URL-Based Routing (/dashboard, /jobs)](#711-page-separation--url-based-routing-dashboard-jobs)
 
 ---
 
@@ -599,4 +600,26 @@ This document details all remaining issues, architectural defects, security enha
   1. Update `searchJobs` to accept `page` and `limit`.
   2. Pass pagination state (`page`, `total`, `totalPages`, `onPageChange`) to `JobSearchPage`.
   3. Render pagination controls (Previous/Next buttons, page numbers, and "Showing X of Y jobs") beneath the results list.
+
+---
+
+### 7.11 Page Separation & URL-Based Routing (/dashboard, /jobs)
+- **Issue**:
+  The frontend currently manages screens entirely via internal React state in `App.jsx` (`view === 'login' | 'signup' | 'loggedIn' | 'jobSearch'`) without updating the browser URL. The URL remains static at `/` regardless of whether the user is on the dashboard or browsing jobs. Consequently:
+  1. Users cannot directly visit, share, or bookmark `/dashboard` or `/jobs`.
+  2. Browser Back and Forward navigation buttons do not work between dashboard and job listings.
+  3. Refreshing the browser or opening links in new tabs resets the user to the default view rather than keeping them on the active page.
+- **Where to fix**:
+  - `src/frontend/src/App.jsx`
+  - `src/frontend/src/components/Navbar.jsx`
+  - `src/frontend/src/components/JobSearchPageNavbar.jsx`
+- **The Fix**:
+  1. Implement HTML5 History API path-based routing (`pushState`, `replaceState`, and `popstate` event listeners) in `App.jsx`.
+  2. Map routes cleanly:
+     - `/dashboard`: Authenticated dashboard view ([LoggedInScreen.jsx](file:///home/thomas/SOEN-341---Group-A/src/frontend/src/components/LoggedInScreen.jsx))
+     - `/jobs`: Job search and listings view ([JobSearchPage.jsx](file:///home/thomas/SOEN-341---Group-A/src/frontend/src/components/JobSearchPage.jsx))
+     - `/login` & `/signup`: Authentication screens
+     - `/`: Redirects authenticated users to `/jobs` (or `/dashboard`), and unauthenticated users to `/login`.
+  3. Update navigation triggers in `Navbar.jsx` ("Browse Jobs" -> `/jobs`) and `JobSearchPageNavbar.jsx` ("Dashboard" -> `/dashboard`) to push browser history entries and update the path without page reloads.
+
 
