@@ -16,6 +16,15 @@ const CATEGORIES = [
     'Other',
 ]
 
+const SORT_OPTIONS = [
+    { label: 'Newest First', sortBy: 'posted_at', sortOrder: 'desc' },
+    { label: 'Oldest First', sortBy: 'posted_at', sortOrder: 'asc' },
+    { label: 'Highest Salary', sortBy: 'salary_max', sortOrder: 'desc' },
+    { label: 'Lowest Salary', sortBy: 'salary_min', sortOrder: 'asc' },
+    { label: 'Most Hours', sortBy: 'max_hours_per_week', sortOrder: 'desc' },
+    { label: 'Fewest Hours', sortBy: 'max_hours_per_week', sortOrder: 'asc' },
+]
+
 function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onNavigateDashboard }) {
     const [keyword, setKeyWord] = useState('')
     const [error, setError] = useState('')
@@ -27,7 +36,8 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
     const [jobSchedule, setJobSchedule] = useState('Schedule')
     const [jobType, setJobType] = useState('Job Type')
     const [orderDisplay, setOrderDisplay] = useState('Order')
-    const [order, setOrder] = useState('')
+    const [sortBy, setSortBy] = useState('')
+    const [sortOrder, setSortOrder] = useState('')
     const [location, setLocation] = useState('')
 
     const categoryRef = useRef(null)
@@ -75,7 +85,8 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
         setIsOrderOpen(false)
         setJobSchedule('Schedule')
         setJobType('Job Type')
-        setOrder('')
+        setSortBy('')
+        setSortOrder('')
         setLocation('')
         setKeyWord('')
         setCategory('')
@@ -94,7 +105,8 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                 category,
                 jobType: jobType !== 'Job Type' ? jobType : undefined,
                 jobSchedule: jobSchedule !== 'Schedule' ? jobSchedule : undefined,
-                sortOrder: order || undefined,
+                sortBy: sortBy || undefined,
+                sortOrder: sortOrder || undefined,
             })
             onJobsLoaded(data.jobs)
         } catch (err){
@@ -312,35 +324,41 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                         setIsScheduleOpen(false)
                                         setIsJobTypeOpen(false)
                                     }}
-                                    className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                    className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 max-w-44 truncate"
+                                    title={orderDisplay}
                                 >
                                     {orderDisplay} ▾
                                 </button>
 
                                 {isOrderOpen && (
-                                    <div className="absolute left-0 top-full mt-2 min-w-40 rounded-xl bg-white border border-gray-200 shadow-lg z-20">
+                                    <div className="absolute left-0 top-full mt-2 min-w-48 rounded-xl bg-white border border-gray-200 shadow-lg z-20 py-1">
                                         <button
                                             type="button"
-                                            className="block w-full hover:bg-purple-50 text-left px-4 py-2 text-sm"
+                                            className="block w-full hover:bg-purple-50 text-left px-4 py-2 text-sm text-gray-700 font-medium border-b border-gray-100"
                                             onClick={() => {
-                                                setOrderDisplay('By Newest')
-                                                setOrder('desc')
+                                                setOrderDisplay('Order')
+                                                setSortBy('')
+                                                setSortOrder('')
                                                 setIsOrderOpen(false)
                                             }}
                                         >
-                                            By Newest
+                                            Default Order
                                         </button>
-                                        <button
-                                            type="button"
-                                            className="block w-full hover:bg-purple-50 text-left px-4 py-2 text-sm"
-                                            onClick={() => {
-                                                setOrderDisplay('By Oldest')
-                                                setOrder('asc')
-                                                setIsOrderOpen(false)
-                                            }}
-                                        >
-                                            By Oldest
-                                        </button>
+                                        {SORT_OPTIONS.map((opt) => (
+                                            <button
+                                                key={opt.label}
+                                                type="button"
+                                                className="block w-full hover:bg-purple-50 text-left px-4 py-2 text-sm text-gray-700"
+                                                onClick={() => {
+                                                    setOrderDisplay(opt.label)
+                                                    setSortBy(opt.sortBy)
+                                                    setSortOrder(opt.sortOrder)
+                                                    setIsOrderOpen(false)
+                                                }}
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        ))}
                                     </div>
                                 )}
                             </div>

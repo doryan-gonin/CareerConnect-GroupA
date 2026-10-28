@@ -9,13 +9,14 @@ function extractErrorMessage(body, fallback) {
   return fallback
 }
 
-export async function searchJobs({ keyword, location, category, jobType, jobSchedule, sortOrder } = {}) {
+export async function searchJobs({ keyword, location, category, jobType, jobSchedule, sortBy, sortOrder } = {}) {
   const params = new URLSearchParams()
   if (keyword) params.set('keyword', keyword)
   if (location) params.set('location', location)
   if (category) params.set('category', category)
   if (jobType) params.set('job_type', jobType)
   if (jobSchedule) params.set('job_schedule', jobSchedule)
+  if (sortBy) params.set('sort_by', sortBy)
   if (sortOrder) params.set('sort_order', sortOrder)
 
   let response

@@ -34,7 +34,7 @@ This document details all remaining issues, architectural defects, security enha
    - [7.5 Category Selector Dropdown [FIXED]](#75-category-selector-dropdown-fixed)
    - [7.6 Selected Job Persistence on Query and Reset](#76-selected-job-persistence-on-query-and-reset)
    - [7.7 Fullscreen & Dedicated Job Posting View](#77-fullscreen--dedicated-job-posting-view)
-   - [7.8 Dynamic Return Order (Salary & Hours Sorting)](#78-dynamic-return-order-salary--hours-sorting)
+   - [7.8 Dynamic Return Order (Salary & Hours Sorting) [FIXED]](#78-dynamic-return-order-salary--hours-sorting-fixed)
    - [7.9 Top Navbar Layout & UI Consistency [FIXED]](#79-top-navbar-layout--ui-consistency-fixed)
    - [7.10 Pagination & Multi-Page Search Results](#710-pagination--multi-page-search-results)
 
@@ -550,7 +550,8 @@ This document details all remaining issues, architectural defects, security enha
 
 ---
 
-### 7.8 Dynamic Return Order (Salary & Hours Sorting)
+### 7.8 Dynamic Return Order (Salary & Hours Sorting) [FIXED]
+- **Status**: ✅ Fixed (Added `sortBy` query parameter handling to `searchJobs` in `jobs.js`, integrated `sortBy` and `sortOrder` in `JobSearchPageNavbar.jsx`, and provided sorting by Newest, Oldest, Highest Salary, Lowest Salary, Most Hours, and Fewest Hours)
 - **Issue**:
   The backend `GET /api/jobs` endpoint supports sorting by multiple fields via `sort_by` (`posted_at`, `salary_max`, `salary_min`, `max_hours_per_week`) and `sort_order` (`asc`, `desc`). However, `src/frontend/src/api/jobs.js` does not accept or pass `sort_by`, and the frontend dropdown only offers "By Newest" and "By Oldest". Sorting by compensation or work hours is completely unavailable to users.
 - **Where to fix**:
