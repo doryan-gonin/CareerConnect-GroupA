@@ -4,7 +4,7 @@
 * **Role**: Backend Developer
 * **Project**: CareerConnect (SOEN 341 - Fall 2026)
 * **Sprint**: Sprint 2
-* **Total Estimated Time Spent**: ~11.8 Hours
+* **Total Estimated Time Spent**: ~13.3 Hours
 
 ---
 
@@ -49,6 +49,7 @@
 | **20** | **Candidate Profile & Multi-Resume Management Frontend Implementation (Features 4 & 5)**<br>Built `ProfileSection.jsx` allowing candidates to view and edit their first and last name with inline loading and persistence via `/api/profiles/me`. Developed `ResumeSection.jsx` providing file upload with client-side 5MB cap check and PDF validation, dynamic 5-resume quota tracking, resume listing with Default badges, default resume switching (`PATCH /default`), in-browser PDF downloading, and deletion. Integrated both components into `LoggedInScreen.jsx` with a responsive two-column layout. Verified production build and 0 oxlint warnings. | 45 min | • Files: `src/frontend/src/components/ProfileSection.jsx`, `src/frontend/src/components/ResumeSection.jsx`, `src/frontend/src/components/LoggedInScreen.jsx` |
 | **21** | **Backend Configuration & Credentials Centralization (FIXES.md Issue 3.5)**<br>Created unified configuration module `src/backend/config.py` anchoring paths to root directory (`BASE_DIR`) and standardizing `.env` loading. Centralized `SECRET_KEY`, `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`, `MAX_FAILED_ATTEMPTS`, `LOCKOUT_DURATION_MINUTES`, `DATABASE_URL`, and `UPLOAD_DIR`. Refactored `dependencies.py`, `routers/auth.py`, `database.py`, and `routers/profiles.py` to eliminate duplicated code and decouple relative directory paths. Authored configuration unit test suite in `tests/test_config.py` and updated `FIXES.md`. | 25 min | • Files: `src/backend/config.py`, `src/backend/dependencies.py`, `src/backend/routers/auth.py`, `src/backend/database.py`, `src/backend/routers/profiles.py`, `tests/test_config.py`<br>• Document: `FIXES.md` (Item 3.5) |
 | **22** | **Developer Tooling & Makefile Automation Expansion**<br>Expanded project `Makefile` to streamline local development workflows. Added `make frontend`/`make frontend-dev` for independent Vite dev server execution, `make dev` with bash process signal trapping (`trap 'kill 0' INT TERM`) running both backend and frontend concurrently with clean termination on Ctrl+C, and `make test`/`make tests` running the full pytest test suite with verbose reporting. | 15 min | • File: `Makefile` |
+| **23** | **Review code, wrongful PRs, issues and more** | 1.5hr |
 
 ---
 
