@@ -95,24 +95,36 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
         onJobsLoaded([])
     }
 
-    async function handleSearch(event){
-        event.preventDefault()
+    async function triggerSearch(overrides = {}) {
         setError('')
-        try{
+        const effectiveKeyword = overrides.keyword !== undefined ? overrides.keyword : keyword
+        const effectiveLocation = overrides.location !== undefined ? overrides.location : location
+        const effectiveCategory = overrides.category !== undefined ? overrides.category : category
+        const effectiveJobType = overrides.jobType !== undefined ? overrides.jobType : jobType
+        const effectiveJobSchedule = overrides.jobSchedule !== undefined ? overrides.jobSchedule : jobSchedule
+        const effectiveSortBy = overrides.sortBy !== undefined ? overrides.sortBy : sortBy
+        const effectiveSortOrder = overrides.sortOrder !== undefined ? overrides.sortOrder : sortOrder
+
+        try {
             const data = await searchJobs({
-                keyword,
-                location,
-                category,
-                jobType: jobType !== 'Job Type' ? jobType : undefined,
-                jobSchedule: jobSchedule !== 'Schedule' ? jobSchedule : undefined,
-                sortBy: sortBy || undefined,
-                sortOrder: sortOrder || undefined,
+                keyword: effectiveKeyword,
+                location: effectiveLocation,
+                category: effectiveCategory,
+                jobType: effectiveJobType !== 'Job Type' ? effectiveJobType : undefined,
+                jobSchedule: effectiveJobSchedule !== 'Schedule' ? effectiveJobSchedule : undefined,
+                sortBy: effectiveSortBy || undefined,
+                sortOrder: effectiveSortOrder || undefined,
             })
             onJobsLoaded(data.jobs)
-        } catch (err){
+        } catch (err) {
             onJobsLoaded([])
             setError(err.message)
         }
+    }
+
+    function handleSearch(event) {
+        if (event) event.preventDefault()
+        triggerSearch()
     }
 
     return (
@@ -154,7 +166,6 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                 <div className="mx-auto max-w-5xl px-4 py-3">
                     <div className="flex flex-wrap items-center gap-2">
                         <form onSubmit={handleSearch} className="flex flex-wrap items-center gap-2">
-                            <button type="submit" hidden>Search</button>
                             <input
                                 type="text"
                                 placeholder="Describe the job you want"
@@ -194,6 +205,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                             onClick={() => {
                                                 setCategory('')
                                                 setIsCategoryOpen(false)
+                                                triggerSearch({ category: '' })
                                             }}
                                         >
                                             All Categories
@@ -206,6 +218,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                                 onClick={() => {
                                                     setCategory(cat)
                                                     setIsCategoryOpen(false)
+                                                    triggerSearch({ category: cat })
                                                 }}
                                             >
                                                 {cat}
@@ -233,10 +246,22 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                     <div className="absolute left-0 top-full mt-2 min-w-40 rounded-xl bg-white border border-gray-200 shadow-lg z-20">
                                         <button
                                             type="button"
+                                            className="block w-full hover:bg-purple-50 text-left px-4 py-2 text-sm text-gray-700 font-medium border-b border-gray-100"
+                                            onClick={() => {
+                                                setJobType("Job Type")
+                                                setIsJobTypeOpen(false)
+                                                triggerSearch({ jobType: 'Job Type' })
+                                            }}
+                                        >
+                                            All Types
+                                        </button>
+                                        <button
+                                            type="button"
                                             className="block w-full hover:bg-purple-50 text-left px-4 py-2 text-sm"
                                             onClick={() => {
                                                 setJobType("Permanent")
                                                 setIsJobTypeOpen(false)
+                                                triggerSearch({ jobType: 'Permanent' })
                                             }}
                                         >
                                             Permanent
@@ -247,6 +272,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                             onClick={() => {
                                                 setJobType("Temporary")
                                                 setIsJobTypeOpen(false)
+                                                triggerSearch({ jobType: 'Temporary' })
                                             }}
                                         >
                                             Temporary
@@ -257,6 +283,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                             onClick={() => {
                                                 setJobType("Contract")
                                                 setIsJobTypeOpen(false)
+                                                triggerSearch({ jobType: 'Contract' })
                                             }}
                                         >
                                             Contract
@@ -267,6 +294,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                             onClick={() => {
                                                 setJobType("Internship")
                                                 setIsJobTypeOpen(false)
+                                                triggerSearch({ jobType: 'Internship' })
                                             }}
                                         >
                                             Internship
@@ -293,10 +321,22 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                     <div className="absolute left-0 top-full mt-2 min-w-40 rounded-xl bg-white border border-gray-200 shadow-lg z-20">
                                         <button
                                             type="button"
+                                            className="block w-full hover:bg-purple-50 text-left px-4 py-2 text-sm text-gray-700 font-medium border-b border-gray-100"
+                                            onClick={() => {
+                                                setJobSchedule("Schedule")
+                                                setIsScheduleOpen(false)
+                                                triggerSearch({ jobSchedule: 'Schedule' })
+                                            }}
+                                        >
+                                            All Schedules
+                                        </button>
+                                        <button
+                                            type="button"
                                             className="block w-full hover:bg-purple-50 text-left px-4 py-2 text-sm"
                                             onClick={() => {
                                                 setJobSchedule("Full-time")
                                                 setIsScheduleOpen(false)
+                                                triggerSearch({ jobSchedule: 'Full-time' })
                                             }}
                                         >
                                             Full-time
@@ -307,6 +347,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                             onClick={() => {
                                                 setJobSchedule("Part-time")
                                                 setIsScheduleOpen(false)
+                                                triggerSearch({ jobSchedule: 'Part-time' })
                                             }}
                                         >
                                             Part-time
@@ -340,6 +381,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                                 setSortBy('')
                                                 setSortOrder('')
                                                 setIsOrderOpen(false)
+                                                triggerSearch({ sortBy: '', sortOrder: '' })
                                             }}
                                         >
                                             Default Order
@@ -354,6 +396,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                                     setSortBy(opt.sortBy)
                                                     setSortOrder(opt.sortOrder)
                                                     setIsOrderOpen(false)
+                                                    triggerSearch({ sortBy: opt.sortBy, sortOrder: opt.sortOrder })
                                                 }}
                                             >
                                                 {opt.label}
@@ -362,6 +405,13 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                     </div>
                                 )}
                             </div>
+
+                            <button
+                                type="submit"
+                                className="rounded-md bg-purple-600 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-purple-700"
+                            >
+                                Search
+                            </button>
                         </form>
 
                         <button

@@ -28,7 +28,7 @@ This document details all remaining issues, architectural defects, security enha
    - [6.6 Recruiter Inactive Job Visibility & Reactivation](#66-recruiter-inactive-job-visibility--reactivation)
 5. [Job Search Frontend Deficiencies & UX Enhancements](#5-job-search-frontend-deficiencies--ux-enhancements)
    - [7.1 Empty State UI & Feedback](#71-empty-state-ui--feedback)
-   - [7.2 Automatic & Explicit Filter Application](#72-automatic--explicit-filter-application)
+   - [7.2 Automatic & Explicit Filter Application [FIXED]](#72-automatic--explicit-filter-application-fixed)
    - [7.3 Reset Filter Action & Search Query Refresh](#73-reset-filter-action--search-query-refresh)
    - [7.4 Dropdown Menu Dismissal & Outside-Click Handling [FIXED]](#74-dropdown-menu-dismissal--outside-click-handling-fixed)
    - [7.5 Category Selector Dropdown [FIXED]](#75-category-selector-dropdown-fixed)
@@ -483,7 +483,8 @@ This document details all remaining issues, architectural defects, security enha
 
 ---
 
-### 7.2 Automatic & Explicit Filter Application
+### 7.2 Automatic & Explicit Filter Application [FIXED]
+- **Status**: ✅ Fixed (Added visible primary Search button and implemented triggerSearch to automatically re-query and apply filters whenever an option in Category, Job Type, Schedule, or Order is clicked)
 - **Issue**:
   Clicking options in dropdown filters (Job Type, Schedule, Order) updates internal React state variables (`jobType`, `jobSchedule`, `order`) but does not execute a search. The form submit button is marked `hidden` (`<button type="submit" hidden>Search</button>`), preventing users from clicking to search. Users are forced to manually enter one of the text inputs and press Enter to trigger the query.
 - **Where to fix**:
