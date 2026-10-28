@@ -30,7 +30,7 @@ This document details all remaining issues, architectural defects, security enha
    - [7.1 Empty State UI & Feedback](#71-empty-state-ui--feedback)
    - [7.2 Automatic & Explicit Filter Application](#72-automatic--explicit-filter-application)
    - [7.3 Reset Filter Action & Search Query Refresh](#73-reset-filter-action--search-query-refresh)
-   - [7.4 Dropdown Menu Dismissal & Outside-Click Handling](#74-dropdown-menu-dismissal--outside-click-handling)
+   - [7.4 Dropdown Menu Dismissal & Outside-Click Handling [FIXED]](#74-dropdown-menu-dismissal--outside-click-handling-fixed)
    - [7.5 Category Selector Dropdown](#75-category-selector-dropdown)
    - [7.6 Selected Job Persistence on Query and Reset](#76-selected-job-persistence-on-query-and-reset)
    - [7.7 Fullscreen & Dedicated Job Posting View](#77-fullscreen--dedicated-job-posting-view)
@@ -505,7 +505,8 @@ This document details all remaining issues, architectural defects, security enha
 
 ---
 
-### 7.4 Dropdown Menu Dismissal & Outside-Click Handling
+### 7.4 Dropdown Menu Dismissal & Outside-Click Handling [FIXED]
+- **Status**: ✅ Fixed (Added explicit menu close calls on option selection, pointerdown outside-click detection via React refs, and Escape key listeners)
 - **Issue**:
   When an option in a dropdown menu (Job Type, Schedule, Order) is clicked, the selection handler updates the label and value, but fails to set the menu's open state to `false` (`setIsJobTypeOpen(false)`, etc.). Furthermore, there is no document-level click listener to close open menus when clicking elsewhere. Menus stay stuck open until the user clicks the menu button again.
 - **Where to fix**:

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { searchJobs } from '../api/jobs'
 
 function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onNavigateDashboard }) {
@@ -14,7 +14,43 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
     const [order, setOrder] = useState('')
     const [location, setLocation] = useState('')
 
+    const jobTypeRef = useRef(null)
+    const scheduleRef = useRef(null)
+    const orderRef = useRef(null)
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (jobTypeRef.current && !jobTypeRef.current.contains(event.target)) {
+                setIsJobTypeOpen(false)
+            }
+            if (scheduleRef.current && !scheduleRef.current.contains(event.target)) {
+                setIsScheduleOpen(false)
+            }
+            if (orderRef.current && !orderRef.current.contains(event.target)) {
+                setIsOrderOpen(false)
+            }
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === 'Escape') {
+                setIsJobTypeOpen(false)
+                setIsScheduleOpen(false)
+                setIsOrderOpen(false)
+            }
+        }
+
+        document.addEventListener('pointerdown', handleClickOutside)
+        document.addEventListener('keydown', handleKeyDown)
+        return () => {
+            document.removeEventListener('pointerdown', handleClickOutside)
+            document.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [])
+
     function handleReset() {
+        setIsScheduleOpen(false)
+        setIsJobTypeOpen(false)
+        setIsOrderOpen(false)
         setJobSchedule('Schedule')
         setJobType('Job Type')
         setOrder('')
@@ -109,7 +145,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                 className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 w-48"
                             />
 
-                            <div className="relative inline-block">
+                            <div ref={jobTypeRef} className="relative inline-block">
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -127,28 +163,40 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                         <button
                                             type="button"
                                             className="block w-full hover:bg-purple-50 text-left px-4 py-2 text-sm"
-                                            onClick={() => setJobType("Permanent")}
+                                            onClick={() => {
+                                                setJobType("Permanent")
+                                                setIsJobTypeOpen(false)
+                                            }}
                                         >
                                             Permanent
                                         </button>
                                         <button
                                             type="button"
                                             className="block w-full hover:bg-purple-50 text-left px-4 py-2 text-sm"
-                                            onClick={() => setJobType("Temporary")}
+                                            onClick={() => {
+                                                setJobType("Temporary")
+                                                setIsJobTypeOpen(false)
+                                            }}
                                         >
                                             Temporary
                                         </button>
                                         <button
                                             type="button"
                                             className="block w-full hover:bg-purple-50 text-left px-4 py-2 text-sm"
-                                            onClick={() => setJobType("Contract")}
+                                            onClick={() => {
+                                                setJobType("Contract")
+                                                setIsJobTypeOpen(false)
+                                            }}
                                         >
                                             Contract
                                         </button>
                                         <button
                                             type="button"
                                             className="block w-full hover:bg-purple-50 text-left px-4 py-2 text-sm"
-                                            onClick={() => setJobType("Internship")}
+                                            onClick={() => {
+                                                setJobType("Internship")
+                                                setIsJobTypeOpen(false)
+                                            }}
                                         >
                                             Internship
                                         </button>
@@ -156,7 +204,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                 )}
                             </div>
 
-                            <div className="relative inline-block">
+                            <div ref={scheduleRef} className="relative inline-block">
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -174,14 +222,20 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                         <button
                                             type="button"
                                             className="block w-full hover:bg-purple-50 text-left px-4 py-2 text-sm"
-                                            onClick={() => setJobSchedule("Full-time")}
+                                            onClick={() => {
+                                                setJobSchedule("Full-time")
+                                                setIsScheduleOpen(false)
+                                            }}
                                         >
                                             Full-time
                                         </button>
                                         <button
                                             type="button"
                                             className="block w-full hover:bg-purple-50 text-left px-4 py-2 text-sm"
-                                            onClick={() => setJobSchedule("Part-time")}
+                                            onClick={() => {
+                                                setJobSchedule("Part-time")
+                                                setIsScheduleOpen(false)
+                                            }}
                                         >
                                             Part-time
                                         </button>
@@ -189,7 +243,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                 )}
                             </div>
 
-                            <div className="relative inline-block">
+                            <div ref={orderRef} className="relative inline-block">
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -210,6 +264,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                             onClick={() => {
                                                 setOrderDisplay('By Newest')
                                                 setOrder('desc')
+                                                setIsOrderOpen(false)
                                             }}
                                         >
                                             By Newest
@@ -220,6 +275,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                             onClick={() => {
                                                 setOrderDisplay('By Oldest')
                                                 setOrder('asc')
+                                                setIsOrderOpen(false)
                                             }}
                                         >
                                             By Oldest
