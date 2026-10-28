@@ -1,9 +1,25 @@
 import { useState, useEffect, useRef } from 'react'
 import { searchJobs } from '../api/jobs'
 
+const CATEGORIES = [
+    'Software Engineering',
+    'Design',
+    'Data Science & AI',
+    'DevOps & Infrastructure',
+    'Quality Assurance',
+    'Technical Support',
+    'Information Technology',
+    'Cybersecurity',
+    'Marketing',
+    'Content & Communications',
+    'Finance',
+    'Other',
+]
+
 function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onNavigateDashboard }) {
     const [keyword, setKeyWord] = useState('')
     const [error, setError] = useState('')
+    const [isCategoryOpen, setIsCategoryOpen] = useState(false)
     const [isScheduleOpen, setIsScheduleOpen] = useState(false)
     const [isJobTypeOpen, setIsJobTypeOpen] = useState(false)
     const [isOrderOpen, setIsOrderOpen] = useState(false)
@@ -14,12 +30,16 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
     const [order, setOrder] = useState('')
     const [location, setLocation] = useState('')
 
+    const categoryRef = useRef(null)
     const jobTypeRef = useRef(null)
     const scheduleRef = useRef(null)
     const orderRef = useRef(null)
 
     useEffect(() => {
         function handleClickOutside(event) {
+            if (categoryRef.current && !categoryRef.current.contains(event.target)) {
+                setIsCategoryOpen(false)
+            }
             if (jobTypeRef.current && !jobTypeRef.current.contains(event.target)) {
                 setIsJobTypeOpen(false)
             }
@@ -33,6 +53,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
 
         function handleKeyDown(event) {
             if (event.key === 'Escape') {
+                setIsCategoryOpen(false)
                 setIsJobTypeOpen(false)
                 setIsScheduleOpen(false)
                 setIsOrderOpen(false)
@@ -48,6 +69,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
     }, [])
 
     function handleReset() {
+        setIsCategoryOpen(false)
         setIsScheduleOpen(false)
         setIsJobTypeOpen(false)
         setIsOrderOpen(false)
@@ -137,19 +159,56 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                 className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 w-48"
                             />
 
-                            <input
-                                type="text"
-                                placeholder="Category (e.g. Software, Design)"
-                                value={category}
-                                onChange={(event) => setCategory(event.target.value)}
-                                className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 w-48"
-                            />
+                            <div ref={categoryRef} className="relative inline-block">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsCategoryOpen(!isCategoryOpen)
+                                        setIsJobTypeOpen(false)
+                                        setIsScheduleOpen(false)
+                                        setIsOrderOpen(false)
+                                    }}
+                                    className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 max-w-48 truncate"
+                                    title={category || 'Category'}
+                                >
+                                    {category || 'Category'} ▾
+                                </button>
+
+                                {isCategoryOpen && (
+                                    <div className="absolute left-0 top-full mt-2 min-w-56 max-h-64 overflow-y-auto rounded-xl bg-white border border-gray-200 shadow-lg z-20 py-1">
+                                        <button
+                                            type="button"
+                                            className="block w-full hover:bg-purple-50 text-left px-4 py-2 text-sm text-gray-700 font-medium border-b border-gray-100"
+                                            onClick={() => {
+                                                setCategory('')
+                                                setIsCategoryOpen(false)
+                                            }}
+                                        >
+                                            All Categories
+                                        </button>
+                                        {CATEGORIES.map((cat) => (
+                                            <button
+                                                key={cat}
+                                                type="button"
+                                                className="block w-full hover:bg-purple-50 text-left px-4 py-2 text-sm text-gray-700"
+                                                onClick={() => {
+                                                    setCategory(cat)
+                                                    setIsCategoryOpen(false)
+                                                }}
+                                            >
+                                                {cat}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
 
                             <div ref={jobTypeRef} className="relative inline-block">
                                 <button
                                     type="button"
                                     onClick={() => {
                                         setIsJobTypeOpen(!isJobTypeOpen)
+                                        setIsCategoryOpen(false)
                                         setIsScheduleOpen(false)
                                         setIsOrderOpen(false)
                                     }}
@@ -209,6 +268,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                     type="button"
                                     onClick={() => {
                                         setIsScheduleOpen(!isScheduleOpen)
+                                        setIsCategoryOpen(false)
                                         setIsJobTypeOpen(false)
                                         setIsOrderOpen(false)
                                     }}
@@ -248,6 +308,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                                     type="button"
                                     onClick={() => {
                                         setIsOrderOpen(!isOrderOpen)
+                                        setIsCategoryOpen(false)
                                         setIsScheduleOpen(false)
                                         setIsJobTypeOpen(false)
                                     }}

@@ -31,7 +31,7 @@ This document details all remaining issues, architectural defects, security enha
    - [7.2 Automatic & Explicit Filter Application](#72-automatic--explicit-filter-application)
    - [7.3 Reset Filter Action & Search Query Refresh](#73-reset-filter-action--search-query-refresh)
    - [7.4 Dropdown Menu Dismissal & Outside-Click Handling [FIXED]](#74-dropdown-menu-dismissal--outside-click-handling-fixed)
-   - [7.5 Category Selector Dropdown](#75-category-selector-dropdown)
+   - [7.5 Category Selector Dropdown [FIXED]](#75-category-selector-dropdown-fixed)
    - [7.6 Selected Job Persistence on Query and Reset](#76-selected-job-persistence-on-query-and-reset)
    - [7.7 Fullscreen & Dedicated Job Posting View](#77-fullscreen--dedicated-job-posting-view)
    - [7.8 Dynamic Return Order (Salary & Hours Sorting)](#78-dynamic-return-order-salary--hours-sorting)
@@ -517,7 +517,8 @@ This document details all remaining issues, architectural defects, security enha
 
 ---
 
-### 7.5 Category Selector Dropdown
+### 7.5 Category Selector Dropdown [FIXED]
+- **Status**: ✅ Fixed (Replaced freeform text input with a curated, scrollable category dropdown menu supporting "All Categories" and distinct business categories with outside-click dismissal)
 - **Issue**:
   The job category is currently a freeform text input (`<input type="text" placeholder="Category (e.g. Software, Design)" />`). Because users do not know the exact nomenclature of categories in the database (e.g., "Engineering", "Design", "Product", "Marketing"), misspellings and mismatches cause valid jobs to be missed.
 - **Where to fix**:
