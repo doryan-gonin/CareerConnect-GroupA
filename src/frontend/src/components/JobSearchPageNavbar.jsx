@@ -25,7 +25,7 @@ const SORT_OPTIONS = [
     { label: 'Fewest Hours', sortBy: 'max_hours_per_week', sortOrder: 'asc' },
 ]
 
-function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onNavigateDashboard }) {
+function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onNavigateDashboard, onReset }) {
     const [keyword, setKeyWord] = useState('')
     const [error, setError] = useState('')
     const [isCategoryOpen, setIsCategoryOpen] = useState(false)
@@ -78,7 +78,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
         }
     }, [])
 
-    function handleReset() {
+    async function handleReset() {
         setIsCategoryOpen(false)
         setIsScheduleOpen(false)
         setIsJobTypeOpen(false)
@@ -92,7 +92,16 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
         setCategory('')
         setOrderDisplay('Order')
         setError('')
-        onJobsLoaded([])
+        if (onReset) onReset()
+        await triggerSearch({
+            keyword: '',
+            location: '',
+            category: '',
+            jobType: 'Job Type',
+            jobSchedule: 'Schedule',
+            sortBy: '',
+            sortOrder: '',
+        })
     }
 
     async function triggerSearch(overrides = {}) {

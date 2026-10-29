@@ -30,10 +30,17 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard }) {
         }
     }
 
+    function handleReset() {
+        setSelectedJob(null)
+        setApplyError('')
+        setApplySuccess('')
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 text-gray-900">
             <JobSearchPageNavbar
                 onJobsLoaded={setJobs}
+                onReset={handleReset}
                 onLogout={onLogout}
                 isLoggingOut={isLoggingOut}
                 onNavigateDashboard={onNavigateDashboard}

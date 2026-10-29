@@ -29,7 +29,7 @@ This document details all remaining issues, architectural defects, security enha
 5. [Job Search Frontend Deficiencies & UX Enhancements](#5-job-search-frontend-deficiencies--ux-enhancements)
    - [7.1 Empty State UI & Feedback](#71-empty-state-ui--feedback)
    - [7.2 Automatic & Explicit Filter Application [FIXED]](#72-automatic--explicit-filter-application-fixed)
-   - [7.3 Reset Filter Action & Search Query Refresh](#73-reset-filter-action--search-query-refresh)
+   - [7.3 Reset Filter Action & Search Query Refresh [FIXED]](#73-reset-filter-action--search-query-refresh-fixed)
    - [7.4 Dropdown Menu Dismissal & Outside-Click Handling [FIXED]](#74-dropdown-menu-dismissal--outside-click-handling-fixed)
    - [7.5 Category Selector Dropdown [FIXED]](#75-category-selector-dropdown-fixed)
    - [7.6 Selected Job Persistence on Query and Reset](#76-selected-job-persistence-on-query-and-reset)
@@ -496,7 +496,8 @@ This document details all remaining issues, architectural defects, security enha
 
 ---
 
-### 7.3 Reset Filter Action & Search Query Refresh
+### 7.3 Reset Filter Action & Search Query Refresh [FIXED]
+- **Status**: ✅ Fixed (Updated `handleReset` in `JobSearchPageNavbar.jsx` to restore all filter fields and dropdowns to default, automatically execute `searchJobs({})` to display all active postings, and invoke `onReset` to clear the selected job card in `JobSearchPage.jsx`)
 - **Issue**:
   The "Reset" button executes `handleReset`, which clears local filter state and invokes `onJobsLoaded([])`. Instead of clearing the active filters and fetching the default list of all active jobs, it wipes out all displayed listings, returning the user to the unsearched empty state.
 - **Where to fix**:
