@@ -131,6 +131,11 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
         }
     }
 
+    useEffect(() => {
+        triggerSearch()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
     function handleSearch(event) {
         if (event) event.preventDefault()
         triggerSearch()

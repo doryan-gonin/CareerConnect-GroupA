@@ -4,6 +4,7 @@ import { applyToJob } from '../api/jobs'
 
 function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard }) {
     const [jobs, setJobs] = useState([])
+    const [hasLoaded, setHasLoaded] = useState(false)
     const [selectedJob, setSelectedJob] = useState(null)
     const [isApplying, setIsApplying] = useState(false)
     const [applyError, setApplyError] = useState('')
@@ -13,6 +14,11 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard }) {
         setSelectedJob(job)
         setApplyError('')
         setApplySuccess('')
+    }
+
+    function handleJobsLoaded(loadedJobs) {
+        setJobs(loadedJobs)
+        setHasLoaded(true)
     }
 
     async function handleApply() {
@@ -39,7 +45,7 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard }) {
     return (
         <div className="min-h-screen bg-gray-50 text-gray-900">
             <JobSearchPageNavbar
-                onJobsLoaded={setJobs}
+                onJobsLoaded={handleJobsLoaded}
                 onReset={handleReset}
                 onLogout={onLogout}
                 isLoggingOut={isLoggingOut}
@@ -47,8 +53,11 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard }) {
             />
             <div className="mx-auto flex max-w-5xl gap-6 px-4 py-8">
                 <div className="flex flex-col gap-3">
-                    {jobs.length === 0 && (
-                        <p className="text-sm text-gray-500">Search for a job above to see results.</p>
+                    {!hasLoaded && (
+                        <p className="text-sm text-gray-500">Loading jobs…</p>
+                    )}
+                    {hasLoaded && jobs.length === 0 && (
+                        <p className="text-sm text-gray-500">No jobs found matching your search.</p>
                     )}
                     {jobs.map((job) => (
                         <button

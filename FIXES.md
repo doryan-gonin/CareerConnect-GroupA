@@ -27,7 +27,7 @@ This document details all remaining issues, architectural defects, security enha
    - [6.5 Unbounded Growth of `RevokedToken` Table](#65-unbounded-growth-of-revokedtoken-table)
    - [6.6 Recruiter Inactive Job Visibility & Reactivation](#66-recruiter-inactive-job-visibility--reactivation)
 5. [Job Search Frontend Deficiencies & UX Enhancements](#5-job-search-frontend-deficiencies--ux-enhancements)
-   - [7.1 Empty State UI & Feedback](#71-empty-state-ui--feedback)
+   - [7.1 Empty State UI & Feedback [FIXED]](#71-empty-state-ui--feedback-fixed)
    - [7.2 Automatic & Explicit Filter Application [FIXED]](#72-automatic--explicit-filter-application-fixed)
    - [7.3 Reset Filter Action & Search Query Refresh [FIXED]](#73-reset-filter-action--search-query-refresh-fixed)
    - [7.4 Dropdown Menu Dismissal & Outside-Click Handling [FIXED]](#74-dropdown-menu-dismissal--outside-click-handling-fixed)
@@ -472,15 +472,16 @@ This document details all remaining issues, architectural defects, security enha
 
 ## 5. Job Search Frontend Deficiencies & UX Enhancements
 
-### 7.1 Empty State UI & Feedback
+### 7.1 Empty State UI & Feedback [FIXED]
+- **Status**: ✅ Fixed (Configured `JobSearchPageNavbar.jsx` to immediately query all active jobs on mount without requiring manual search interaction, and updated `JobSearchPage.jsx` with clear "Loading jobs…" and "No jobs found matching your search." states instead of a misleading prompt)
 - **Issue**:
   When users navigate to the job search page initially, `jobs.length === 0` renders the message `"Search for a job above to see results."`. When a user submits a search query that yields zero matches, the UI renders the exact same initial string. There is no visual feedback indicating that a search was conducted and yielded no matching positions.
 - **Where to fix**:
   - `src/frontend/src/components/JobSearchPage.jsx`
   - `src/frontend/src/components/JobSearchPageNavbar.jsx`
 - **The Fix**:
-  1. Track search execution state (e.g. `hasSearched: boolean` or loading/searched status).
-  2. Distinguish the initial welcome state ("Find your next opportunity by keyword, location, or category above") from the empty result state ("No jobs found matching your criteria. Try adjusting your search or clearing filters.").
+  1. Trigger an immediate job query on initial component mount in `JobSearchPageNavbar.jsx` so active postings display straight away when arriving on `/jobs`.
+  2. In `JobSearchPage.jsx`, track `hasLoaded` state to display `"Loading jobs…"` during the initial request, and `"No jobs found matching your search."` when zero results are returned.
 
 ---
 
