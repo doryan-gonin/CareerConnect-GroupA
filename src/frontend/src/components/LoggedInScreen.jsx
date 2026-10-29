@@ -1,7 +1,8 @@
+import ApplicationsSection from './ApplicationsSection'
 import ProfileSection from './ProfileSection'
 import ResumeSection from './ResumeSection'
 
-// Authenticated dashboard screen for managing profile and documents
+// Authenticated dashboard screen for managing profile, documents, and applications
 function LoggedInScreen({ token }) {
   return (
     <div className="flex flex-col gap-6">
@@ -9,7 +10,7 @@ function LoggedInScreen({ token }) {
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
         <p className="text-sm text-gray-600">
-          Manage your personal profile and uploaded resumes.
+          Manage your personal profile, uploaded resumes, and job applications.
         </p>
       </div>
 
@@ -18,6 +19,8 @@ function LoggedInScreen({ token }) {
         <ProfileSection token={token} />
         <ResumeSection token={token} />
       </div>
+
+      <ApplicationsSection token={token} />
     </div>
   )
 }
