@@ -36,7 +36,7 @@ This document details all remaining issues, architectural defects, security enha
    - [7.7 Fullscreen & Dedicated Job Posting View](#77-fullscreen--dedicated-job-posting-view)
    - [7.8 Dynamic Return Order (Salary & Hours Sorting) [FIXED]](#78-dynamic-return-order-salary--hours-sorting-fixed)
    - [7.9 Top Navbar Layout & UI Consistency [FIXED]](#79-top-navbar-layout--ui-consistency-fixed)
-   - [7.10 Pagination & Multi-Page Search Results](#710-pagination--multi-page-search-results)
+   - [7.10 Pagination & Multi-Page Search Results [FIXED]](#710-pagination--multi-page-search-results-fixed)
    - [7.11 Page Separation & URL-Based Routing (/dashboard, /jobs) [FIXED]](#711-page-separation--url-based-routing-dashboard-jobs-fixed)
 
 ---
@@ -592,7 +592,8 @@ This document details all remaining issues, architectural defects, security enha
 
 ---
 
-### 7.10 Pagination & Multi-Page Search Results
+### 7.10 Pagination & Multi-Page Search Results [FIXED]
+- **Status**: ✅ Fixed (Updated `searchJobs` in `jobs.js` to accept `page` and `limit`, expanded `JobSearchPageNavbar.jsx` to pass pagination metadata and `onPageChange` to `JobSearchPage.jsx`, and added complete pagination controls including page count, Previous/Next navigation, and page buttons)
 - **Issue**:
   The backend endpoint `GET /api/jobs` enforces pagination with a default limit of 20 (`limit=20`) and returns `JobListResponse(jobs, total, page, limit, total_pages)`. The frontend API ignores `page` and `limit`, and `JobSearchPageNavbar` extracts only `data.jobs`, discarding `total`, `page`, and `total_pages`. No pagination controls exist in `JobSearchPage.jsx`, meaning any results beyond the first 20 are completely inaccessible.
 - **Where to fix**:

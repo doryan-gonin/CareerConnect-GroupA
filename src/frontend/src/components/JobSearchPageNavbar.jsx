@@ -101,6 +101,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
             jobSchedule: 'Schedule',
             sortBy: '',
             sortOrder: '',
+            page: 1,
         })
     }
 
@@ -113,6 +114,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
         const effectiveJobSchedule = overrides.jobSchedule !== undefined ? overrides.jobSchedule : jobSchedule
         const effectiveSortBy = overrides.sortBy !== undefined ? overrides.sortBy : sortBy
         const effectiveSortOrder = overrides.sortOrder !== undefined ? overrides.sortOrder : sortOrder
+        const effectivePage = overrides.page !== undefined ? overrides.page : 1
 
         try {
             const data = await searchJobs({
@@ -123,10 +125,23 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
                 jobSchedule: effectiveJobSchedule !== 'Schedule' ? effectiveJobSchedule : undefined,
                 sortBy: effectiveSortBy || undefined,
                 sortOrder: effectiveSortOrder || undefined,
+                page: effectivePage,
             })
-            onJobsLoaded(data.jobs)
+            onJobsLoaded(data.jobs, {
+                page: data.page,
+                totalPages: data.total_pages,
+                total: data.total,
+                limit: data.limit,
+                onPageChange: (newPage) => triggerSearch({ page: newPage }),
+            })
         } catch (err) {
-            onJobsLoaded([])
+            onJobsLoaded([], {
+                page: 1,
+                totalPages: 0,
+                total: 0,
+                limit: 20,
+                onPageChange: (newPage) => triggerSearch({ page: newPage }),
+            })
             setError(err.message)
         }
     }

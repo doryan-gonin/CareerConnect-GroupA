@@ -6,6 +6,7 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard }) {
     const [jobs, setJobs] = useState([])
     const [hasLoaded, setHasLoaded] = useState(false)
     const [selectedJob, setSelectedJob] = useState(null)
+    const [pagination, setPagination] = useState(null)
     const [isApplying, setIsApplying] = useState(false)
     const [applyError, setApplyError] = useState('')
     const [applySuccess, setApplySuccess] = useState('')
@@ -16,9 +17,12 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard }) {
         setApplySuccess('')
     }
 
-    function handleJobsLoaded(loadedJobs) {
+    function handleJobsLoaded(loadedJobs, paginationInfo) {
         setJobs(loadedJobs)
         setHasLoaded(true)
+        if (paginationInfo) {
+            setPagination(paginationInfo)
+        }
         setSelectedJob((prevSelected) => {
             if (!prevSelected) return null
             const stillExists = loadedJobs.find((j) => j.id === prevSelected.id)
@@ -86,6 +90,66 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard }) {
                             <p>{job.location}</p>
                         </button>
                     ))}
+
+                    {/* Pagination Controls */}
+                    {pagination && pagination.total > 0 && (
+                        <div className="mt-2 flex flex-col gap-2 pt-3 border-t border-gray-200">
+                            <p className="text-xs text-gray-500 text-center">
+                                Showing {Math.min((pagination.page - 1) * pagination.limit + 1, pagination.total)}–{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} jobs
+                            </p>
+                            {pagination.totalPages > 1 && (
+                                <div className="flex items-center justify-center gap-1">
+                                    <button
+                                        type="button"
+                                        disabled={pagination.page <= 1}
+                                        onClick={() => pagination.onPageChange(pagination.page - 1)}
+                                        className="rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Previous
+                                    </button>
+
+                                    {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((p) => {
+                                        if (
+                                            pagination.totalPages > 7 &&
+                                            p !== 1 &&
+                                            p !== pagination.totalPages &&
+                                            Math.abs(p - pagination.page) > 1
+                                        ) {
+                                            if (p === 2 || p === pagination.totalPages - 1) {
+                                                return <span key={p} className="px-1 text-xs text-gray-400">…</span>
+                                            }
+                                            return null
+                                        }
+
+                                        const isActive = p === pagination.page
+                                        return (
+                                            <button
+                                                key={p}
+                                                type="button"
+                                                onClick={() => pagination.onPageChange(p)}
+                                                className={`min-w-7 rounded-md px-2 py-1 text-xs font-medium transition ${
+                                                    isActive
+                                                        ? 'bg-purple-600 text-white'
+                                                        : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                {p}
+                                            </button>
+                                        )
+                                    })}
+
+                                    <button
+                                        type="button"
+                                        disabled={pagination.page >= pagination.totalPages}
+                                        onClick={() => pagination.onPageChange(pagination.page + 1)}
+                                        className="rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
                 <div className="flex-1">
                     {selectedJob && (
