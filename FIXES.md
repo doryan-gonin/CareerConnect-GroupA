@@ -32,7 +32,7 @@ This document details all remaining issues, architectural defects, security enha
    - [7.3 Reset Filter Action & Search Query Refresh [FIXED]](#73-reset-filter-action--search-query-refresh-fixed)
    - [7.4 Dropdown Menu Dismissal & Outside-Click Handling [FIXED]](#74-dropdown-menu-dismissal--outside-click-handling-fixed)
    - [7.5 Category Selector Dropdown [FIXED]](#75-category-selector-dropdown-fixed)
-   - [7.6 Selected Job Persistence on Query and Reset](#76-selected-job-persistence-on-query-and-reset)
+   - [7.6 Selected Job Persistence on Query and Reset [FIXED]](#76-selected-job-persistence-on-query-and-reset-fixed)
    - [7.7 Fullscreen & Dedicated Job Posting View](#77-fullscreen--dedicated-job-posting-view)
    - [7.8 Dynamic Return Order (Salary & Hours Sorting) [FIXED]](#78-dynamic-return-order-salary--hours-sorting-fixed)
    - [7.9 Top Navbar Layout & UI Consistency [FIXED]](#79-top-navbar-layout--ui-consistency-fixed)
@@ -532,7 +532,8 @@ This document details all remaining issues, architectural defects, security enha
 
 ---
 
-### 7.6 Selected Job Persistence on Query and Reset
+### 7.6 Selected Job Persistence on Query and Reset [FIXED]
+- **Status**: ✅ Fixed (Updated `handleJobsLoaded` in `JobSearchPage.jsx` to revalidate `selectedJob` against the incoming search results and automatically clear the preview and alerts if the job is no longer present, and ensured `handleReset` clears selection immediately)
 - **Issue**:
   In `JobSearchPage.jsx`, `selectedJob` is retained in component state across searches and resets. If a user selects a job posting and then runs a new search that returns different results (or clicks Reset), the details card of the previously selected job remains displayed in the right pane, despite no longer matching or being present in the current results list.
 - **Where to fix**:

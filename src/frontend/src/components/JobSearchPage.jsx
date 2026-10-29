@@ -19,6 +19,16 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard }) {
     function handleJobsLoaded(loadedJobs) {
         setJobs(loadedJobs)
         setHasLoaded(true)
+        setSelectedJob((prevSelected) => {
+            if (!prevSelected) return null
+            const stillExists = loadedJobs.find((j) => j.id === prevSelected.id)
+            if (!stillExists) {
+                setApplyError('')
+                setApplySuccess('')
+                return null
+            }
+            return stillExists
+        })
     }
 
     async function handleApply() {
@@ -64,14 +74,16 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard }) {
                             key={job.id}
                             type="button"
                             onClick={() => handleSelectJob(job)}
-                            className="group block w-100 rounded-xl border border-gray-200 bg-white p-4 text-left"
+                            className={`group block w-100 rounded-xl border p-4 text-left transition hover:border-purple-300 hover:shadow-xs ${
+                                selectedJob?.id === job.id
+                                    ? 'border-purple-500 bg-purple-50/30'
+                                    : 'border-gray-200 bg-white'
+                            }`}
                         >
                             <h2 className='group-hover:text-purple-600 group-hover:underline font-semibold'>{job.title}</h2>
                             <p>{job.company_name}</p>
                             <p>{job.job_schedule}</p>
                             <p>{job.location}</p>
-
-
                         </button>
                     ))}
                 </div>
