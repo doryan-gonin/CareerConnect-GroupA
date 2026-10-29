@@ -73,13 +73,16 @@ function LoginForm({ successMessage, onLoggedIn, onSwitchToSignup }) {
 
       <p className="text-center text-sm text-gray-600">
         Need an account?{' '}
-        <button
-          type="button"
-          onClick={onSwitchToSignup}
-          className="font-medium text-purple-600 hover:underline"
+        <a
+          href="/signup"
+          onClick={(e) => {
+            e.preventDefault()
+            onSwitchToSignup()
+          }}
+          className="font-medium text-purple-600 hover:underline cursor-pointer"
         >
           Sign up
-        </button>
+        </a>
       </p>
     </form>
   )

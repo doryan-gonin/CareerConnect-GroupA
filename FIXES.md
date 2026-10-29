@@ -37,7 +37,7 @@ This document details all remaining issues, architectural defects, security enha
    - [7.8 Dynamic Return Order (Salary & Hours Sorting) [FIXED]](#78-dynamic-return-order-salary--hours-sorting-fixed)
    - [7.9 Top Navbar Layout & UI Consistency [FIXED]](#79-top-navbar-layout--ui-consistency-fixed)
    - [7.10 Pagination & Multi-Page Search Results](#710-pagination--multi-page-search-results)
-   - [7.11 Page Separation & URL-Based Routing (/dashboard, /jobs)](#711-page-separation--url-based-routing-dashboard-jobs)
+   - [7.11 Page Separation & URL-Based Routing (/dashboard, /jobs) [FIXED]](#711-page-separation--url-based-routing-dashboard-jobs-fixed)
 
 ---
 
@@ -603,7 +603,8 @@ This document details all remaining issues, architectural defects, security enha
 
 ---
 
-### 7.11 Page Separation & URL-Based Routing (/dashboard, /jobs)
+### 7.11 Page Separation & URL-Based Routing (/dashboard, /jobs) [FIXED]
+- **Status**: ✅ Fixed (Implemented HTML5 History API path-based routing in `App.jsx` for `/dashboard`, `/jobs`, `/login`, and `/signup`, synchronized browser URL state with `pushState`/`replaceState`/`popstate`, updated navigation links across `Navbar.jsx` and `JobSearchPageNavbar.jsx`, and added route protection)
 - **Issue**:
   The frontend currently manages screens entirely via internal React state in `App.jsx` (`view === 'login' | 'signup' | 'loggedIn' | 'jobSearch'`) without updating the browser URL. The URL remains static at `/` regardless of whether the user is on the dashboard or browsing jobs. Consequently:
   1. Users cannot directly visit, share, or bookmark `/dashboard` or `/jobs`.

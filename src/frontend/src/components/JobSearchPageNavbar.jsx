@@ -133,21 +133,33 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
             <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
                 {/* Brand */}
                 <div className="flex items-center gap-2">
-                    <span className="text-xl font-bold text-gray-900">
+                    <a
+                        href="/dashboard"
+                        onClick={(e) => {
+                            if (onNavigateDashboard) {
+                                e.preventDefault()
+                                onNavigateDashboard()
+                            }
+                        }}
+                        className="text-xl font-bold text-gray-900"
+                    >
                         Career<span className="text-purple-600">Connect</span>
-                    </span>
+                    </a>
                 </div>
 
                 {/* User & Navigation */}
                 <div className="flex items-center gap-4">
                     {onNavigateDashboard && (
-                        <button
-                            type="button"
-                            onClick={onNavigateDashboard}
-                            className="text-sm font-medium text-purple-600 hover:underline"
+                        <a
+                            href="/dashboard"
+                            onClick={(e) => {
+                                e.preventDefault()
+                                onNavigateDashboard()
+                            }}
+                            className="text-sm font-medium text-purple-600 hover:underline cursor-pointer"
                         >
                             Dashboard
-                        </button>
+                        </a>
                     )}
 
                     <button
