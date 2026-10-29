@@ -33,7 +33,7 @@ This document details all remaining issues, architectural defects, security enha
    - [7.4 Dropdown Menu Dismissal & Outside-Click Handling [FIXED]](#74-dropdown-menu-dismissal--outside-click-handling-fixed)
    - [7.5 Category Selector Dropdown [FIXED]](#75-category-selector-dropdown-fixed)
    - [7.6 Selected Job Persistence on Query and Reset [FIXED]](#76-selected-job-persistence-on-query-and-reset-fixed)
-   - [7.7 Fullscreen & Dedicated Job Posting View](#77-fullscreen--dedicated-job-posting-view)
+   - [7.7 Dedicated Job Posting Page Route (/jobs/:job_id) [FIXED]](#77-dedicated-job-posting-page-route-jobsjob_id-fixed)
    - [7.8 Dynamic Return Order (Salary & Hours Sorting) [FIXED]](#78-dynamic-return-order-salary--hours-sorting-fixed)
    - [7.9 Top Navbar Layout & UI Consistency [FIXED]](#79-top-navbar-layout--ui-consistency-fixed)
    - [7.10 Pagination & Multi-Page Search Results [FIXED]](#710-pagination--multi-page-search-results-fixed)
@@ -543,15 +543,20 @@ This document details all remaining issues, architectural defects, security enha
 
 ---
 
-### 7.7 Fullscreen & Dedicated Job Posting View
+### 7.7 Dedicated Job Posting Page Route (/jobs/:job_id) [FIXED]
+- **Status**: ✅ Fixed (Implemented dedicated full-page job posting view at `siteurl/jobs/:job_id` via `JobDetailPage.jsx` and HTML5 History routing in `App.jsx`, added `getJobById` API integration, and linked both the job title and Expand button in the `JobSearchPage.jsx` preview panel to navigate to `/jobs/:id`)
 - **Issue**:
-  Job postings can only be previewed in a constrained half-width side panel. There is no fullscreen or dedicated view to inspect comprehensive details, full descriptions, requirements, and application status comfortably.
+  Job postings could only be previewed in a constrained half-width side panel. Rather than an overlay modal popup, users require a dedicated URL-addressable page at `/jobs/:job_id` so postings can be bookmarked, shared, opened directly, and navigated using browser history.
 - **Where to fix**:
+  - `src/frontend/src/api/jobs.js`
+  - `src/frontend/src/App.jsx`
+  - `src/frontend/src/components/JobDetailPage.jsx`
   - `src/frontend/src/components/JobSearchPage.jsx`
-  - Dedicated component `src/frontend/src/components/JobDetailModal.jsx` or full-page view
 - **The Fix**:
-  1. Add an "Expand" / "Fullscreen" action to the job preview panel.
-  2. Implement a full-screen modal or dedicated full-width view that shows complete job specifications, company info, salary ranges, work hours, and application submission status.
+  1. Add `getJobById(jobId)` to `src/frontend/src/api/jobs.js` fetching `GET /api/jobs/{job_id}`.
+  2. Create dedicated `JobDetailPage.jsx` component displaying complete job header, specifications grid (type, schedule, salary, hours, location, category), full description, application action with real-time feedback, and a top navigation bar with "← Back to Jobs" link.
+  3. Wire `/jobs/:job_id` routing in `App.jsx` with popstate handling and deep-linking support.
+  4. In `JobSearchPage.jsx`, update the job title and "Expand" button to navigate to `/jobs/:id`.
 
 ---
 

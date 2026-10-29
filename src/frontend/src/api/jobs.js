@@ -42,6 +42,28 @@ export async function searchJobs({ keyword, location, category, jobType, jobSche
   return body
 }
 
+export async function getJobById(jobId) {
+  let response
+  try {
+    response = await fetch(`/api/jobs/${jobId}`)
+  } catch {
+    throw new Error('Could not reach the server. Is the backend running?')
+  }
+
+  let body = null
+  try {
+    body = await response.json()
+  } catch {
+    // ignore
+  }
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(body, 'Failed to load job posting.'))
+  }
+
+  return body
+}
+
 export async function applyToJob(token, jobId, { resumeId, coverLetter } = {}) {
   let response
   try {

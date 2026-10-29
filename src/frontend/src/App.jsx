@@ -4,6 +4,7 @@ import LoginForm from './components/LoginForm'
 import SignupForm from './components/SignupForm'
 import Navbar from './components/Navbar'
 import JobSearchPage from './components/JobSearchPage'
+import JobDetailPage from './components/JobDetailPage'
 import { logoutUser } from './api/auth'
 
 const TOKEN_STORAGE_KEY = 'accessToken'
@@ -13,18 +14,23 @@ function normalizePath(pathname) {
   return cleaned === '' ? '/' : cleaned
 }
 
+function isAllowedAppPath(path) {
+  return path === '/dashboard' || path === '/jobs' || /^\/jobs\/\d+$/.test(path)
+}
+
 function App() {
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_STORAGE_KEY) || '')
+  const initialRawPath = normalizePath(window.location.pathname)
   const intendedPathRef = useRef(
-    ['/jobs', '/dashboard'].includes(normalizePath(window.location.pathname))
-      ? normalizePath(window.location.pathname)
+    isAllowedAppPath(initialRawPath)
+      ? initialRawPath
       : '/dashboard'
   )
   const [currentPath, setCurrentPath] = useState(() => {
     const initialPath = normalizePath(window.location.pathname)
     const hasToken = Boolean(localStorage.getItem(TOKEN_STORAGE_KEY))
     if (hasToken) {
-      return initialPath === '/jobs' ? '/jobs' : '/dashboard'
+      return isAllowedAppPath(initialPath) ? initialPath : '/dashboard'
     }
     return initialPath === '/signup' ? '/signup' : '/login'
   })
@@ -59,7 +65,7 @@ function App() {
           setCurrentPath('/dashboard')
           return
         }
-        setCurrentPath(nextPath === '/jobs' ? '/jobs' : '/dashboard')
+        setCurrentPath(isAllowedAppPath(nextPath) ? nextPath : '/dashboard')
       } else {
         if (nextPath !== '/signup' && nextPath !== '/login') {
           window.history.replaceState(null, '', '/login')
@@ -102,6 +108,21 @@ function App() {
     }
   }
 
+  const jobDetailMatch = currentPath.match(/^\/jobs\/(\d+)$/)
+  if (token && jobDetailMatch) {
+    const jobId = Number(jobDetailMatch[1])
+    return (
+      <JobDetailPage
+        token={token}
+        jobId={jobId}
+        onNavigateJobs={() => navigate('/jobs')}
+        onNavigateDashboard={() => navigate('/dashboard')}
+        onLogout={handleLogout}
+        isLoggingOut={isLoggingOut}
+      />
+    )
+  }
+
   if (token && currentPath === '/jobs') {
     return (
       <JobSearchPage
@@ -109,6 +130,7 @@ function App() {
         onLogout={handleLogout}
         isLoggingOut={isLoggingOut}
         onNavigateDashboard={() => navigate('/dashboard')}
+        onViewJob={(jobId) => navigate(`/jobs/${jobId}`)}
       />
     )
   }
