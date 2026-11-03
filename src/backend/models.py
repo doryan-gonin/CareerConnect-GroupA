@@ -7,7 +7,7 @@ from pydantic import EmailStr
 from sqlalchemy import UniqueConstraint
 from sqlmodel import SQLModel, Field, Relationship
 from typing import List
-from datetime import datetime
+from datetime import date, datetime
 
 # ENUMS
 
@@ -43,6 +43,16 @@ class AnalyticsGranularity(str, Enum):
     DAY = "day"
     WEEK = "week"
     MONTH = "month"
+
+class AnalyticsPoint(SQLModel):
+    period: date
+    count: int
+
+class ApplicationAnalyticsResponse(SQLModel):
+    start_date: date
+    end_date: date
+    group_by: AnalyticsGranularity
+    points: List[AnalyticsPoint]
 
 # TABLES
 
