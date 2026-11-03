@@ -7,7 +7,7 @@ import datetime
 
 from backend.main import app
 from backend.database import get_session
-from backend.models import User, Resume, Job, JobType, JobSchedule
+from backend.models import User, Resume, Job, JobType, JobSchedule, Application
 
 # Creates an in-memory DB with static pool to ensure the same connection
 sqlite_url = "sqlite://"
@@ -165,3 +165,20 @@ def inactive_job(test_user):
         session.commit()
         session.refresh(job)
         return job
+
+# --------------------------------- Analytics ----------------------------------
+@pytest.fixture
+def test_applications(test_user, test_jobs):
+    applied_jobs = []
+
+    with Session(engine) as session:
+        for i, job in enumerate(test_jobs):
+            application = Application(
+                applicant_id = test_user["id"],
+                job_id = job.id,
+                applied_at = datetime.datetime.now() - datetime.timedelta(days=i)
+                application_status = "applied"
+                resume_id = None # Hopefully that works
+                session.add(application)
+                applied_jobs.append(application)
+            )
