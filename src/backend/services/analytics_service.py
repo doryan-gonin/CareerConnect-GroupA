@@ -237,10 +237,10 @@ def compute_application_summary(
         categories[category] = categories.get(category, 0) + 1
         locations[location] = locations.get(location, 0) + 1
     category, category_count = max(
-        categories.items(), key=lambda item: (-item[1], item[0]), default=(None, 0)
+        categories.items(), key=lambda item: (item[1], item[0]), default=(None, 0)
     )
     location, location_count = max(
-        locations.items(), key=lambda item: (-item[1], item[0]), default=(None, 0)
+        locations.items(), key=lambda item: (item[1], item[0]), default=(None, 0)
     )
     
     return ApplicationSummaryResponse(

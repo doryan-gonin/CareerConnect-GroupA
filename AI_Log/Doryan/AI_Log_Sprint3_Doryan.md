@@ -83,3 +83,14 @@
 
 ---
 
+### Entry 5: Final analytics review and validation
+* **Task ID / Title**: Final analytics review and validation
+* **Purpose of AI Use**: Review / Testing / Debugging
+* **Chat Link or Prompt/Response**: Local Copilot session
+* **AI-Suggested Content**: Reviewed the analytics models, router, service computations, job-search logging, job-view logging, fixtures, and endpoint tests. Identified and corrected the application-summary ranking bug so the highest-count category/location is selected, while preserving the existing alphabetical tie-breaker.
+* **Validation**: All 9 analytics tests passed. Backend compilation and `git diff --check` also passed.
+* **Decision**: Accepted.
+* **Reflection**: The final pass confirmed that analytics are computed on request and scoped to the authenticated user. It also clarified that viewed-posting analytics count unique postings per period, while salary analytics returns count, average, minimum, maximum, and standard deviation based on salary midpoints.
+* **Responsible Person**: Doryan Gonin
+
+---
