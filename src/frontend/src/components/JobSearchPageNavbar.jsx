@@ -25,7 +25,7 @@ const SORT_OPTIONS = [
     { label: 'Fewest Hours', sortBy: 'max_hours_per_week', sortOrder: 'asc' },
 ]
 
-function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onNavigateDashboard, onReset }) {
+function JobSearchPageNavbar({ token, onLogout, isLoggingOut = false, onJobsLoaded, onNavigateDashboard, onReset }) {
     const [keyword, setKeyWord] = useState('')
     const [error, setError] = useState('')
     const [isCategoryOpen, setIsCategoryOpen] = useState(false)
@@ -117,7 +117,7 @@ function JobSearchPageNavbar({ onLogout, isLoggingOut = false, onJobsLoaded, onN
         const effectivePage = overrides.page !== undefined ? overrides.page : 1
 
         try {
-            const data = await searchJobs({
+            const data = await searchJobs(token, {
                 keyword: effectiveKeyword,
                 location: effectiveLocation,
                 category: effectiveCategory,

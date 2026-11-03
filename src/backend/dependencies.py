@@ -10,6 +10,7 @@ from backend.database import get_session
 from backend.models import User, RevokedToken
 
 bearer_scheme = HTTPBearer()
+optional_bearer_scheme = HTTPBearer(auto_error=False)
 
 def get_token_payload(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer_scheme)],
@@ -52,3 +53,25 @@ def get_current_user(
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found.")
     return user
+
+# Jobs GET endpoints can be accessed without being registered as a user
+def get_optional_current_user(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(optional_bearer_scheme)],
+    session: Annotated[Session, Depends(get_session)],
+) -> User | None:
+    if not credentials:
+        return None
+
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        jti = payload.get("jti")
+        if jti and session.exec(select(RevokedToken).where(RevokedToken.jti == jti)).first():
+            return None
+
+        user_id = payload.get("sub")
+        if user_id is not None:
+            return session.get(User, int(user_id))
+    except Exception:
+        return None
+
+    return None

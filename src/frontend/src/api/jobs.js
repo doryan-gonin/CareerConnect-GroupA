@@ -9,7 +9,7 @@ function extractErrorMessage(body, fallback) {
   return fallback
 }
 
-export async function searchJobs({ keyword, location, category, jobType, jobSchedule, sortBy, sortOrder, page, limit } = {}) {
+export async function searchJobs(token, { keyword, location, category, jobType, jobSchedule, sortBy, sortOrder, page, limit } = {}) {
   const params = new URLSearchParams()
   if (keyword) params.set('keyword', keyword)
   if (location) params.set('location', location)
@@ -23,7 +23,11 @@ export async function searchJobs({ keyword, location, category, jobType, jobSche
 
   let response
   try {
-    response = await fetch(`/api/jobs?${params.toString()}`)
+    response = await fetch(`/api/jobs?${params.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
   } catch {
     throw new Error('Could not reach the server. Is the backend running?')
   }
@@ -42,10 +46,14 @@ export async function searchJobs({ keyword, location, category, jobType, jobSche
   return body
 }
 
-export async function getJobById(jobId) {
+export async function getJobById(token, jobId) {
   let response
   try {
-    response = await fetch(`/api/jobs/${jobId}`)
+    response = await fetch(`/api/jobs/${jobId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
   } catch {
     throw new Error('Could not reach the server. Is the backend running?')
   }

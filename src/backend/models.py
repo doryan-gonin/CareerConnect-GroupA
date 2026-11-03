@@ -7,7 +7,7 @@ from pydantic import EmailStr
 from sqlalchemy import UniqueConstraint
 from sqlmodel import SQLModel, Field, Relationship
 from typing import List
-from datetime import datetime
+from datetime import date, datetime
 
 # ENUMS
 
@@ -38,6 +38,11 @@ class ApplicationStatus(str, Enum):
     INTERVIEW = "Interview"
     OFFERED = "Offered"
     REJECTED = "Rejected"
+
+class AnalyticsGranularity(str, Enum):
+    DAY = "day"
+    WEEK = "week"
+    MONTH = "month"
 
 # TABLES
 
@@ -116,6 +121,24 @@ class Application(SQLModel, table=True):
     job: Job | None = Relationship(back_populates="applications")
     applicant: User | None = Relationship(back_populates="applications")
     resume: Resume | None = Relationship()
+
+class SearchLog(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    keyword: str | None
+    location: str | None
+    category: str | None
+    job_type: JobType | None
+    job_schedule: JobSchedule | None
+    salary_min: int | None
+    result_count: int | None #Will help the AI know if the search was fruitful or not
+    searched_at: datetime = Field(default_factory=datetime.now, index=True)
+
+class JobViewLog(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    job_id: int = Field(foreign_key="job.id", index=True)
+    viewed_at: datetime = Field(default_factory=datetime.now, index=True)
 
 # REQUEST/RESPONSES SCHEMAS
 
@@ -247,3 +270,45 @@ class ApplicationDetailResponse(SQLModel):
 
 class ApplicationStatusUpdate(SQLModel):
     status: ApplicationStatus
+
+# ANALYTICS CLASSES
+
+class AnalyticsPoint(SQLModel):
+    period: date
+    count: int
+
+class ApplicationAnalyticsResponse(SQLModel):
+    start_date: date
+    end_date: date
+    group_by: AnalyticsGranularity
+    points: List[AnalyticsPoint]
+
+class SearchAnalyticsResponse(ApplicationAnalyticsResponse):
+    pass
+
+class ViewAnalyticsPoint(SQLModel):
+    period: date
+    unique_postings: int
+
+class ViewAnalyticsResponse(SQLModel):
+    start_date: date
+    end_date: date
+    group_by: AnalyticsGranularity
+    points: List[ViewAnalyticsPoint]
+
+class SalaryDistributionResponse(SQLModel):
+    start_date: date
+    end_date: date
+    salary_count: int
+    average_salary: float | None = None
+    minimum_salary: float | None = None
+    maximum_salary: float | None = None
+    standard_deviation: float | None = None
+
+class ApplicationSummaryResponse(SQLModel):
+    start_date: date
+    end_date: date
+    category: str | None = None
+    category_count: int = 0
+    location: str | None = None
+    location_count: int = 0
