@@ -44,16 +44,6 @@ class AnalyticsGranularity(str, Enum):
     WEEK = "week"
     MONTH = "month"
 
-class AnalyticsPoint(SQLModel):
-    period: date
-    count: int
-
-class ApplicationAnalyticsResponse(SQLModel):
-    start_date: date
-    end_date: date
-    group_by: AnalyticsGranularity
-    points: List[AnalyticsPoint]
-
 # TABLES
 
 class User(SQLModel, table=True):
@@ -280,3 +270,45 @@ class ApplicationDetailResponse(SQLModel):
 
 class ApplicationStatusUpdate(SQLModel):
     status: ApplicationStatus
+
+# ANALYTICS CLASSES
+
+class AnalyticsPoint(SQLModel):
+    period: date
+    count: int
+
+class ApplicationAnalyticsResponse(SQLModel):
+    start_date: date
+    end_date: date
+    group_by: AnalyticsGranularity
+    points: List[AnalyticsPoint]
+
+class SearchAnalyticsResponse(ApplicationAnalyticsResponse):
+    pass
+
+class ViewAnalyticsPoint(SQLModel):
+    period: date
+    unique_postings: int
+
+class ViewAnalyticsResponse(SQLModel):
+    start_date: date
+    end_date: date
+    group_by: AnalyticsGranularity
+    points: List[ViewAnalyticsPoint]
+
+class SalaryDistributionResponse(SQLModel):
+    start_date: date
+    end_date: date
+    salary_count: int
+    average_salary: float | None = None
+    minimum_salary: float | None = None
+    maximum_salary: float | None = None
+    standard_deviation: float | None = None
+
+class ApplicationSummaryResponse(SQLModel):
+    start_date: date
+    end_date: date
+    category: str | None = None
+    category_count: int = 0
+    location: str | None = None
+    location_count: int = 0
