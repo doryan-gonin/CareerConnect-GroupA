@@ -126,7 +126,7 @@ class SearchLog(SQLModel, table=True):
     job_type: JobType | None
     job_schedule: JobSchedule | None
     salary_min: int | None
-    result_count = int | None #Will help the AI know if the search was fruitful or not
+    result_count: int | None #Will help the AI know if the search was fruitful or not
     searched_at: datetime = Field(default_factory=datetime.now, index=True)
 
 class JobViewLog(SQLModel, table=True):
