@@ -39,6 +39,11 @@ class ApplicationStatus(str, Enum):
     OFFERED = "Offered"
     REJECTED = "Rejected"
 
+class AnalyticsGranularity(str, Enum):
+    DAY = "day"
+    WEEK = "week"
+    MONTH = "month"
+
 # TABLES
 
 class User(SQLModel, table=True):
