@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getJobById, applyToJob } from '../api/jobs'
 
 function formatSalary(min, max) {
@@ -52,14 +52,18 @@ function JobDetailPage({
   const [isApplying, setIsApplying] = useState(false)
   const [applyError, setApplyError] = useState('')
   const [applySuccess, setApplySuccess] = useState('')
+  const viewedJobIdRef = useRef(null)
 
   const job = jobState.id === jobId ? jobState.job : null
   const isLoading = jobState.id !== jobId || jobState.isLoading
   const loadError = jobState.id === jobId ? jobState.error : ''
 
   useEffect(() => {
+    if (viewedJobIdRef.current === jobId) return
+    viewedJobIdRef.current = jobId
+
     let isMounted = true
-    getJobById(jobId)
+    getJobById(token, jobId)
       .then((data) => {
         if (isMounted) {
           setJobState({ id: jobId, job: data, isLoading: false, error: '' })
