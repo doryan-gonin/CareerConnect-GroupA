@@ -45,6 +45,8 @@
 * **Reflection**: Agent tried to acces `.env` variables and provided features that broke compilation.
 * **Responsible Person**: Doryan Gonin
 
+---
+
 ### Entry 2: Debugging and fixing analytics DB issues (#111)
 * **Task ID / Title**: Debugging and fixing analytics DB issues (#111)
 * **Purpose of AI Use**: Debugging / Coding
@@ -57,4 +59,27 @@
 
 ---
 
+### Entry 3: Designing independent analytics endpoints
+* **Task ID / Title**: Designing independent analytics endpoints
+* **Purpose of AI Use**: Brainstorming / Requirements Analysis
+* **Chat Link or Prompt/Response**: Local Copilot session
+* **AI-Suggested Content**: Recommended separating analytics into independent authenticated endpoints so each dashboard widget can request its own date range and grouping. Discussed application, search, view, salary, category, and location metrics.
+* **Validation**: Manual review against the existing `Application`, `SearchLog`, and `JobViewLog` models.
+* **Decision**: Accepted with modifications.
+* **Reflection**: Independent endpoints fit the planned dashboard better than one large analytics response because each graph can use different periods and parameters.
+* **Responsible Person**: Doryan Gonin
+
+---
+
+### Entry 4: Implementing backend analytics computations
+* **Task ID / Title**: Implementing backend analytics computations
+* **Purpose of AI Use**: Coding / Documentation
+* **Chat Link or Prompt/Response**: Local Copilot session
+* **AI-Suggested Content**: Added service-layer computations and authenticated endpoints for searches, unique viewed postings, applied-job salary buckets, most-applied category, and most-common location. Added response models and shared date-period helpers.
+* **Validation**: Python compilation and git diff validation passed.
+* **Decision**: Modified before use.
+* **Reflection**: The service/router separation makes it clearer that analytics are computed only when a dashboard widget requests them. Salary buckets are useful for a frequency chart, but average, median, and spread is more adapated to salary visualization.
+* **Responsible Person**: Doryan Gonin
+
+---
 
