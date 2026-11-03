@@ -133,7 +133,7 @@ class JobViewLog(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", index=True)
     job_id: int = Field(foreign_key="job.id", index=True)
-    viewed_at: datetimdate = Field(default_factory=datetime.now, index=True)
+    viewed_at: datetime = Field(default_factory=datetime.now, index=True)
 
 # REQUEST/RESPONSES SCHEMAS
 
