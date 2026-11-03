@@ -3,11 +3,13 @@ import bcrypt
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.pool import StaticPool
-import datetime
+from datetime import datetime, timedelta
 
 from backend.main import app
 from backend.database import get_session
-from backend.models import User, Resume, Job, JobType, JobSchedule, Application
+from backend.models import JobViewLog, User, Resume, Job, JobType, JobSchedule, Application
+
+TEST_NOW = datetime(2026, 6, 15, 12, 0, 0) # Fixed datetime for testing purposes
 
 # Creates an in-memory DB with static pool to ensure the same connection
 sqlite_url = "sqlite://"
@@ -135,7 +137,7 @@ def test_jobs(test_user):
                 max_hours_per_week = 40,
                 salary_min = 50000 + i * 1000,
                 salary_max = 70000 + i * 1000,
-                posted_at = datetime.datetime.now()
+                posted_at = TEST_NOW
             )
 
             session.add(job)
@@ -169,16 +171,49 @@ def inactive_job(test_user):
 # --------------------------------- Analytics ----------------------------------
 @pytest.fixture
 def test_applications(test_user, test_jobs):
-    applied_jobs = []
-
     with Session(engine) as session:
         for i, job in enumerate(test_jobs):
             application = Application(
                 applicant_id = test_user["id"],
                 job_id = job.id,
-                applied_at = datetime.datetime.now() - datetime.timedelta(days=i)
-                application_status = "applied"
-                resume_id = None # Hopefully that works
-                session.add(application)
-                applied_jobs.append(application)
+                applied_at = TEST_NOW - timedelta(days=i),
             )
+            session.add(application)
+        session.commit()
+    return len(test_jobs)  # Return the number of applications created
+
+@pytest.fixture
+def test_searches(client, test_user, test_jobs): # We have a field keeping tracks of searches returning results (for the AI features)
+    # Since we don't have a dedicated endpoint for searches, we have to simulate it by calling GET jobs with search parameters
+    login_response = client.post("/api/auth/login", json ={"email_address": test_user["email_address"],"password": test_user["password"]})
+    assert login_response.status_code == 200
+
+    token = login_response.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    searches = [
+        {"keyword": "Title 1"},
+        {"keyword": "Title 2"},
+        {"location": "Toronto"},
+        {"category": "Engineering"},
+        {"job_type": "Permanent"},
+    ]
+
+    for search_params in searches:
+        response = client.get("/api/jobs", params=search_params, headers=headers)
+        assert response.status_code == 200
+
+    return len(searches)  # Return the number of searches made
+
+@pytest.fixture
+def test_views(test_user, test_jobs):
+    with Session(engine) as session:
+        for job in test_jobs:
+            job_view = JobViewLog(
+                user_id = test_user["id"],
+                job_id = job.id,
+                viewed_at = TEST_NOW
+            )
+            session.add(job_view)
+        session.commit()
+    return len(test_jobs)  # Return the number of views logged
