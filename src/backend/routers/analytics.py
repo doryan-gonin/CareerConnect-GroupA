@@ -29,7 +29,7 @@ router = APIRouter(tags=["Analytics"])
 def validate_dates(start_date: date, end_date: date) -> None:
     if start_date > end_date:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="start_date must be on or before end_date.",
         )
 
