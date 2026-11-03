@@ -117,6 +117,24 @@ class Application(SQLModel, table=True):
     applicant: User | None = Relationship(back_populates="applications")
     resume: Resume | None = Relationship()
 
+class SearchLog(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    keyword: str | None
+    location: str | None
+    category: str | None
+    job_type: JobType | None
+    job_schedule: JobSchedule | None
+    salary_min: int | None
+    result_count = int | None #Will help the AI know if the search was fruitful or not
+    searched_at: datetime = Field(default_factory=datetime.now, index=True)
+
+class JobViewLog(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    job_id: int = Field(foreign_key="job.id", index=True)
+    viewed_at: datetimdate = Field(default_factory=datetime.now, index=True)
+
 # REQUEST/RESPONSES SCHEMAS
 
 class UserCreate(SQLModel):
