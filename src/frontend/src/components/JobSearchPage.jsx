@@ -59,6 +59,7 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
     return (
         <div className="min-h-screen bg-gray-50 text-gray-900">
             <JobSearchPageNavbar
+                token={token}
                 onJobsLoaded={handleJobsLoaded}
                 onReset={handleReset}
                 onLogout={onLogout}
