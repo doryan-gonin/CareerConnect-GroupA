@@ -15,6 +15,7 @@ src/frontend/.next/
 
 # Environment variables
 .env
+src/frontend/.env.development
 
 # Uploads folder for storing resumes
 uploads/

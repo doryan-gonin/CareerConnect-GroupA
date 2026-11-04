@@ -1,3 +1,5 @@
+import { API_BASE_URL } from './client'
+
 // Handles API communication for user profiles and resume management.
 
 function extractErrorMessage(body, fallback) {
@@ -12,7 +14,7 @@ function extractErrorMessage(body, fallback) {
 export async function getProfile(token) {
   let response
   try {
-    response = await fetch('/api/profiles/me', {
+    response = await fetch(`${API_BASE_URL}/api/profiles/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -38,7 +40,7 @@ export async function getProfile(token) {
 export async function updateProfile(token, { firstName, lastName }) {
   let response
   try {
-    response = await fetch('/api/profiles/me', {
+    response = await fetch(`${API_BASE_URL}/api/profiles/me`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -70,7 +72,7 @@ export async function updateProfile(token, { firstName, lastName }) {
 export async function getResumes(token) {
   let response
   try {
-    response = await fetch('/api/profiles/me/resumes', {
+    response = await fetch(`${API_BASE_URL}/api/profiles/me/resumes`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -97,7 +99,7 @@ export async function uploadResume(token, file, makeDefault = false) {
   const formData = new FormData()
   formData.append('file', file)
 
-  const url = `/api/profiles/me/resumes?make_default=${Boolean(makeDefault)}`
+  const url = `${API_BASE_URL}/api/profiles/me/resumes?make_default=${Boolean(makeDefault)}`
 
   let response
   try {
@@ -129,7 +131,7 @@ export async function uploadResume(token, file, makeDefault = false) {
 export async function setDefaultResume(token, resumeId) {
   let response
   try {
-    response = await fetch(`/api/profiles/me/resumes/${resumeId}/default`, {
+    response = await fetch(`${API_BASE_URL}/api/profiles/me/resumes/${resumeId}/default`, {
       method: 'PATCH',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -156,7 +158,7 @@ export async function setDefaultResume(token, resumeId) {
 export async function downloadResume(token, resumeId, fileName = 'resume.pdf') {
   let response
   try {
-    response = await fetch(`/api/profiles/me/resumes/${resumeId}`, {
+    response = await fetch(`${API_BASE_URL}/api/profiles/me/resumes/${resumeId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -189,7 +191,7 @@ export async function downloadResume(token, resumeId, fileName = 'resume.pdf') {
 export async function deleteResume(token, resumeId) {
   let response
   try {
-    response = await fetch(`/api/profiles/me/resumes/${resumeId}`, {
+    response = await fetch(`${API_BASE_URL}/api/profiles/me/resumes/${resumeId}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`,
