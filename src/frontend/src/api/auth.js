@@ -1,3 +1,5 @@
+import { API_BASE_URL } from './client'
+
 // Turns a FastAPI error body into one readable string.
 // - Most errors look like { detail: "Some message." }
 // - Validation errors (422) look like { detail: [{ msg: "...", ... }, ...] }
@@ -37,14 +39,14 @@ async function postJson(path, payload) {
 }
 
 export function registerUser(emailAddress, password) {
-  return postJson('/api/auth/register', {
+  return postJson(`${API_BASE_URL}/api/auth/register`, {
     email_address: emailAddress,
     password,
   })
 }
 
 export function loginUser(emailAddress, password) {
-  return postJson('/api/auth/login', {
+  return postJson(`${API_BASE_URL}/api/auth/login`, {
     email_address: emailAddress,
     password,
   })
@@ -53,7 +55,7 @@ export function loginUser(emailAddress, password) {
 export async function logoutUser(token) {
   if (!token) return
   try {
-    await fetch('/api/auth/logout', {
+    await fetch(`${API_BASE_URL}/api/auth/logout`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

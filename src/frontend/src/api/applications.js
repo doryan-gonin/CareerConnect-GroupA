@@ -1,3 +1,5 @@
+import { API_BASE_URL } from './client'
+
 // Handles API communication for a job seeker's own applications.
 
 function extractErrorMessage(body, fallback) {
@@ -11,8 +13,8 @@ function extractErrorMessage(body, fallback) {
 
 export async function getMyApplications(token, statusFilter) {
   const url = statusFilter
-    ? `/api/applications/me?status=${encodeURIComponent(statusFilter)}`
-    : '/api/applications/me'
+    ? `${API_BASE_URL}/api/applications/me?status=${encodeURIComponent(statusFilter)}`
+    : `${API_BASE_URL}/api/applications/me`
 
   let response
   try {
@@ -42,7 +44,7 @@ export async function getMyApplications(token, statusFilter) {
 export async function withdrawApplication(token, applicationId) {
   let response
   try {
-    response = await fetch(`/api/applications/${applicationId}`, {
+    response = await fetch(`${API_BASE_URL}/api/applications/${applicationId}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`,

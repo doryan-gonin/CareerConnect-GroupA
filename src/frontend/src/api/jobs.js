@@ -1,3 +1,5 @@
+import { API_BASE_URL } from './client'
+
 // Handles API communication for browsing and applying to job postings.
 
 function extractErrorMessage(body, fallback) {
@@ -23,7 +25,7 @@ export async function searchJobs(token, { keyword, location, category, jobType, 
 
   let response
   try {
-    response = await fetch(`/api/jobs?${params.toString()}`, {
+    response = await fetch(`${API_BASE_URL}/api/jobs?${params.toString()}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -49,7 +51,7 @@ export async function searchJobs(token, { keyword, location, category, jobType, 
 export async function getJobById(token, jobId) {
   let response
   try {
-    response = await fetch(`/api/jobs/${jobId}`, {
+    response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -75,7 +77,7 @@ export async function getJobById(token, jobId) {
 export async function applyToJob(token, jobId, { resumeId, coverLetter } = {}) {
   let response
   try {
-    response = await fetch(`/api/jobs/${jobId}/apply`, {
+    response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}/apply`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
