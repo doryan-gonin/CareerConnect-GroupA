@@ -5,19 +5,27 @@ from sqlalchemy.engine import Engine
 
 from backend.config import DATABASE_URL
 
-# Normalize database URL if provider uses legacy 'postgres://' format
 url = DATABASE_URL
 if url.startswith("postgres://"):
     url = url.replace("postgres://", "postgresql://", 1)
 
-# Apply SQLite-specific arguments ONLY when running against SQLite
+# Ensure SSL mode is enabled for remote cloud PostgreSQL (Neon)
+if not url.startswith("sqlite") and "sslmode" not in url:
+    separator = "&" if "?" in url else "?"
+    url = f"{url}{separator}sslmode=require"
+
 is_sqlite = url.startswith("sqlite")
 connect_args = {"check_same_thread": False} if is_sqlite else {}
 
-# Initialize database engine dynamically
-engine: Engine = create_engine(url, echo=False, connect_args=connect_args)
+# pool_pre_ping=True tests connections before executing queries to prevent SSL disconnect errors
+engine: Engine = create_engine(
+    url,
+    echo=False,
+    connect_args=connect_args,
+    pool_pre_ping=True,
+    pool_recycle=300  # Recycles connections every 5 minutes
+)
 
-# Enable foreign keys dynamically ONLY when connected to a SQLite database
 if is_sqlite:
     @event.listens_for(engine, "connect")
     def set_sqlite_pragma(dbapi_connection, connection_record):
@@ -25,9 +33,8 @@ if is_sqlite:
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
 
-# Create tables in database if they do not exist already
 def init_db():
-    from backend import models  # Register models before metadata creation
+    from backend import models
     SQLModel.metadata.create_all(engine)
 
 def get_session():
