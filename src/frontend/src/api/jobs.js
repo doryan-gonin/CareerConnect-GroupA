@@ -48,15 +48,17 @@ export async function searchJobs(token, { keyword, location, category, jobType, 
   return body
 }
 
-export async function getJobById(token, jobId) {
+export async function getJobById(token, jobId, signal) {
   let response
   try {
     response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      signal,
     })
-  } catch {
+  } catch (err) {
+    if (err.name === 'AbortError') throw err
     throw new Error('Could not reach the server. Is the backend running?')
   }
 
