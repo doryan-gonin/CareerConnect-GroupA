@@ -94,3 +94,15 @@
 * **Responsible Person**: Doryan Gonin
 
 ---
+
+### Entry 6: General Deployment Help and Guidance
+* **Task ID / Title**: General Deployment Help and Guidance
+* **Purpose of AI Use**: Brainstorming / Requirements Analysis / Coding
+* **Chat Link or Prompt/Response**: Local session
+* **AI-Suggested Content**: Provided guidance on deployment strategies, including Dockerization, cloud hosting, free hosting options, code modifications to align with host changes ...
+* **Validation**: Couldn't be validated, the "free" hosts and suggested requirements were wrong and/or outdated.
+* **Decision**: Rejected.
+* **Reflection**: The AI provided some useful guidance on deployment strategies, but the information was outdated and not applicable to our project. Everything had to be reworked to align with the limited free options available.
+* **Responsible Person**: Doryan Gonin
+
+---
