@@ -43,7 +43,7 @@ def update_profile(payload: ProfileUpdate, current_user: Annotated[User, Depends
     if payload.last_name is not None:
         profile.last_name = payload.last_name
 
-    profile.last_updated = datetime.now()
+    profile.last_updated = datetime.now(timezone.utc)
 
     session.commit()
     session.refresh(profile)
