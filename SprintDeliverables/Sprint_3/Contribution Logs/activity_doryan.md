@@ -4,7 +4,7 @@
 * **Role**: ScrumMaster - Documentation - Testing - Backend
 * **Project**: CareerConnect (SOEN 341 - Fall 2026)
 * **Sprint**: Sprint 3
-* **Time Spent**: 16h50
+* **Time Spent**: 17h30
 
 ---
 
@@ -24,3 +24,4 @@
 | **11** | **Initial deployment attempt** (Vercel & HF) [FAILED] <br> - Rewrote frontend endpoints to allow remote deployment <br> - Configured prod env variables <br> - Updated CORS and added Uvicorn startup script <br> - ~~Added Dockerfile and YAML config file for HF~~ <br> - ~~Test deployed frontend on Vercel (no free support for path rewrites)~~ <br> - ~~Tried to deploy backend on HF (free plan doesn't support Docker and AI model hosting anymore)~~   | 2 hr       | [`e8e9520`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/e8e9520) <br> to <br> [`a721ab2`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/a721ab2) | #119 | #117 <br> #118 | 04/11/26 |
 | **12** | **Correct Deployment** (Render and Neon) (see #120 for more info) <br> - Cleaned up stale configs <br> - Migrated DB to PostgreSQL so it could be hosted online (on Neon) <br> - Created Render static site for frontend <br> - Created Render web service for backend <br> - Connected DB, backend, frontend with paths as environment variables <br> - Set-up autodeploy | 5 hr | [`695e6cc`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/695e6cc) <br> to <br> [`7426855`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/7426855) | #123 <br> to <br> #126 | #120 | 04/11/26 |
 | **13** | Update relevant issues, project board, and contribution logs | 1 hr | Project | | | 04/11/26
+| **14** | **Analytics backend fixes** <br> - Stop countint empty searches <br> - Refactor frontend endpoints to count job views even when not expanded | 45 min | [`01a0471`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/01a0471) <br> [`bc6e9e5`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/bc6e9e5) | #128 | #127 | 05/11/26
