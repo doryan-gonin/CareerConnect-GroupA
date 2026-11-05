@@ -7,7 +7,7 @@ from pydantic import EmailStr
 from sqlalchemy import UniqueConstraint
 from sqlmodel import SQLModel, Field, Relationship
 from typing import List
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 # ENUMS
 
@@ -50,7 +50,7 @@ class User(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     email_address: EmailStr = Field(unique=True, index=True, nullable=False)
     password_hash: str = Field(nullable=False)
-    created_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     failed_attempts: int = Field(default=0)
     locked_until: datetime | None = Field(default=None)
 
