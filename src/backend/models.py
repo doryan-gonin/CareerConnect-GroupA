@@ -80,7 +80,7 @@ class Resume(SQLModel, table=True):
     file_name: str # Original filename
     file_path: str # Path on disk
     is_default: bool = Field(default=False)
-    uploaded_at: datetime = Field(default_factory=datetime.now)
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     user: User | None = Relationship(back_populates="resumes")
 
@@ -100,7 +100,7 @@ class Job(SQLModel, table=True):
     salary_min: int | None = Field(default=None)
     salary_max: int | None = Field(default=None)
     is_active: bool = Field(default=True, index=True)
-    posted_at: datetime = Field(default_factory=datetime.now)
+    posted_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     recruiter: User | None = Relationship(back_populates="posted_jobs")
     applications: List["Application"] = Relationship(back_populates="job")
@@ -115,7 +115,7 @@ class Application(SQLModel, table=True):
     resume_id: int | None = Field(default=None, foreign_key="resume.id", index=True)
     cover_letter: str | None = Field(default=None)
     status: ApplicationStatus = Field(default=ApplicationStatus.APPLIED, index=True, nullable=False)
-    applied_at: datetime = Field(default_factory=datetime.now)
+    applied_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime | None = Field(default=None)
 
     job: Job | None = Relationship(back_populates="applications")
@@ -132,13 +132,13 @@ class SearchLog(SQLModel, table=True):
     job_schedule: JobSchedule | None
     salary_min: int | None
     result_count: int | None #Will help the AI know if the search was fruitful or not
-    searched_at: datetime = Field(default_factory=datetime.now, index=True)
+    searched_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
 
 class JobViewLog(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", index=True)
     job_id: int = Field(foreign_key="job.id", index=True)
-    viewed_at: datetime = Field(default_factory=datetime.now, index=True)
+    viewed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
 
 # REQUEST/RESPONSES SCHEMAS
 

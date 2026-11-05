@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated, List
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session, select, col
@@ -173,7 +173,7 @@ def update_application_status(
         )
 
     application.status = payload.status
-    application.updated_at = datetime.now()
+    application.updated_at = datetime.now(timezone.utc)
     session.add(application)
     session.commit()
     session.refresh(application)
