@@ -177,8 +177,13 @@ def get_job_by_id(
             detail="Job posting not found.",
         )
 
-    # Record job view for authenticated users
-    if current_user:
+    # Record only the first view for each authenticated user/job pair.
+    if current_user and not session.exec(
+        select(JobViewLog).where(
+            JobViewLog.user_id == current_user.id,
+            JobViewLog.job_id == job.id,
+        )
+    ).first():
         view_log = JobViewLog(
             user_id=current_user.id,
             job_id=job.id,
@@ -187,6 +192,31 @@ def get_job_by_id(
         session.commit()
 
     return job
+
+
+@router.post("/{job_id}/view", status_code=status.HTTP_204_NO_CONTENT)
+def record_job_view(
+    job_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    """Record the first view of an active job for the current user."""
+    job = session.get(Job, job_id)
+    if not job or not job.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job posting not found.",
+        )
+
+    existing_view = session.exec(
+        select(JobViewLog).where(
+            JobViewLog.user_id == current_user.id,
+            JobViewLog.job_id == job.id,
+        )
+    ).first()
+    if not existing_view:
+        session.add(JobViewLog(user_id=current_user.id, job_id=job.id))
+        session.commit()
 
 
 @router.post("", response_model=JobResponse, status_code=status.HTTP_201_CREATED)
