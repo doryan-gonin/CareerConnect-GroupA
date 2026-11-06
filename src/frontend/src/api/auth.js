@@ -63,3 +63,29 @@ export async function logoutUser(token) {
     // Silently handle network errors so client logout isn't blocked
   }
 }
+
+export async function getCurrentUser(token) {
+  let response
+
+  try {
+    response = await fetch('/api/auth/me', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  } catch {
+    throw new Error('Could not reach the server.')
+  }
+
+  const body = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(
+      typeof body?.detail === 'string'
+        ? body.detail
+        : 'Failed to load account information.'
+    )
+  }
+
+  return body
+}
