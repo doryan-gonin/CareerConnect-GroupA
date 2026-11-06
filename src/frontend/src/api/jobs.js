@@ -76,6 +76,24 @@ export async function getJobById(token, jobId, signal) {
   return body
 }
 
+export async function recordJobView(token, jobId) {
+  let response
+  try {
+    response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}/view`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  } catch {
+    throw new Error('Could not reach the server. Is the backend running?')
+  }
+
+  if (!response.ok) {
+    throw new Error('Failed to record job view.')
+  }
+}
+
 export async function applyToJob(token, jobId, { resumeId, coverLetter } = {}) {
   let response
   try {

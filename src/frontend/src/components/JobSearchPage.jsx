@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import JobSearchPageNavbar from './JobSearchPageNavbar'
-import { applyToJob } from '../api/jobs'
+import { applyToJob, recordJobView } from '../api/jobs'
 
 function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onViewJob }) {
     const [jobs, setJobs] = useState([])
@@ -15,6 +15,7 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
         setSelectedJob(job)
         setApplyError('')
         setApplySuccess('')
+        recordJobView(token, job.id).catch(() => {})
     }
 
     function handleJobsLoaded(loadedJobs, paginationInfo) {
@@ -222,4 +223,3 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
 }
 
 export default JobSearchPage
-
