@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { getJobById, applyToJob } from '../api/jobs'
 
 function formatSalary(min, max) {
@@ -52,33 +52,27 @@ function JobDetailPage({
   const [isApplying, setIsApplying] = useState(false)
   const [applyError, setApplyError] = useState('')
   const [applySuccess, setApplySuccess] = useState('')
-  const viewedJobIdRef = useRef(null)
-
   const job = jobState.id === jobId ? jobState.job : null
   const isLoading = jobState.id !== jobId || jobState.isLoading
   const loadError = jobState.id === jobId ? jobState.error : ''
 
   useEffect(() => {
-    if (viewedJobIdRef.current === jobId) return
-    viewedJobIdRef.current = jobId
+    const controller = new AbortController()
 
-    let isMounted = true
-    getJobById(token, jobId)
+    getJobById(token, jobId, controller.signal)
       .then((data) => {
-        if (isMounted) {
-          setJobState({ id: jobId, job: data, isLoading: false, error: '' })
-        }
+        setJobState({ id: jobId, job: data, isLoading: false, error: '' })
       })
       .catch((err) => {
-        if (isMounted) {
+        if (err.name !== 'AbortError') {
           setJobState({ id: jobId, job: null, isLoading: false, error: err.message })
         }
       })
 
     return () => {
-      isMounted = false
+      controller.abort()
     }
-  }, [jobId])
+  }, [token, jobId])
 
   async function handleApply() {
     if (!job) return

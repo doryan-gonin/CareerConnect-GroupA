@@ -147,8 +147,9 @@ def list_jobs(
             salary_min=min_salary,
             result_count=total_count,
         )
-        session.add(search_log)
-        session.commit()
+        if(any([keyword, location, category, job_type, job_schedule, min_salary])):
+            session.add(search_log)
+            session.commit()
 
     return JobListResponse(
         jobs=list(jobs),
