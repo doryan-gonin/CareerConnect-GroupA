@@ -93,13 +93,16 @@ function SignupForm({ onSignedUp, onSwitchToLogin }) {
 
       <p className="text-center text-sm text-gray-600">
         Already have an account?{' '}
-        <button
-          type="button"
-          onClick={onSwitchToLogin}
-          className="font-medium text-purple-600 hover:underline"
+        <a
+          href="/login"
+          onClick={(e) => {
+            e.preventDefault()
+            onSwitchToLogin()
+          }}
+          className="font-medium text-purple-600 hover:underline cursor-pointer"
         >
           Log in
-        </button>
+        </a>
       </p>
     </form>
   )

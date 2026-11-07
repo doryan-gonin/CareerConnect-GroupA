@@ -7,7 +7,7 @@ from pydantic import EmailStr
 from sqlalchemy import UniqueConstraint
 from sqlmodel import SQLModel, Field, Relationship
 from typing import List
-from datetime import datetime
+from datetime import date, datetime, timezone
 
 # ENUMS
 
@@ -39,13 +39,18 @@ class ApplicationStatus(str, Enum):
     OFFERED = "Offered"
     REJECTED = "Rejected"
 
+class AnalyticsGranularity(str, Enum):
+    DAY = "day"
+    WEEK = "week"
+    MONTH = "month"
+
 # TABLES
 
 class User(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     email_address: EmailStr = Field(unique=True, index=True, nullable=False)
     password_hash: str = Field(nullable=False)
-    created_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     failed_attempts: int = Field(default=0)
     locked_until: datetime | None = Field(default=None)
 
@@ -75,7 +80,7 @@ class Resume(SQLModel, table=True):
     file_name: str # Original filename
     file_path: str # Path on disk
     is_default: bool = Field(default=False)
-    uploaded_at: datetime = Field(default_factory=datetime.now)
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     user: User | None = Relationship(back_populates="resumes")
 
@@ -95,7 +100,7 @@ class Job(SQLModel, table=True):
     salary_min: int | None = Field(default=None)
     salary_max: int | None = Field(default=None)
     is_active: bool = Field(default=True, index=True)
-    posted_at: datetime = Field(default_factory=datetime.now)
+    posted_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     recruiter: User | None = Relationship(back_populates="posted_jobs")
     applications: List["Application"] = Relationship(back_populates="job")
@@ -110,12 +115,30 @@ class Application(SQLModel, table=True):
     resume_id: int | None = Field(default=None, foreign_key="resume.id", index=True)
     cover_letter: str | None = Field(default=None)
     status: ApplicationStatus = Field(default=ApplicationStatus.APPLIED, index=True, nullable=False)
-    applied_at: datetime = Field(default_factory=datetime.now)
+    applied_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime | None = Field(default=None)
 
     job: Job | None = Relationship(back_populates="applications")
     applicant: User | None = Relationship(back_populates="applications")
     resume: Resume | None = Relationship()
+
+class SearchLog(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    keyword: str | None
+    location: str | None
+    category: str | None
+    job_type: JobType | None
+    job_schedule: JobSchedule | None
+    salary_min: int | None
+    result_count: int | None #Will help the AI know if the search was fruitful or not
+    searched_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+
+class JobViewLog(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    job_id: int = Field(foreign_key="job.id", index=True)
+    viewed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
 
 # REQUEST/RESPONSES SCHEMAS
 
@@ -247,3 +270,45 @@ class ApplicationDetailResponse(SQLModel):
 
 class ApplicationStatusUpdate(SQLModel):
     status: ApplicationStatus
+
+# ANALYTICS CLASSES
+
+class AnalyticsPoint(SQLModel):
+    period: date
+    count: int
+
+class ApplicationAnalyticsResponse(SQLModel):
+    start_date: date
+    end_date: date
+    group_by: AnalyticsGranularity
+    points: List[AnalyticsPoint]
+
+class SearchAnalyticsResponse(ApplicationAnalyticsResponse):
+    pass
+
+class ViewAnalyticsPoint(SQLModel):
+    period: date
+    unique_postings: int
+
+class ViewAnalyticsResponse(SQLModel):
+    start_date: date
+    end_date: date
+    group_by: AnalyticsGranularity
+    points: List[ViewAnalyticsPoint]
+
+class SalaryDistributionResponse(SQLModel):
+    start_date: date
+    end_date: date
+    salary_count: int
+    average_salary: float | None = None
+    minimum_salary: float | None = None
+    maximum_salary: float | None = None
+    standard_deviation: float | None = None
+
+class ApplicationSummaryResponse(SQLModel):
+    start_date: date
+    end_date: date
+    category: str | None = None
+    category_count: int = 0
+    location: str | None = None
+    location_count: int = 0

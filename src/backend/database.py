@@ -1,26 +1,40 @@
-# SQLITE DATABASE ENGINE
-
+import os
 from sqlmodel import SQLModel, create_engine, Session
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
-from sqlite3 import Connection
 
 from backend.config import DATABASE_URL
 
-# echo prints sql statements to standard output, turn it on for debugging, otherwise leave it off.
-# Leave "check_same_thread" to false, SQLite needs it to allow multiple threads to interact with the db.
-engine: Engine = create_engine(DATABASE_URL, echo=False, connect_args={"check_same_thread": False})
+url = DATABASE_URL
+if url.startswith("postgres://"):
+    url = url.replace("postgres://", "postgresql://", 1)
 
-# Enable foreign keys on db
-@event.listens_for(Engine, "connect")
-def set_sqlite_pragma(dbapi_connection: Connection, connection_record):
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.close()
+# Ensure SSL mode is enabled for remote cloud PostgreSQL (Neon)
+if not url.startswith("sqlite") and "sslmode" not in url:
+    separator = "&" if "?" in url else "?"
+    url = f"{url}{separator}sslmode=require"
 
-# Create tables in database if they do not exist already.
+is_sqlite = url.startswith("sqlite")
+connect_args = {"check_same_thread": False} if is_sqlite else {}
+
+# pool_pre_ping=True tests connections before executing queries to prevent SSL disconnect errors
+engine: Engine = create_engine(
+    url,
+    echo=False,
+    connect_args=connect_args,
+    pool_pre_ping=True,
+    pool_recycle=300  # Recycles connections every 5 minutes
+)
+
+if is_sqlite:
+    @event.listens_for(engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
 def init_db():
-    from backend import models # Importing models here ensures the models are registered before the tables are created
+    from backend import models
     SQLModel.metadata.create_all(engine)
 
 def get_session():

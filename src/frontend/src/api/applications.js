@@ -1,60 +1,68 @@
+import { API_BASE_URL } from './client'
 
-export async function submitApplication(token, jobId, resumeId) {
+// Handles API communication for a job seeker's own applications.
+
+function extractErrorMessage(body, fallback) {
+  const detail = body?.detail
+  if (typeof detail === 'string') return detail
+  if (Array.isArray(detail)) {
+    return detail.map((item) => item.msg).join(' ')
+  }
+  return fallback
+}
+
+export async function getMyApplications(token, statusFilter) {
+  const url = statusFilter
+    ? `${API_BASE_URL}/api/applications/me?status=${encodeURIComponent(statusFilter)}`
+    : `${API_BASE_URL}/api/applications/me`
+
   let response
-
   try {
-    response = await fetch(`/api/jobs/${jobId}/apply`, {
-      method: 'POST',
+    response = await fetch(url, {
       headers: {
-        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        resume_id: resumeId,
-      }),
     })
   } catch {
     throw new Error('Could not reach the server. Is the backend running?')
   }
 
   let body = null
-
   try {
     body = await response.json()
   } catch {
-    // Ignore invalid or empty JSON responses
+    // ignore
   }
 
   if (!response.ok) {
-    const detail = body?.detail
+    throw new Error(extractErrorMessage(body, 'Failed to load applications.'))
+  }
 
-    if (typeof detail === 'string') {
-      throw new Error(detail)
+  return body || []
+}
+
+export async function withdrawApplication(token, applicationId) {
+  let response
+  try {
+    response = await fetch(`${API_BASE_URL}/api/applications/${applicationId}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  } catch {
+    throw new Error('Could not reach the server. Is the backend running?')
+  }
+
+  if (!response.ok) {
+    let body = null
+    try {
+      body = await response.json()
+    } catch {
+      // ignore
     }
-
-    throw new Error('Failed to submit application.')
+    throw new Error(extractErrorMessage(body, 'Failed to withdraw application.'))
   }
 
-  return body
+  return true
 }
-
-export async function getMyApplications(token) {
-  const response = await fetch('/api/applications/me', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  })
-
-  const data = await response.json().catch(() => null)
-
-  if (!response.ok) {
-    throw new Error(
-      typeof data?.detail === 'string'
-        ? data.detail
-        : 'Failed to retrieve applications.'
-    )
-  }
-
-  return data
-}
-

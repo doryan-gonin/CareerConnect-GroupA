@@ -20,8 +20,10 @@ from backend.models import (
     ApplicationStatus,
     ApplicationCreate,
     ApplicationResponse,
+    SearchLog,
+    JobViewLog,
 )
-from backend.dependencies import get_current_user
+from backend.dependencies import get_current_user, get_optional_current_user
 
 router = APIRouter(tags=["Jobs"])
 
@@ -40,6 +42,7 @@ def list_jobs(
     limit: int = Query(default=20, ge=1, le=100, description="Items per page"),
     sort_by: JobSortBy = Query(default=JobSortBy.POSTED_AT, description="Field to sort by (e.g. posted_at, salary)"),
     sort_order: JobSortOrder = Query(default=JobSortOrder.DESC, description="Sort order: asc or desc"),
+    current_user: Annotated[User | None, Depends(get_optional_current_user)] = None,
 ):
     """
     Search and filter active job opportunities with pagination.
@@ -132,6 +135,22 @@ def list_jobs(
 
     total_pages = math.ceil(total_count / limit) if total_count > 0 else 0
 
+    # Data Harvesting: only log the search query for authenticated users on page 1
+    if current_user and page == 1:
+        search_log = SearchLog(
+            user_id=current_user.id,
+            keyword=keyword.strip() if keyword else None,
+            location=location.strip() if location else None,
+            category=category.strip() if category else None,
+            job_type=job_type,
+            job_schedule=job_schedule,
+            salary_min=min_salary,
+            result_count=total_count,
+        )
+        if(any([keyword, location, category, job_type, job_schedule, min_salary])):
+            session.add(search_log)
+            session.commit()
+
     return JobListResponse(
         jobs=list(jobs),
         total=total_count,
@@ -142,7 +161,11 @@ def list_jobs(
 
 
 @router.get("/{job_id}", response_model=JobResponse)
-def get_job_by_id(job_id: int, session: Annotated[Session, Depends(get_session)]):
+def get_job_by_id(
+    job_id: int,
+    session: Annotated[Session, Depends(get_session)],
+    current_user: Annotated[User | None, Depends(get_optional_current_user)] = None,
+):
     """
     Fetch complete details for a single job posting.
     Returns 404 if not found or inactive.
@@ -153,7 +176,47 @@ def get_job_by_id(job_id: int, session: Annotated[Session, Depends(get_session)]
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Job posting not found.",
         )
+
+    # Record only the first view for each authenticated user/job pair.
+    if current_user and not session.exec(
+        select(JobViewLog).where(
+            JobViewLog.user_id == current_user.id,
+            JobViewLog.job_id == job.id,
+        )
+    ).first():
+        view_log = JobViewLog(
+            user_id=current_user.id,
+            job_id=job.id,
+        )
+        session.add(view_log)
+        session.commit()
+
     return job
+
+
+@router.post("/{job_id}/view", status_code=status.HTTP_204_NO_CONTENT)
+def record_job_view(
+    job_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    """Record the first view of an active job for the current user."""
+    job = session.get(Job, job_id)
+    if not job or not job.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job posting not found.",
+        )
+
+    existing_view = session.exec(
+        select(JobViewLog).where(
+            JobViewLog.user_id == current_user.id,
+            JobViewLog.job_id == job.id,
+        )
+    ).first()
+    if not existing_view:
+        session.add(JobViewLog(user_id=current_user.id, job_id=job.id))
+        session.commit()
 
 
 @router.post("", response_model=JobResponse, status_code=status.HTTP_201_CREATED)
