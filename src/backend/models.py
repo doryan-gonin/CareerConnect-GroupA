@@ -39,6 +39,12 @@ class ApplicationStatus(str, Enum):
     OFFERED = "Offered"
     REJECTED = "Rejected"
 
+class NotificationType(str, Enum):
+    STATUS_UPDATE = "status_update"
+    INTERVIEW_INVITATION = "interview_invitation"
+    APPLICATION_RECEIVED = "application_received"
+    SYSTEM = "system"
+
 class AnalyticsGranularity(str, Enum):
     DAY = "day"
     WEEK = "week"
@@ -58,6 +64,7 @@ class User(SQLModel, table=True):
     resumes: List[Resume] = Relationship(back_populates="user")
     posted_jobs: List["Job"] = Relationship(back_populates="recruiter")
     applications: List["Application"] = Relationship(back_populates="applicant")
+    notifications: List["Notification"] = Relationship(back_populates="user")
 
 
 class Profile(SQLModel, table=True):
@@ -139,6 +146,19 @@ class JobViewLog(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", index=True)
     job_id: int = Field(foreign_key="job.id", index=True)
     viewed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+
+class Notification(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True, nullable=False)
+    title: str = Field(nullable=False)
+    message: str = Field(nullable=False)
+    notification_type: NotificationType = Field(default=NotificationType.STATUS_UPDATE, index=True)
+    is_read: bool = Field(default=False, index=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+    reference_id: int | None = Field(default=None)
+    reference_type: str | None = Field(default=None)
+
+    user: User | None = Relationship(back_populates="notifications")
 
 # REQUEST/RESPONSES SCHEMAS
 
@@ -312,3 +332,21 @@ class ApplicationSummaryResponse(SQLModel):
     category_count: int = 0
     location: str | None = None
     location_count: int = 0
+
+# NOTIFICATION SCHEMAS
+
+class NotificationResponse(SQLModel):
+    id: int
+    user_id: int
+    title: str
+    message: str
+    notification_type: NotificationType
+    is_read: bool
+    created_at: datetime
+    reference_id: int | None = None
+    reference_type: str | None = None
+
+class NotificationListResponse(SQLModel):
+    total_count: int
+    unread_count: int
+    notifications: List[NotificationResponse]
