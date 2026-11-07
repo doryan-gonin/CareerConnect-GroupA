@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getJobById, applyToJob } from '../api/jobs'
+import ApplicationForm from './ApplicationForm'
 
 function formatSalary(min, max) {
   if (min && max) {
@@ -49,9 +50,7 @@ function JobDetailPage({
   isLoggingOut = false,
 }) {
   const [jobState, setJobState] = useState({ id: null, job: null, isLoading: true, error: '' })
-  const [isApplying, setIsApplying] = useState(false)
-  const [applyError, setApplyError] = useState('')
-  const [applySuccess, setApplySuccess] = useState('')
+  const [showApplicationForm, setShowApplicationForm] = useState(false)
   const job = jobState.id === jobId ? jobState.job : null
   const isLoading = jobState.id !== jobId || jobState.isLoading
   const loadError = jobState.id === jobId ? jobState.error : ''
@@ -76,17 +75,11 @@ function JobDetailPage({
 
   async function handleApply() {
     if (!job) return
-    setIsApplying(true)
-    setApplyError('')
-    setApplySuccess('')
-    try {
-      await applyToJob(token, job.id)
-      setApplySuccess('Application submitted successfully!')
-    } catch (err) {
-      setApplyError(err.message)
-    } finally {
-      setIsApplying(false)
-    }
+    setShowApplicationForm(true)
+  }
+
+  async function handleSubmitApplication({ job_id, resume_id }) {
+    await applyToJob(token, job_id, { resumeId: resume_id })
   }
 
   const salaryDisplay = job ? formatSalary(job.salary_min, job.salary_max) : null
@@ -255,38 +248,35 @@ function JobDetailPage({
 
             {/* Application Section */}
             <div className="pt-6">
-              {applySuccess && (
-                <p className="mb-4 rounded-md bg-green-50 p-4 text-sm font-medium text-green-700">
-                  {applySuccess}
-                </p>
-              )}
-              {applyError && (
-                <p className="mb-4 rounded-md bg-red-50 p-4 text-sm font-medium text-red-700">
-                  {applyError}
-                </p>
-              )}
+              {showApplicationForm ? (
+                <ApplicationForm
+                  token={token}
+                  job={job}
+                  onBack={() => setShowApplicationForm(false)}
+                  onSubmitApplication={handleSubmitApplication}
+                />
+              ) : (
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={handleApply}
+                    className="rounded-md bg-purple-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-purple-700"
+                  >
+                    Apply Now
+                  </button>
 
-              <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={handleApply}
-                  disabled={isApplying || Boolean(applySuccess)}
-                  className="rounded-md bg-purple-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {applySuccess ? 'Applied' : isApplying ? 'Applying…' : 'Apply Now'}
-                </button>
-
-                <a
-                  href="/jobs"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    if (onNavigateJobs) onNavigateJobs()
-                  }}
-                  className="text-sm font-medium text-gray-600 hover:underline cursor-pointer"
-                >
-                  Back to Jobs
-                </a>
-              </div>
+                  <a
+                    href="/jobs"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      if (onNavigateJobs) onNavigateJobs()
+                    }}
+                    className="text-sm font-medium text-gray-600 hover:underline cursor-pointer"
+                  >
+                    Back to Jobs
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         ) : null}

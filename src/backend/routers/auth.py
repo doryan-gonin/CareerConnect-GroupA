@@ -144,6 +144,7 @@ def refresh_token(
     user: Annotated[User, Depends(get_current_user)],
     session: Annotated[Session, Depends(get_session)],
 ):
+
     # Revoke the old token, then hand out a fresh one
     session.add(RevokedToken(
         jti=payload["jti"],
@@ -151,3 +152,11 @@ def refresh_token(
     ))
     session.commit()
     return {"access_token": create_access_token(data={"sub": str(user.id)}), "token_type": "bearer"}
+@router.get("/me", response_model=UserResponse)
+def get_authenticated_user(
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    """
+    Return the currently authenticated user's account information.
+    """
+    return current_user
