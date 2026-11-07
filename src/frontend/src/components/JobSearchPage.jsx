@@ -1,20 +1,15 @@
 import { useState } from 'react'
 import JobSearchPageNavbar from './JobSearchPageNavbar'
-import { applyToJob, recordJobView } from '../api/jobs'
+import { recordJobView } from '../api/jobs'
 
 function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onViewJob }) {
     const [jobs, setJobs] = useState([])
     const [hasLoaded, setHasLoaded] = useState(false)
     const [selectedJob, setSelectedJob] = useState(null)
     const [pagination, setPagination] = useState(null)
-    const [isApplying, setIsApplying] = useState(false)
-    const [applyError, setApplyError] = useState('')
-    const [applySuccess, setApplySuccess] = useState('')
 
     function handleSelectJob(job) {
         setSelectedJob(job)
-        setApplyError('')
-        setApplySuccess('')
         recordJobView(token, job.id).catch(() => {})
     }
 
@@ -28,33 +23,14 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
             if (!prevSelected) return null
             const stillExists = loadedJobs.find((j) => j.id === prevSelected.id)
             if (!stillExists) {
-                setApplyError('')
-                setApplySuccess('')
                 return null
             }
             return stillExists
         })
     }
 
-    async function handleApply() {
-        if (!selectedJob) return
-        setIsApplying(true)
-        setApplyError('')
-        setApplySuccess('')
-        try {
-            await applyToJob(token, selectedJob.id)
-            setApplySuccess('Application submitted successfully!')
-        } catch (err) {
-            setApplyError(err.message)
-        } finally {
-            setIsApplying(false)
-        }
-    }
-
     function handleReset() {
         setSelectedJob(null)
-        setApplyError('')
-        setApplySuccess('')
     }
 
     return (
@@ -195,24 +171,12 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
                             )}
                             <p className="mt-2">Description: {selectedJob.description}</p>
 
-                            {applySuccess && (
-                                <p className="mt-3 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
-                                    {applySuccess}
-                                </p>
-                            )}
-                            {applyError && (
-                                <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-                                    {applyError}
-                                </p>
-                            )}
-
                             <button
                                 type="button"
-                                onClick={handleApply}
-                                disabled={isApplying || Boolean(applySuccess)}
+                                onClick={() => onViewJob?.(selectedJob.id)}
                                 className="mt-3 rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                                {applySuccess ? 'Applied' : isApplying ? 'Applying…' : 'Apply'}
+                                Apply
                             </button>
                         </div>
                     )}
