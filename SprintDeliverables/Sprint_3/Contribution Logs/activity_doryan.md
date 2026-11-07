@@ -1,10 +1,10 @@
 # Sprint 3 Contribution & Activity Log
 
 * **Team Member**: Doryan Gonin
-* **Role**: ScrumMaster - Documentation - Testing - Backend
+* **Role**: ScrumMaster - Documentation - Acceptance & Unit Testing - Backend - Deployment
 * **Project**: CareerConnect (SOEN 341 - Fall 2026)
 * **Sprint**: Sprint 3
-* **Time Spent**: 17h30
+* **Time Spent**: ~ 26 hours
 
 ---
 
@@ -30,4 +30,5 @@
 | **17** | Board update & team point                            | 45 min      | Project   |               |            | 05/11/26      |
 | **18** | **Analytics backend fixes** <br> - Add endpoint call from frontend to count views | 45 min | [`96eb9f3`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/96eb9f3) | #129 | #127 | 06/11/26 | 
 | **19** | **PR #130 review and fixes** <br> - Pulled `main` to resolve stale branch (2 weeks old) <br> - Fixed merge conflicts (+317 -70) <br> - Isolated needed feature from erroneuous backend and frontend modifications <br> - Redirect apply button to application form <br> - Documented pre-merge fixes (see comments #130) <br> - Documented issues to be addressed (see #131) - Accepted PR #130 with aforementioned fixes <br> - Left a review outlining the fixes and issues to be addressed <br> | 2 hr | [`565c36c`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/565c36c) <br> [`06af154`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/06af154) | #130 | #94 <br> #131 | 06/11/26 |
+| **20** | **Project board & Acceptance Tests** <br> - Final update of project board for Sprint 3 <br> - Added acceptance tests documentation in each relevant User Story to keep it readable and organized | 1.5 hr | Project | | | 07/11/26 |
 
