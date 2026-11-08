@@ -15,7 +15,7 @@ function normalizePath(pathname) {
 }
 
 function isAllowedAppPath(path) {
-  return path === '/dashboard' || path === '/jobs' || /^\/jobs\/\d+$/.test(path)
+  return path === '/dashboard' || path === '/jobs' || /^\/jobs\/\d+(\/apply)?$/.test(path)
 }
 
 function App() {
@@ -108,13 +108,21 @@ function App() {
     }
   }
 
-  const jobDetailMatch = currentPath.match(/^\/jobs\/(\d+)$/)
+  function openApplication(jobId) {
+    navigate(`/jobs/${jobId}/apply`)
+    window.scrollTo(0, 0)
+  }
+
+  const jobDetailMatch = currentPath.match(/^\/jobs\/(\d+)(\/apply)?$/)
   if (token && jobDetailMatch) {
     const jobId = Number(jobDetailMatch[1])
     return (
       <JobDetailPage
         token={token}
         jobId={jobId}
+        isApplying={Boolean(jobDetailMatch[2])}
+        onApply={() => openApplication(jobId)}
+        onBackToPosting={() => navigate(`/jobs/${jobId}`)}
         onNavigateJobs={() => navigate('/jobs')}
         onNavigateDashboard={() => navigate('/dashboard')}
         onLogout={handleLogout}
@@ -131,6 +139,7 @@ function App() {
         isLoggingOut={isLoggingOut}
         onNavigateDashboard={() => navigate('/dashboard')}
         onViewJob={(jobId) => navigate(`/jobs/${jobId}`)}
+        onApplyJob={openApplication}
       />
     )
   }
