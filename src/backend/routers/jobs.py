@@ -24,6 +24,7 @@ from backend.models import (
     JobViewLog,
 )
 from backend.dependencies import get_current_user, get_optional_current_user
+from backend.services.notification_service import notify_new_application_received
 
 router = APIRouter(tags=["Jobs"])
 
@@ -395,6 +396,15 @@ def apply_to_job(
         status=ApplicationStatus.APPLIED,
     )
     session.add(application)
+
+    # Notify recruiter about the new application
+    notify_new_application_received(
+        session=session,
+        job=job,
+        application=application,
+        applicant=current_user,
+    )
+
     session.commit()
     session.refresh(application)
 

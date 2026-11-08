@@ -15,6 +15,7 @@ from backend.models import (
     ApplicationStatusUpdate,
 )
 from backend.dependencies import get_current_user
+from backend.services.notification_service import notify_status_change
 
 router = APIRouter(tags=["Applications"])
 
@@ -172,9 +173,20 @@ def update_application_status(
             detail="Not authorized to update status for this application.",
         )
 
+    old_status = application.status
     application.status = payload.status
     application.updated_at = datetime.now(timezone.utc)
     session.add(application)
+
+    if old_status != payload.status:
+        notify_status_change(
+            session=session,
+            application=application,
+            job=job,
+            old_status=old_status,
+            new_status=payload.status,
+        )
+
     session.commit()
     session.refresh(application)
 
