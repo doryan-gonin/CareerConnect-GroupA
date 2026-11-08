@@ -36,13 +36,13 @@ def get_my_notifications(
     unread_count = session.exec(
         select(func.count(Notification.id)).where(
             Notification.user_id == current_user.id,
-            not Notification.is_read, 
+            col(Notification.is_read).is_(False)
         )
     ).one()
 
     query = base_query
     if unread_only:
-        query = query.where(not Notification.is_read)
+        query = query.where(col(Notification.is_read).is_(False))
 
     query = query.order_by(col(Notification.created_at).desc()).offset(offset).limit(limit)
     items = session.exec(query).all()
@@ -114,7 +114,7 @@ def mark_all_notifications_as_read(
     notifications = session.exec(
         select(Notification).where(
             Notification.user_id == current_user.id,
-            not Notification.is_read,
+            col(Notification.is_read).is_(False)
         )
     ).all()
 
