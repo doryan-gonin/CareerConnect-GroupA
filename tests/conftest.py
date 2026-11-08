@@ -7,7 +7,16 @@ from datetime import datetime, timedelta
 
 from backend.main import app
 from backend.database import get_session
-from backend.models import JobViewLog, User, Resume, Job, JobType, JobSchedule, Application
+from backend.models import (
+    JobViewLog,
+    User,
+    Resume,
+    Job,
+    JobType,
+    JobSchedule,
+    Application,
+    ApplicationStatus,
+)
 
 TEST_NOW = datetime(2026, 6, 15, 12, 0, 0) # Fixed datetime for testing purposes
 
