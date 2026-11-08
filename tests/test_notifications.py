@@ -10,7 +10,7 @@ def login_and_get_token(client, email_address: str, password: str) -> str:
 
 
 # ==============================================================================
-# Test Cases for Notification Endpoints and Flow
+# Test Cases for Notification Triggers
 # ==============================================================================
 class TestNotificationTriggers:
     def test_status_update_triggers_notification(self, client, candidate_application):
@@ -70,7 +70,49 @@ class TestNotificationTriggers:
         assert data["notifications"][0]["notification_type"] == "interview_invitation"
         assert "Interview Invitation" in data["notifications"][0]["title"]
 
+    def test_apply_job_triggers_recruiter_notification(self, client, test_user, second_user, test_jobs):
+        recruiter = test_user
+        applicant = second_user
+        job = test_jobs[1]
 
+        recruiter_token = login_and_get_token(client, recruiter["email_address"], recruiter["password"])
+        applicant_token = login_and_get_token(client, applicant["email_address"], applicant["password"])
+
+        recruiter_headers = {"Authorization": f"Bearer {recruiter_token}"}
+        applicant_headers = {"Authorization": f"Bearer {applicant_token}"}
+
+        # Upload a resume for applicant
+        dummy_pdf = b"%PDF-1.4 test resume"
+        upload_res = client.post(
+            "/api/profiles/me/resumes",
+            files={"file": ("my_resume.pdf", dummy_pdf, "application/pdf")},
+            headers=applicant_headers,
+        )
+        assert upload_res.status_code == 201
+        resume_id = upload_res.json()["id"]
+
+        # Applicant applies to job
+        apply_res = client.post(
+            f"/api/jobs/{job.id}/apply",
+            json={"resume_id": resume_id, "cover_letter": "I would love to join!"},
+            headers=applicant_headers,
+        )
+        assert apply_res.status_code == 201
+
+        # Check recruiter's notifications
+        recruiter_notifs = client.get("/api/notifications", headers=recruiter_headers)
+        assert recruiter_notifs.status_code == 200
+        data = recruiter_notifs.json()
+        assert data["total_count"] == 1
+        assert data["unread_count"] == 1
+        notif = data["notifications"][0]
+        assert notif["notification_type"] == "application_received"
+        assert job.title in notif["title"]
+        assert "new candidate" in notif["message"]
+
+# ==============================================================================
+# Test Cases for Notification Management
+# ==============================================================================
 class TestNotificationManagement:
     def test_get_notifications_empty(self, client, test_user):
         token = login_and_get_token(client, test_user["email_address"], test_user["password"])
