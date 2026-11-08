@@ -5,6 +5,7 @@ import SignupForm from './components/SignupForm'
 import Navbar from './components/Navbar'
 import JobSearchPage from './components/JobSearchPage'
 import JobDetailPage from './components/JobDetailPage'
+import AnalyticsPage from './components/AnalyticsPage'
 import { logoutUser } from './api/auth'
 
 const TOKEN_STORAGE_KEY = 'accessToken'
@@ -15,7 +16,7 @@ function normalizePath(pathname) {
 }
 
 function isAllowedAppPath(path) {
-  return path === '/dashboard' || path === '/jobs' || /^\/jobs\/\d+$/.test(path)
+  return path === '/dashboard' || path === '/analytics' || path === '/jobs' || /^\/jobs\/\d+$/.test(path)
 }
 
 function App() {
@@ -144,7 +145,11 @@ function App() {
           onBrowseJobs={() => navigate('/jobs')}
         />
         <main className="mx-auto max-w-5xl px-4 py-8">
-          <LoggedInScreen token={token} onLogout={handleLogout} />
+          {currentPath === '/analytics' ? (
+            <AnalyticsPage token={token} onBack={() => navigate('/dashboard')} />
+          ) : (
+            <LoggedInScreen token={token} onLogout={handleLogout} onViewAnalytics={() => navigate('/analytics')} />
+          )}
         </main>
       </div>
     )
