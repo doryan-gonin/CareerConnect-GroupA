@@ -76,3 +76,28 @@ def notify_status_change(
         reference_type="application",
     )
 
+# Only used for recruiter accounts (flag set in "users" DB)
+def notify_new_application_received(
+    session: Session,
+    job: Job,
+    application: Application,
+    applicant: User,
+) -> Notification | None:
+    """
+    Generate a notification for a recruiter when a new candidate applies to their job posting.
+    """
+    if not job.recruiter_id or job.recruiter_id == applicant.id:
+        return None
+
+    job_title = job.title if job.title else "your job posting"
+    return create_notification(
+        session=session,
+        user_id=job.recruiter_id,
+        title=f"New Application: {job_title}",
+        message=f"A new candidate has submitted an application for '{job_title}'.",
+        notification_type=NotificationType.APPLICATION_RECEIVED,
+        reference_id=application.id,
+        reference_type="application",
+    )
+
+
