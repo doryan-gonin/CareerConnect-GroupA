@@ -4,57 +4,25 @@ This document details all identified bugs, architectural defects, security enhan
 
 ---
 
-## Priority & Urgency Roadmap (School Project Focus)
+## Priority & Urgency Roadmap
 
-> **Evaluation Focus**: In an academic project, theoretical long-term scalability and edge-case security hardening take a back seat to **functional execution, demo reliability, and maintaining a passing test suite**. The priority tiers below reflect what must be resolved for a flawless demonstration and grading submission.
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│ Tier 1: Immediate Blockers & Critical Runtime Bugs                     │
-│  - 3.5: Missing Dependency Synchronization (pypdf breaks pytest)       │
-│  - 4.8: AI Provider Malformed Responses Cause HTTP 500                 │
-│  - 4.7: Hardcoded AI Provider URL (AI_API_BASE_URL)                    │
-│  - 2.2: Account Re-lockout Bug After Lockout Duration Expires          │
-│  - 2.6: Missing Profile Creation on User Registration                  │
-├────────────────────────────────────────────────────────────────────────┤
-│ Tier 2: Functional Reliability & Demo Polish                           │
-│  - 4.7: Fallback Mock Mode when AI_API_KEY is Unset (Prevents 503)     │
-│  - 4.9: Conversation History Truncation by Turn                        │
-│  - 4.10: Chat Plaintext vs. Markdown Formatting Mismatch               │
-│  - 3.1: Test Suite Lifespan Modifying Development Database             │
-├────────────────────────────────────────────────────────────────────────┤
-│ Tier 3: Test Architecture, Quality & Data Integrity Edge Cases         │
-│  - 3.4: Interview Failure-Path, Rate-Limit & Auth Test Coverage        │
-│  - 3.2: Foreign Keys Disabled in Test In-Memory Database               │
-│  - 3.3: Missing Test Coverage (Profiles, Resumes, Lockout)             │
-│  - 2.7: Resume Deletion vs. Active Application Retention               │
-│  - 4.6: Recruiter Inactive Job Visibility & Reactivation               │
-│  - 1.1: File Validation Bypass & Filename Sanitization                 │
-│  - 2.4: Non-Atomic File Operations & Orphaned Files                    │
-├────────────────────────────────────────────────────────────────────────┤
-│ Tier 4: Quality of Life, Long-Term Scalability & Minor Cleanups        │
-│  - 4.11: Prompt Untrusted Reference Data Delimitation & Guarantees     │
-│  - 1.2: Missing Token Type Distinction (Access vs. Refresh)            │
-│  - 4.4: Typo in Model Name ResumeReponse                               │
-│  - 4.3: Orphaned 1-Byte File frontend in Project Root                  │
-│  - 4.5: Unbounded Growth of RevokedToken Table                         │
-│  - 2.1: Timezone Inconsistencies (Naive vs. UTC Datetimes)             │
-│  - 2.3: Relative Working Directory Dependencies (DB & Uploads)         │
-│  - 2.5: Race Conditions in Resume Count & Default Status               │
-└────────────────────────────────────────────────────────────────────────┘
-```
+To systematically resolve outstanding defects, tasks are organized into four priority tiers based on operational impact:
+- **Tier 1 (Immediate Blockers & Critical Runtime Bugs)**: Fatal issues that break the build, cause tests to abort on import, trigger unhandled HTTP 500 server errors, or break core authentication and profile flows. These must be resolved first.
+- **Tier 2 (Functional Reliability & UX Polish)**: Issues that degrade feature usability, cause service failures under standard unprovisioned environments (such as missing external API keys), corrupt conversation context, or introduce UI inconsistencies.
+- **Tier 3 (Test Architecture, Quality & Data Integrity Edge Cases)**: Gaps in automated test coverage (failure paths, rate-limits, authorization boundaries), database constraint enforcement, and transactional edge cases.
+- **Tier 4 (Quality of Life, Long-Term Scalability & Minor Cleanups)**: Defense-in-depth prompt boundaries, token type distinction, database maintenance routines, and code/naming hygiene.
 
 ### Tier 1: Immediate Blockers & Critical Runtime Bugs
-Issues that directly break the build, crash the test suite, cause unhandled HTTP 500 errors during normal use, or cause persistent account lockout loops during grading:
+Issues that directly break the build, crash the test suite, cause unhandled HTTP 500 errors during normal use, or cause persistent account lockout loops:
 - [3.5 Missing Dependency Synchronization Breaking Test Environment (`pypdf`)](#35-missing-dependency-synchronization-breaking-test-environment-pypdf) — Running `pytest` immediately fails with `ModuleNotFoundError: No module named 'pypdf'`.
 - [4.8 AI Provider Unexpected Responses Causing HTTP 500](#48-interview-provider-unexpected-responses-causing-http-500) — Malformed responses, empty choices, or missing fields crash the backend with an uncaught 500 instead of 502 Bad Gateway.
 - [4.7 Interview Provider Configuration, Base URL & Offline Fallback Mocking](#47-interview-provider-configuration-base-url--offline-fallback-mocking) — Base URL is hardcoded to Groq; cannot be configured via `.env` to use local models or alternate providers.
 - [2.2 Account Re-lockout Bug After Lockout Duration Expires](#22-account-re-lockout-bug-after-lockout-duration-expires) — `failed_attempts` is not reset after the 15-minute lockout elapses; a single typo re-locks the user indefinitely.
 - [2.6 Missing Profile Creation on User Registration](#26-missing-profile-creation-on-user-registration) — Registration does not insert a corresponding `Profile` row, leaving `User.profile` as `None` and leading to missing profile data.
 
-### Tier 2: Functional Reliability & Demo Polish
+### Tier 2: Functional Reliability & UX Polish
 Issues that impact feature usability, cause HTTP 503 errors on unconfigured deployments, or degrade conversation flow:
-- [4.7 Fallback Mocking when `AI_API_KEY` is Unset](#47-interview-provider-configuration-base-url--offline-fallback-mocking) — Avoid returning 503 during offline presentations or when graders do not have personal Groq keys.
+- [4.7 Fallback Mocking when `AI_API_KEY` is Unset](#47-interview-provider-configuration-base-url--offline-fallback-mocking) — Avoid returning 503 during offline usage or when external provider keys are not provisioned.
 - [4.9 Interview Conversation History Truncation by Turn](#49-interview-conversation-history-truncation-by-turn) — Slicing by raw message count can start prompt context with an assistant response rather than an alternating user turn.
 - [4.10 Chat Plaintext vs. Markdown Formatting Mismatch](#410-chat-plaintext-vs-markdown-formatting-mismatch) — The backend only strips `#` and `**`, leaving lists and italics, while the frontend displays unparsed raw text in a plain `<div>`.
 - [3.1 Test Suite Lifespan Modifying Development Database](#31-test-suite-lifespan-modifying-development-database) — `TestClient(app)` triggers `init_db()` against the physical disk database `careerconnect_test.db` during test runs.
@@ -70,7 +38,7 @@ Deficits that prevent thorough regression verification or affect edge-case integ
 - [2.4 Non-Atomic File Operations & Orphaned Files](#24-non-atomic-file-operations--orphaned-files) — Disk files saved before database commit without cleanup on rollback.
 
 ### Tier 4: Quality of Life, Long-Term Scalability & Minor Cleanups
-Academic/theoretical issues that do not impact basic application functionality or short-term demonstrations:
+Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
 - [4.11 Interview Prompt Untrusted Data Delimitation & Fact Guarantees](#411-interview-prompt-untrusted-data-delimitation--fact-guarantees) — Delimiting resume text to mitigate prompt injection; framing model output expectations realistically.
 - [1.2 Missing Token Type Distinction (Access vs. Refresh)](#12-missing-token-type-distinction-access-vs-refresh) — Security enhancement to differentiate access and refresh tokens.
 - [4.4 Typo in Model Name `ResumeReponse`](#44-typo-in-model-name-resumereponse) — Simple typo cleanup in `models.py` and `profiles.py`.
@@ -546,7 +514,7 @@ Academic/theoretical issues that do not impact basic application functionality o
 ### 4.7 Interview Provider Configuration, Base URL & Offline Fallback Mocking
 - **Issue**:
   1. **Hardcoded Base URL**: `AI_API_BASE_URL` is hardcoded to `"https://api.groq.com/openai/v1"` in `src/backend/config.py`. It cannot be overridden via environment variables to target alternative providers, local models (Ollama, LM Studio), or self-hosted tokenizers required for issue #136.
-  2. **Missing Key Service Failure (HTTP 503)**: If `AI_API_KEY` is omitted, all interview endpoints raise `HTTP 503 Service Unavailable`. In academic or evaluation settings without access to live Groq credentials, the entire feature is non-functional.
+  2. **Missing Key Service Failure (HTTP 503)**: If `AI_API_KEY` is omitted, all interview endpoints raise `HTTP 503 Service Unavailable`. In local development or test environments without access to live Groq credentials, the entire feature is non-functional.
 - **Where to fix**:
   - `src/backend/config.py`
   - `src/backend/services/interview_service.py`
