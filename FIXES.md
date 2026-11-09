@@ -17,7 +17,7 @@ Issues that directly break the build, crash the test suite, cause unhandled HTTP
 - [4.8 AI Provider Unexpected Responses Causing HTTP 500 [FIXED]](#48-interview-provider-unexpected-responses-causing-http-500-fixed) — Malformed responses, empty choices, or missing fields crash the backend with an uncaught 500 instead of 502 Bad Gateway.
 - [4.7 Hardcoded AI Provider URL (`AI_API_BASE_URL`) [FIXED]](#47-interview-provider-configuration-base-url--offline-fallback-mocking) — Base URL is read dynamically from environment variables without any hardcoded provider default.
 - [2.2 Account Re-lockout Bug After Lockout Duration Expires [FIXED]](#22-account-re-lockout-bug-after-lockout-duration-expires-fixed) — `failed_attempts` is reset when the lockout duration elapses, preventing immediate re-lockout loops.
-- [2.6 Missing Profile Creation on User Registration](#26-missing-profile-creation-on-user-registration) — Registration does not insert a corresponding `Profile` row, leaving `User.profile` as `None` and leading to missing profile data.
+- [2.6 Missing Profile Creation on User Registration [FIXED]](#26-missing-profile-creation-on-user-registration-fixed) — `Profile` record is created atomically during user registration.
 
 ### Tier 2: Functional Reliability & UX Polish
 Issues that impact feature usability, cause HTTP 503 errors on unconfigured deployments, or degrade conversation flow:
@@ -60,7 +60,7 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
    - [2.3 Relative Working Directory Dependencies (DB & Uploads)](#23-relative-working-directory-dependencies-db--uploads)
    - [2.4 Non-Atomic File Operations & Orphaned Files](#24-non-atomic-file-operations--orphaned-files)
    - [2.5 Race Conditions in Resume Count & Default Status](#25-race-conditions-in-resume-count--default-status)
-   - [2.6 Missing Profile Creation on User Registration](#26-missing-profile-creation-on-user-registration)
+   - [2.6 Missing Profile Creation on User Registration [FIXED]](#26-missing-profile-creation-on-user-registration-fixed)
    - [2.7 Resume Deletion vs. Active Application Retention](#27-resume-deletion-vs-active-application-retention)
 3. [Testing & Database Infrastructure](#3-testing--database-infrastructure)
    - [3.1 Test Suite Lifespan Modifying Development Database](#31-test-suite-lifespan-modifying-development-database)
@@ -301,7 +301,8 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
 
 ---
 
-### 2.6 Missing Profile Creation on User Registration
+### 2.6 Missing Profile Creation on User Registration [FIXED]
+- **Status**: ✅ Fixed (Created `Profile` record atomically during user registration in `register_user` in `src/backend/routers/auth.py`, and typed `User.profile` as `Optional["Profile"]` in `src/backend/models.py`; verified with tests in `tests/test_auth.py`)
 - **Issue**:
   `register_user` in `auth.py` creates a `User`, but never creates a corresponding `Profile` record. `profiles.py` uses a helper `get_or_create_profile` to patch around this, but `User.profile` is typed as non-optional. If any query accesses `user.profile` prior to a user visiting `/api/profiles/me`, it returns `None`.
 - **Where to fix**:

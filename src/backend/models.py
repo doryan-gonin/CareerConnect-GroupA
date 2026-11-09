@@ -6,7 +6,7 @@ from enum import Enum
 from pydantic import EmailStr
 from sqlalchemy import UniqueConstraint
 from sqlmodel import SQLModel, Field, Relationship
-from typing import List
+from typing import List, Optional
 from datetime import date, datetime, timezone
 
 # ENUMS
@@ -64,7 +64,7 @@ class User(SQLModel, table=True):
     failed_attempts: int = Field(default=0)
     locked_until: datetime | None = Field(default=None)
 
-    profile: Profile = Relationship(back_populates="user")
+    profile: Optional["Profile"] = Relationship(back_populates="user")
     resumes: List[Resume] = Relationship(back_populates="user")
     posted_jobs: List["Job"] = Relationship(back_populates="recruiter")
     applications: List["Application"] = Relationship(back_populates="applicant")

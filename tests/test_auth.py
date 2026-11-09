@@ -104,6 +104,31 @@ class TestRegistration:
         response = client.post("/api/auth/register", json=payload)
         assert response.status_code == 201
 
+    def test_registration_creates_profile(self, client, db_session):
+        from sqlmodel import select
+        from backend.models import User, Profile
+
+        email = "profile_check@example.com"
+        payload = {
+            "email_address": email,
+            "password": "Password@123",
+        }
+        response = client.post("/api/auth/register", json=payload)
+        assert response.status_code == 201
+        created_user_id = response.json()["id"]
+
+        # Verify profile was created in database
+        profile = db_session.exec(select(Profile).where(Profile.user_id == created_user_id)).first()
+        assert profile is not None
+        assert profile.first_name == ""
+        assert profile.last_name == ""
+
+        # Verify access via relationship
+        user = db_session.exec(select(User).where(User.id == created_user_id)).first()
+        assert user is not None
+        assert user.profile is not None
+        assert user.profile.id == profile.id
+
     def test_existing_email(self, test_user, client):
         payload = {
             "email_address": test_user["email_address"],

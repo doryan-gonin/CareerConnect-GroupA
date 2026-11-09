@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 import bcrypt
 from backend.database import get_session
-from backend.models import User, UserCreate, UserResponse, UserLogin, Token, RevokedToken
+from backend.models import User, UserCreate, UserResponse, UserLogin, Token, RevokedToken, Profile
 from backend.dependencies import get_current_user, get_token_payload
 from backend.config import (
     SECRET_KEY,
@@ -83,6 +83,15 @@ def register_user(payload: UserCreate, session: Annotated[Session, Depends(get_s
     )
 
     session.add(new_user)
+    session.flush()
+
+    new_profile = Profile(
+        user_id = new_user.id,
+        first_name = "",
+        last_name = ""
+    )
+    session.add(new_profile)
+
     session.commit()
     session.refresh(new_user)
     return new_user
