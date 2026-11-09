@@ -19,6 +19,7 @@ This document details all remaining issues, architectural defects, security enha
    - [5.1 Test Suite Lifespan Modifying Development Database](#51-test-suite-lifespan-modifying-development-database)
    - [5.2 Foreign Keys Disabled in Test In-Memory Database](#52-foreign-keys-disabled-in-test-in-memory-database)
    - [5.3 Missing Test Coverage (Profiles, Resumes, Lockout, Revocation)](#53-missing-test-coverage-profiles-resumes-lockout-revocation)
+   - [5.4 Interview Prep Failure-Path and Authorization Coverage](#54-interview-prep-failure-path-and-authorization-coverage)
 4. [Frontend-Backend Integration & Code Cleanup](#4-frontend-backend-integration--code-cleanup)
    - [6.1 Frontend Logout Does Not Revoke Token on Backend [FIXED]](#61-frontend-logout-does-not-revoke-token-on-backend-fixed)
    - [6.2 Frontend Password Rules Missing 72-Byte Limit [FIXED]](#62-frontend-password-rules-missing-72-byte-limit-fixed)
@@ -26,6 +27,8 @@ This document details all remaining issues, architectural defects, security enha
    - [6.4 Typo in Model Name `ResumeReponse`](#64-typo-in-model-name-resumereponse)
    - [6.5 Unbounded Growth of `RevokedToken` Table](#65-unbounded-growth-of-revokedtoken-table)
    - [6.6 Recruiter Inactive Job Visibility & Reactivation](#66-recruiter-inactive-job-visibility--reactivation)
+   - [6.7 Interview Provider Configuration and External Secret Provisioning](#67-interview-provider-configuration-and-external-secret-provisioning)
+   - [6.8 Interview Prompt Data Handling and Output Constraints](#68-interview-prompt-data-handling-and-output-constraints)
 5. [Job Search Frontend Deficiencies & UX Enhancements](#5-job-search-frontend-deficiencies--ux-enhancements)
    - [7.1 Empty State UI & Feedback [FIXED]](#71-empty-state-ui--feedback-fixed)
    - [7.2 Automatic & Explicit Filter Application [FIXED]](#72-automatic--explicit-filter-application-fixed)
@@ -375,6 +378,25 @@ This document details all remaining issues, architectural defects, security enha
 
 ---
 
+### 5.4 Interview Prep Failure-Path and Authorization Coverage
+- **Issue**:
+  The interview tests use a locally defined provider fake that always returns the exact successful response shape expected by the implementation. They do not cover malformed provider responses, empty content, timeouts, HTTP errors, rate limits, unreadable PDFs, or cross-user access to interview sessions. The tests also duplicate authentication setup instead of extending the shared fixtures in `tests/conftest.py`.
+
+  The implementation intentionally calls the provider before saving a new session or message, but this persistence guarantee is not tested. A regression could therefore create partial sessions or messages without failing the suite.
+- **Where to fix**:
+  - `tests/test_interview.py`
+  - `tests/conftest.py`
+  - `src/backend/services/interview_service.py`
+  - `src/backend/routers/interview.py`
+- **The Fix**:
+  Move reusable provider and authenticated-user setup into the shared fixtures, then add tests for:
+  - provider HTTP errors, timeouts, malformed JSON, missing fields, empty content, and rate-limit responses;
+  - malformed or unreadable resume files;
+  - list, read, and send-message authorization boundaries between two users;
+  - failed provider calls leaving no session or message rows behind.
+
+---
+
 ## 4. Frontend-Backend Integration & Code Cleanup
 
 ### 6.1 Frontend Logout Does Not Revoke Token on Backend [FIXED]
@@ -467,6 +489,28 @@ This document details all remaining issues, architectural defects, security enha
   1. In `GET /api/jobs/{job_id}`, check if the requesting user is the authenticated `recruiter_id`; if so, allow returning the job even when `is_active == False`.
   2. Implement a dedicated recruiter endpoint `GET /api/jobs/recruiter/my-postings` that returns both active and inactive jobs owned by the logged-in user.
   3. Ensure `PUT /api/jobs/{job_id}` allows the owner to toggle `is_active` back to `True` for reactivation.
+
+---
+
+### 6.7 Interview Provider Configuration and External Secret Provisioning
+- **Issue**:
+  The interview service reads `AI_API_KEY` from the environment, but `AI_API_BASE_URL` is hardcoded to Groq in `src/backend/config.py`. This prevents switching to another OpenAI-compatible provider or a local model without changing source code. The feature also requires a production secret that is not provisioned or validated by the repository; without it, every interview request returns `503`.
+- **Where to fix**:
+  - `src/backend/config.py`
+  - `.env.example`
+  - Deployment environment configuration
+- **The Fix**:
+  Make the provider base URL configurable, document the required production variables and their ownership/rotation process, and add a deployment smoke check that verifies configuration without exposing the secret. Do not commit provider keys or rely on individual contributors' personal free-tier credentials.
+
+---
+
+### 6.8 Interview Prompt Data Handling and Output Constraints
+- **Issue**:
+  Job descriptions, resume text, and conversation content are inserted into prompts as untrusted data and sent to an external AI provider. The prompt does not clearly separate reference data from instructions, does not address unnecessary repetition of personal information, and relies on the model to enforce the 300-word and relevance requirements. The response cleanup only removes a subset of Markdown syntax, so it does not guarantee plain text. Conversation history is truncated by message count, which can begin the request with an assistant message and omit the corresponding user turn.
+- **Where to fix**:
+  - `src/backend/services/interview_service.py`
+- **The Fix**:
+  Delimit untrusted job and resume content as reference data and instruct the model not to follow instructions contained within it. Document the external processing of resume content, enforce response-size and output-format requirements server-side (or support Markdown intentionally), and truncate history by complete conversation turns while preserving the required context.
 
 ---
 
@@ -631,5 +675,4 @@ This document details all remaining issues, architectural defects, security enha
      - `/login` & `/signup`: Authentication screens
      - `/`: Redirects authenticated users to `/jobs` (or `/dashboard`), and unauthenticated users to `/login`.
   3. Update navigation triggers in `Navbar.jsx` ("Browse Jobs" -> `/jobs`) and `JobSearchPageNavbar.jsx` ("Dashboard" -> `/dashboard`) to push browser history entries and update the path without page reloads.
-
 

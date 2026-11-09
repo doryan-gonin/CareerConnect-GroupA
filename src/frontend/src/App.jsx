@@ -5,6 +5,10 @@ import SignupForm from './components/SignupForm'
 import Navbar from './components/Navbar'
 import JobSearchPage from './components/JobSearchPage'
 import JobDetailPage from './components/JobDetailPage'
+import InterviewPrepPage from './components/InterviewPrepPage'
+import InterviewNewSession from './components/InterviewNewSession'
+import InterviewConversation from './components/InterviewConversation'
+import AnalyticsPage from './components/AnalyticsPage'
 import { logoutUser } from './api/auth'
 
 const TOKEN_STORAGE_KEY = 'accessToken'
@@ -15,7 +19,7 @@ function normalizePath(pathname) {
 }
 
 function isAllowedAppPath(path) {
-  return path === '/dashboard' || path === '/jobs' || /^\/jobs\/\d+$/.test(path)
+  return path === '/dashboard' || path === '/analytics' || path === '/jobs' || /^\/jobs\/\d+$/.test(path) || /^\/interview(\/new|\/\d+)?$/.test(path)
 }
 
 function App() {
@@ -108,13 +112,21 @@ function App() {
     }
   }
 
-  const jobDetailMatch = currentPath.match(/^\/jobs\/(\d+)$/)
+  function openApplication(jobId) {
+    navigate(`/jobs/${jobId}/apply`)
+    window.scrollTo(0, 0)
+  }
+
+  const jobDetailMatch = currentPath.match(/^\/jobs\/(\d+)(\/apply)?$/)
   if (token && jobDetailMatch) {
     const jobId = Number(jobDetailMatch[1])
     return (
       <JobDetailPage
         token={token}
         jobId={jobId}
+        isApplying={Boolean(jobDetailMatch[2])}
+        onApply={() => openApplication(jobId)}
+        onBackToPosting={() => navigate(`/jobs/${jobId}`)}
         onNavigateJobs={() => navigate('/jobs')}
         onNavigateDashboard={() => navigate('/dashboard')}
         onLogout={handleLogout}
@@ -131,20 +143,63 @@ function App() {
         isLoggingOut={isLoggingOut}
         onNavigateDashboard={() => navigate('/dashboard')}
         onViewJob={(jobId) => navigate(`/jobs/${jobId}`)}
+        onApplyJob={openApplication}
       />
     )
   }
 
   if (token) {
+    const interviewMatch = currentPath.match(/^\/interview\/(\d+)$/)
+    let page = (
+      <LoggedInScreen
+        token={token}
+        onLogout={handleLogout}
+        onViewAnalytics={() => navigate('/analytics')}
+      />
+    )
+    if (interviewMatch) {
+      page = (
+        <InterviewConversation
+          key={interviewMatch[1]}
+          token={token}
+          sessionId={Number(interviewMatch[1])}
+          onBack={() => navigate('/interview')}
+        />
+      )
+    } else if (currentPath === '/interview/new') {
+      page = (
+        <InterviewNewSession
+          token={token}
+          onBack={() => navigate('/interview')}
+          onBrowseJobs={() => navigate('/jobs')}
+          onCreated={(id) => navigate(`/interview/${id}`, { replace: true })}
+        />
+      )
+    } else if (currentPath === '/interview') {
+      page = (
+        <InterviewPrepPage
+          token={token}
+          onNewSession={() => navigate('/interview/new')}
+          onOpenSession={(id) => navigate(`/interview/${id}`)}
+        />
+      )
+    }
+
     return (
       <div className="min-h-screen bg-gray-50 text-gray-900">
         <Navbar
           onLogout={handleLogout}
           isLoggingOut={isLoggingOut}
           onBrowseJobs={() => navigate('/jobs')}
+          onInterviewPrep={() => navigate('/interview')}
+          onDashboard={currentPath.startsWith('/interview') ? () => navigate('/dashboard') : undefined}
         />
         <main className="mx-auto max-w-5xl px-4 py-8">
-          <LoggedInScreen token={token} onLogout={handleLogout} />
+          {currentPath === '/analytics' ? (
+            <AnalyticsPage token={token} onBack={() => navigate('/dashboard')} />
+          ) : (
+            page
+          )}
         </main>
       </div>
     )
