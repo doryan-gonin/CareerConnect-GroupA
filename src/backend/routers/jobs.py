@@ -1,3 +1,5 @@
+from pathlib import Path
+from fastapi.responses import FileResponse
 import math
 from typing import Annotated, List
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
@@ -6,6 +8,7 @@ from sqlmodel import Session, select, col, or_, func
 from backend.database import get_session
 from backend.models import (
     User,
+    Profile,
     Job,
     JobType,
     JobSchedule,
@@ -27,6 +30,22 @@ from backend.dependencies import get_current_user, get_optional_current_user
 from backend.services.notification_service import notify_new_application_received
 
 router = APIRouter(tags=["Jobs"])
+@router.get("/mine", response_model=List[JobResponse])
+def list_my_jobs(
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    """
+    Return all job postings created by the authenticated recruiter,
+    including active and closed postings.
+    """
+    statement = (
+        select(Job)
+        .where(Job.recruiter_id == current_user.id)
+        .order_by(col(Job.posted_at).desc())
+    )
+
+    return session.exec(statement).all()
 
 @router.get("", response_model=JobListResponse)
 def list_jobs(
@@ -158,6 +177,158 @@ def list_jobs(
         page=page,
         limit=limit,
         total_pages=total_pages,
+    )
+
+
+
+@router.get("/{job_id}/applications")
+def get_job_applications(
+    job_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    # Verify that the job exists.
+    job = session.get(Job, job_id)
+
+    if job is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Job not found."
+        )
+
+    # Only the recruiter who owns the job can view applicants.
+    if job.recruiter_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="You can only view applicants for your own jobs."
+        )
+
+    applications = session.exec(
+        select(Application)
+        .where(Application.job_id == job_id)
+        .order_by(Application.applied_at.desc())
+    ).all()
+
+    results = []
+
+    for application in applications:
+        applicant = session.get(User, application.applicant_id)
+
+        profile = session.exec(
+            select(Profile).where(
+                Profile.user_id == application.applicant_id
+            )
+        ).first()
+
+        resume = (
+            session.get(Resume, application.resume_id)
+            if application.resume_id is not None
+            else None
+        )
+
+        # Only include a resume if it belongs to the applicant.
+        if resume and resume.user_id != application.applicant_id:
+            resume = None
+
+        first_name = profile.first_name if profile else ""
+        last_name = profile.last_name if profile else ""
+
+        results.append({
+            "id": application.id,
+            "job_id": application.job_id,
+            "applicant_id": application.applicant_id,
+            "applicant_name": (
+                f"{first_name} {last_name}".strip()
+                or f"Applicant #{application.applicant_id}"
+            ),
+            "applicant_email": (
+                str(applicant.email_address) if applicant else None
+            ),
+            "resume_id": resume.id if resume else None,
+            "resume_name": resume.file_name if resume else None,
+            "cover_letter": application.cover_letter,
+            "status": application.status,
+            "applied_at": application.applied_at,
+            "updated_at": application.updated_at,
+        })
+
+    return results
+
+
+@router.get("/{job_id}/applications/{application_id}/resume")
+def view_applicant_resume(
+    job_id: int,
+    application_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    # Step 1: Find the job.
+    job = session.get(Job, job_id)
+
+    if job is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Job not found."
+        )
+
+    # Step 2: Verify that the current recruiter owns the job.
+    if job.recruiter_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="You are not authorized to view this job's resumes."
+        )
+
+    # Step 3: Find the application for this specific job.
+    application = session.exec(
+        select(Application).where(
+            Application.id == application_id,
+            Application.job_id == job_id,
+        )
+    ).first()
+
+    if application is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Application not found for this job."
+        )
+
+    # Step 4: Check that a resume was submitted.
+    if application.resume_id is None:
+        raise HTTPException(
+            status_code=404,
+            detail="No resume was submitted with this application."
+        )
+
+    # Step 5: Retrieve the resume and verify its owner.
+    resume = session.exec(
+        select(Resume).where(
+            Resume.id == application.resume_id,
+            Resume.user_id == application.applicant_id,
+        )
+    ).first()
+
+    if resume is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Submitted resume not found."
+        )
+
+    # Step 6: Verify that the PDF still exists.
+    resume_path = Path(resume.file_path)
+
+    if not resume_path.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail="Resume file not found on server."
+        )
+
+    # Step 7: Return the PDF for viewing.
+    return FileResponse(
+        path=str(resume_path),
+        media_type="application/pdf",
+        filename=resume.file_name,
+        content_disposition_type="inline",
+        headers={"Cache-Control": "no-store"},
     )
 
 

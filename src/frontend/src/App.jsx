@@ -5,6 +5,7 @@ import SignupForm from './components/SignupForm'
 import Navbar from './components/Navbar'
 import JobSearchPage from './components/JobSearchPage'
 import JobDetailPage from './components/JobDetailPage'
+import RecruiterDashboard from './components/RecruiterDashboard'
 import { logoutUser } from './api/auth'
 
 const TOKEN_STORAGE_KEY = 'accessToken'
@@ -15,7 +16,12 @@ function normalizePath(pathname) {
 }
 
 function isAllowedAppPath(path) {
-  return path === '/dashboard' || path === '/jobs' || /^\/jobs\/\d+$/.test(path)
+  return (
+    path === '/dashboard' ||
+    path === '/jobs' ||
+    path === '/recruiter/dashboard' ||
+    /^\/jobs\/\d+$/.test(path)
+  )
 }
 
 function App() {
@@ -123,6 +129,22 @@ function App() {
     )
   }
 
+  if (token && currentPath === '/recruiter/dashboard') {
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-900">
+      <Navbar
+        onLogout={handleLogout}
+        isLoggingOut={isLoggingOut}
+        onBrowseJobs={() => navigate('/jobs')}
+      />
+
+      <main className="mx-auto max-w-6xl px-4 py-8">
+        <RecruiterDashboard token={token} />
+      </main>
+    </div>
+  )
+}
+
   if (token && currentPath === '/jobs') {
     return (
       <JobSearchPage
@@ -143,9 +165,19 @@ function App() {
           isLoggingOut={isLoggingOut}
           onBrowseJobs={() => navigate('/jobs')}
         />
-        <main className="mx-auto max-w-5xl px-4 py-8">
-          <LoggedInScreen token={token} onLogout={handleLogout} />
-        </main>
+       <main className="mx-auto max-w-5xl px-4 py-8">
+  <div className="mb-6 flex justify-end">
+    <button
+      type="button"
+      onClick={() => navigate('/recruiter/dashboard')}
+      className="rounded-lg bg-indigo-600 px-5 py-2.5 font-medium text-white hover:bg-indigo-700"
+    >
+      Recruiter Dashboard
+    </button>
+  </div>
+
+  <LoggedInScreen token={token} onLogout={handleLogout} />
+</main>
       </div>
     )
   }
