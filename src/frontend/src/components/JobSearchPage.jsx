@@ -1,12 +1,32 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import JobSearchPageNavbar from './JobSearchPageNavbar'
+import ApplicationStatusBadge from './ApplicationStatusBadge'
+import { getMyApplications } from '../api/applications'
 import { recordJobView } from '../api/jobs'
 
-function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onViewJob }) {
+function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onViewJob, onApplyJob }) {
     const [jobs, setJobs] = useState([])
     const [hasLoaded, setHasLoaded] = useState(false)
     const [selectedJob, setSelectedJob] = useState(null)
     const [pagination, setPagination] = useState(null)
+    const [statusByJobId, setStatusByJobId] = useState({})
+    const selectedStatus = selectedJob ? statusByJobId[selectedJob.id] : null
+
+    useEffect(() => {
+        let active = true
+
+        getMyApplications(token)
+            .then((applications) => {
+                if (active) {
+                    setStatusByJobId(Object.fromEntries(applications.map((a) => [a.job_id, a.status])))
+                }
+            })
+            .catch(() => {})
+
+        return () => {
+            active = false
+        }
+    }, [token])
 
     function handleSelectJob(job) {
         setSelectedJob(job)
@@ -66,6 +86,11 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
                             <p>{job.company_name}</p>
                             <p>{job.job_schedule}</p>
                             <p>{job.location}</p>
+                            {statusByJobId[job.id] && (
+                                <div className="mt-2">
+                                    <ApplicationStatusBadge status={statusByJobId[job.id]} />
+                                </div>
+                            )}
                         </button>
                     ))}
 
@@ -145,6 +170,11 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
                                         {selectedJob.title}
                                     </a>
                                     <p className="text-sm text-gray-700">{selectedJob.company_name}</p>
+                                    {selectedStatus && (
+                                        <div className="mt-1">
+                                            <ApplicationStatusBadge status={selectedStatus} />
+                                        </div>
+                                    )}
                                 </div>
                                 <a
                                     href={`/jobs/${selectedJob.id}`}
@@ -173,10 +203,11 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
 
                             <button
                                 type="button"
-                                onClick={() => onViewJob?.(selectedJob.id)}
-                                className="mt-3 rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                onClick={() => onApplyJob?.(selectedJob.id)}
+                                disabled={Boolean(selectedStatus)}
+                                className="mt-3 rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-600"
                             >
-                                Apply
+                                {selectedStatus ? 'Already applied' : 'Apply'}
                             </button>
                         </div>
                     )}
