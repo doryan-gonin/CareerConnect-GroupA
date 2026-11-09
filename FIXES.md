@@ -14,7 +14,7 @@ To systematically resolve outstanding defects, tasks are organized into four pri
 
 ### Tier 1: Immediate Blockers & Critical Runtime Bugs
 Issues that directly break the build, crash the test suite, cause unhandled HTTP 500 errors during normal use, or cause persistent account lockout loops:
-- [4.8 AI Provider Unexpected Responses Causing HTTP 500](#48-interview-provider-unexpected-responses-causing-http-500) — Malformed responses, empty choices, or missing fields crash the backend with an uncaught 500 instead of 502 Bad Gateway.
+- [4.8 AI Provider Unexpected Responses Causing HTTP 500 [FIXED]](#48-interview-provider-unexpected-responses-causing-http-500-fixed) — Malformed responses, empty choices, or missing fields crash the backend with an uncaught 500 instead of 502 Bad Gateway.
 - [4.7 Interview Provider Configuration, Base URL & Offline Fallback Mocking](#47-interview-provider-configuration-base-url--offline-fallback-mocking) — Base URL is hardcoded to Groq; cannot be configured via `.env` to use local models or alternate providers.
 - [2.2 Account Re-lockout Bug After Lockout Duration Expires](#22-account-re-lockout-bug-after-lockout-duration-expires) — `failed_attempts` is not reset after the 15-minute lockout elapses; a single typo re-locks the user indefinitely.
 - [2.6 Missing Profile Creation on User Registration](#26-missing-profile-creation-on-user-registration) — Registration does not insert a corresponding `Profile` row, leaving `User.profile` as `None` and leading to missing profile data.
@@ -75,7 +75,7 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
    - [4.5 Unbounded Growth of `RevokedToken` Table](#45-unbounded-growth-of-revokedtoken-table)
    - [4.6 Recruiter Inactive Job Visibility & Reactivation](#46-recruiter-inactive-job-visibility--reactivation)
    - [4.7 Interview Provider Configuration, Base URL & Offline Fallback Mocking](#47-interview-provider-configuration-base-url--offline-fallback-mocking)
-   - [4.8 Interview Provider Unexpected Responses Causing HTTP 500](#48-interview-provider-unexpected-responses-causing-http-500)
+   - [4.8 Interview Provider Unexpected Responses Causing HTTP 500 [FIXED]](#48-interview-provider-unexpected-responses-causing-http-500-fixed)
    - [4.9 Interview Conversation History Truncation by Turn](#49-interview-conversation-history-truncation-by-turn)
    - [4.10 Chat Plaintext vs. Markdown Formatting Mismatch](#410-chat-plaintext-vs-markdown-formatting-mismatch)
    - [4.11 Interview Prompt Untrusted Data Delimitation & Fact Guarantees](#411-interview-prompt-untrusted-data-delimitation--fact-guarantees)
@@ -514,7 +514,8 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
 
 ---
 
-### 4.8 Interview Provider Unexpected Responses Causing HTTP 500
+### 4.8 Interview Provider Unexpected Responses Causing HTTP 500 [FIXED]
+- **Status**: ✅ Fixed (Defensively validated JSON decoding, choices list structure, message object, and non-empty content in `_chat_completion` in `src/backend/services/interview_service.py`, raising explicit 502 Bad Gateway exceptions instead of unhandled 500s; added failure test suite in `tests/test_interview.py`)
 - **Issue**:
   In `src/backend/services/interview_service.py`:
   ```python

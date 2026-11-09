@@ -102,8 +102,43 @@ def _chat_completion(system_prompt: str, messages: list[InterviewMessage]) -> st
             detail="Could not reach the AI provider.",
         ) from err
 
-    content = response.json()["choices"][0]["message"].get("content")
-    if not content or not content.strip():
+    try:
+        data = response.json()
+    except Exception as err:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI provider returned a non-JSON or malformed response.",
+        ) from err
+
+    if not isinstance(data, dict):
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI provider returned an invalid response structure.",
+        )
+
+    choices = data.get("choices")
+    if not isinstance(choices, list) or not choices:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI provider response missing choices.",
+        )
+
+    first_choice = choices[0]
+    if not isinstance(first_choice, dict):
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI provider response choice is malformed.",
+        )
+
+    message = first_choice.get("message")
+    if not isinstance(message, dict):
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI provider message is malformed or missing.",
+        )
+
+    content = message.get("content")
+    if not isinstance(content, str) or not content.strip():
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="The AI provider returned an empty response.",
