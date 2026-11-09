@@ -7,7 +7,16 @@ from datetime import datetime, timedelta
 
 from backend.main import app
 from backend.database import get_session
-from backend.models import JobViewLog, User, Resume, Job, JobType, JobSchedule, Application
+from backend.models import (
+    JobViewLog,
+    User,
+    Resume,
+    Job,
+    JobType,
+    JobSchedule,
+    Application,
+    ApplicationStatus,
+)
 
 TEST_NOW = datetime(2026, 6, 15, 12, 0, 0) # Fixed datetime for testing purposes
 
@@ -44,6 +53,11 @@ def client():
 
     # Clears override after the test
     app.dependency_overrides.clear()
+
+@pytest.fixture
+def db_session():
+    with Session(engine) as session:
+        yield session
 
 # ---------------------------------- Users -------------------------------------
 @pytest.fixture
@@ -217,3 +231,40 @@ def test_views(test_user, test_jobs):
             session.add(job_view)
         session.commit()
     return len(test_jobs)  # Return the number of views logged
+
+# ------------------------------- Applications ---------------------------------
+@pytest.fixture
+def candidate_application(client, test_user, second_user, test_jobs, add_resumes_for_user):
+    """
+    Creates an application where test_user is recruiter and second_user is applicant.
+    Returns recruiter_user, applicant_user, and the created application object.
+    """
+    with Session(engine) as session:
+        job = test_jobs[0]
+        # Resume was created for test_user in add_resumes_for_user fixture; let's create a resume for second_user
+        resume = Resume(
+            user_id=second_user["id"],
+            file_name="applicant_resume.pdf",
+            file_path="/tmp/applicant_resume.pdf",
+            is_default=True,
+        )
+        session.add(resume)
+        session.commit()
+        session.refresh(resume)
+
+        application = Application(
+            job_id=job.id,
+            applicant_id=second_user["id"],
+            resume_id=resume.id,
+            status=ApplicationStatus.APPLIED,
+        )
+        session.add(application)
+        session.commit()
+        session.refresh(application)
+
+        return {
+            "recruiter": test_user,
+            "applicant": second_user,
+            "job_id": job.id,
+            "application_id": application.id,
+        }

@@ -6,7 +6,7 @@ from enum import Enum
 from pydantic import EmailStr
 from sqlalchemy import UniqueConstraint
 from sqlmodel import SQLModel, Field, Relationship
-from typing import List
+from typing import List, Optional
 from datetime import date, datetime, timezone
 
 # ENUMS
@@ -39,6 +39,16 @@ class ApplicationStatus(str, Enum):
     OFFERED = "Offered"
     REJECTED = "Rejected"
 
+class NotificationType(str, Enum):
+    STATUS_UPDATE = "status_update"
+    INTERVIEW_INVITATION = "interview_invitation"
+    APPLICATION_RECEIVED = "application_received"
+    SYSTEM = "system"
+
+class InterviewRole(str, Enum):
+    USER = "user"
+    ASSISTANT = "assistant"
+
 class AnalyticsGranularity(str, Enum):
     DAY = "day"
     WEEK = "week"
@@ -54,10 +64,11 @@ class User(SQLModel, table=True):
     failed_attempts: int = Field(default=0)
     locked_until: datetime | None = Field(default=None)
 
-    profile: Profile = Relationship(back_populates="user")
+    profile: Optional["Profile"] = Relationship(back_populates="user")
     resumes: List[Resume] = Relationship(back_populates="user")
     posted_jobs: List["Job"] = Relationship(back_populates="recruiter")
     applications: List["Application"] = Relationship(back_populates="applicant")
+    notifications: List["Notification"] = Relationship(back_populates="user")
 
 
 class Profile(SQLModel, table=True):
@@ -139,6 +150,35 @@ class JobViewLog(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", index=True)
     job_id: int = Field(foreign_key="job.id", index=True)
     viewed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+
+class Notification(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True, nullable=False)
+    title: str = Field(nullable=False)
+    message: str = Field(nullable=False)
+    notification_type: NotificationType = Field(default=NotificationType.STATUS_UPDATE, index=True)
+    is_read: bool = Field(default=False, index=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+    reference_id: int | None = Field(default=None)
+    reference_type: str | None = Field(default=None)
+
+    user: User | None = Relationship(back_populates="notifications")
+
+class InterviewSession(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True, nullable=False)
+    job_id: int = Field(foreign_key="job.id", index=True, nullable=False)
+    # No foreign key: resumes are hard-deleted and that must not be blocked by old sessions
+    resume_id: int | None = Field(default=None)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+
+class InterviewSessionMessage(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    session_id: int = Field(foreign_key="interviewsession.id", index=True, nullable=False)
+    role: InterviewRole = Field(nullable=False)
+    content: str = Field(nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # REQUEST/RESPONSES SCHEMAS
 
@@ -312,3 +352,44 @@ class ApplicationSummaryResponse(SQLModel):
     category_count: int = 0
     location: str | None = None
     location_count: int = 0
+
+# NOTIFICATION SCHEMAS
+
+class NotificationResponse(SQLModel):
+    id: int
+    user_id: int
+    title: str
+    message: str
+    notification_type: NotificationType
+    is_read: bool
+    created_at: datetime
+    reference_id: int | None = None
+    reference_type: str | None = None
+
+class NotificationListResponse(SQLModel):
+    total_count: int
+    unread_count: int
+    notifications: List[NotificationResponse]
+
+# INTERVIEW PREP SCHEMAS
+
+class InterviewMessage(SQLModel):
+    role: InterviewRole
+    content: str
+
+class InterviewSessionCreate(SQLModel):
+    application_id: int
+
+class InterviewMessageCreate(SQLModel):
+    content: str
+
+class InterviewSessionSummary(SQLModel):
+    id: int
+    job_id: int
+    job_title: str
+    company_name: str
+    created_at: datetime
+    updated_at: datetime
+
+class InterviewSessionDetail(InterviewSessionSummary):
+    messages: List[InterviewMessage]

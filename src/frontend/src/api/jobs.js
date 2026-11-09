@@ -48,15 +48,17 @@ export async function searchJobs(token, { keyword, location, category, jobType, 
   return body
 }
 
-export async function getJobById(token, jobId) {
+export async function getJobById(token, jobId, signal) {
   let response
   try {
     response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      signal,
     })
-  } catch {
+  } catch (err) {
+    if (err.name === 'AbortError') throw err
     throw new Error('Could not reach the server. Is the backend running?')
   }
 
@@ -72,6 +74,24 @@ export async function getJobById(token, jobId) {
   }
 
   return body
+}
+
+export async function recordJobView(token, jobId) {
+  let response
+  try {
+    response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}/view`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  } catch {
+    throw new Error('Could not reach the server. Is the backend running?')
+  }
+
+  if (!response.ok) {
+    throw new Error('Failed to record job view.')
+  }
 }
 
 export async function applyToJob(token, jobId, { resumeId, coverLetter } = {}) {

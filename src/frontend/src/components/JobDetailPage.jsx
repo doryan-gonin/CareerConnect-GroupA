@@ -1,5 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { getJobById, applyToJob } from '../api/jobs'
+import { getMyApplications } from '../api/applications'
+import ApplicationForm from './ApplicationForm'
+import ApplicationStatusBadge from './ApplicationStatusBadge'
 
 function formatSalary(min, max) {
   if (min && max) {
@@ -47,52 +50,57 @@ function JobDetailPage({
   onNavigateDashboard,
   onLogout,
   isLoggingOut = false,
+  isApplying = false,
+  onApply,
+  onBackToPosting,
 }) {
   const [jobState, setJobState] = useState({ id: null, job: null, isLoading: true, error: '' })
-  const [isApplying, setIsApplying] = useState(false)
-  const [applyError, setApplyError] = useState('')
-  const [applySuccess, setApplySuccess] = useState('')
-  const viewedJobIdRef = useRef(null)
-
+  const [applicationState, setApplicationState] = useState({ id: null, status: null })
   const job = jobState.id === jobId ? jobState.job : null
   const isLoading = jobState.id !== jobId || jobState.isLoading
   const loadError = jobState.id === jobId ? jobState.error : ''
+  const isCheckingApplication = applicationState.id !== jobId
+  const applicationStatus = isCheckingApplication ? null : applicationState.status
 
   useEffect(() => {
-    if (viewedJobIdRef.current === jobId) return
-    viewedJobIdRef.current = jobId
+    const controller = new AbortController()
 
-    let isMounted = true
-    getJobById(token, jobId)
+    getJobById(token, jobId, controller.signal)
       .then((data) => {
-        if (isMounted) {
-          setJobState({ id: jobId, job: data, isLoading: false, error: '' })
-        }
+        setJobState({ id: jobId, job: data, isLoading: false, error: '' })
       })
       .catch((err) => {
-        if (isMounted) {
+        if (err.name !== 'AbortError') {
           setJobState({ id: jobId, job: null, isLoading: false, error: err.message })
         }
       })
 
     return () => {
-      isMounted = false
+      controller.abort()
     }
-  }, [jobId])
+  }, [token, jobId])
 
-  async function handleApply() {
-    if (!job) return
-    setIsApplying(true)
-    setApplyError('')
-    setApplySuccess('')
-    try {
-      await applyToJob(token, job.id)
-      setApplySuccess('Application submitted successfully!')
-    } catch (err) {
-      setApplyError(err.message)
-    } finally {
-      setIsApplying(false)
+  useEffect(() => {
+    let active = true
+
+    getMyApplications(token)
+      .then((applications) => {
+        const existing = applications.find((application) => application.job_id === jobId)
+        if (active) setApplicationState({ id: jobId, status: existing?.status ?? null })
+      })
+      .catch(() => {
+        // The backend still rejects duplicates, so a failed check must not block applying
+        if (active) setApplicationState({ id: jobId, status: null })
+      })
+
+    return () => {
+      active = false
     }
+  }, [token, jobId])
+
+  async function handleSubmitApplication({ job_id, resume_id }) {
+    await applyToJob(token, job_id, { resumeId: resume_id })
+    setApplicationState({ id: job_id, status: 'Applied' })
   }
 
   const salaryDisplay = job ? formatSalary(job.salary_min, job.salary_max) : null
@@ -160,7 +168,7 @@ function JobDetailPage({
 
       {/* Main Content */}
       <main className="mx-auto max-w-4xl px-4 py-8">
-        <div className="mb-6">
+        {!isApplying && <div className="mb-6">
           <a
             href="/jobs"
             onClick={(e) => {
@@ -171,7 +179,7 @@ function JobDetailPage({
           >
             ← Back to Jobs
           </a>
-        </div>
+        </div>}
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white p-16 text-center shadow-xs">
@@ -193,6 +201,13 @@ function JobDetailPage({
               Back to Job Listings
             </a>
           </div>
+        ) : job && isApplying ? (
+          <ApplicationForm
+            token={token}
+            job={job}
+            onBack={onBackToPosting}
+            onSubmitApplication={handleSubmitApplication}
+          />
         ) : job ? (
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs sm:p-10">
             {/* Header */}
@@ -205,6 +220,7 @@ function JobDetailPage({
                 <span className="rounded-full bg-gray-100 px-3 py-0.5 text-xs font-medium text-gray-700">
                   {job.category}
                 </span>
+                {applicationStatus && <ApplicationStatusBadge status={applicationStatus} />}
                 {postedDisplay && (
                   <>
                     <span className="text-gray-300">•</span>
@@ -261,25 +277,14 @@ function JobDetailPage({
 
             {/* Application Section */}
             <div className="pt-6">
-              {applySuccess && (
-                <p className="mb-4 rounded-md bg-green-50 p-4 text-sm font-medium text-green-700">
-                  {applySuccess}
-                </p>
-              )}
-              {applyError && (
-                <p className="mb-4 rounded-md bg-red-50 p-4 text-sm font-medium text-red-700">
-                  {applyError}
-                </p>
-              )}
-
               <div className="flex items-center gap-4">
                 <button
                   type="button"
-                  onClick={handleApply}
-                  disabled={isApplying || Boolean(applySuccess)}
-                  className="rounded-md bg-purple-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={onApply}
+                  disabled={isCheckingApplication || Boolean(applicationStatus)}
+                  className="rounded-md bg-purple-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-600"
                 >
-                  {applySuccess ? 'Applied' : isApplying ? 'Applying…' : 'Apply Now'}
+                  {applicationStatus ? 'Already applied' : 'Apply Now'}
                 </button>
 
                 <a
