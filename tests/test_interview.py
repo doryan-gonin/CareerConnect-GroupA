@@ -26,6 +26,7 @@ def ai_requests(monkeypatch):
         return FakeProviderResponse()
 
     monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
+    monkeypatch.setattr(interview_service, "AI_API_BASE_URL", "https://api.example.com/v1")
     monkeypatch.setattr(interview_service.httpx, "post", fake_post)
     return payloads
 
@@ -147,3 +148,125 @@ class TestContextPassing:
             {"role": "assistant", "content": "AI reply"},
             {"role": "user", "content": "Second question"},
         ]
+
+
+class TestProviderFailureHandling:
+    def test_provider_not_configured_returns_503(
+        self, client, candidate_application, applicant_headers, monkeypatch
+    ):
+        monkeypatch.setattr(interview_service, "AI_API_BASE_URL", None)
+
+        response = client.post(
+            "/api/interview/sessions",
+            json={"application_id": candidate_application["application_id"]},
+            headers=applicant_headers,
+        )
+        assert response.status_code == 503
+        assert "AI interview prep is not configured" in response.json()["detail"]
+
+    def test_provider_non_json_response_returns_502(
+        self, client, candidate_application, applicant_headers, monkeypatch
+    ):
+        class NonJsonResponse:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                raise ValueError("No JSON object could be decoded")
+
+        monkeypatch.setattr(interview_service, "AI_API_BASE_URL", "https://api.example.com/v1")
+        monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
+        monkeypatch.setattr(interview_service.httpx, "post", lambda *args, **kwargs: NonJsonResponse())
+
+        response = client.post(
+            "/api/interview/sessions",
+            json={"application_id": candidate_application["application_id"]},
+            headers=applicant_headers,
+        )
+        assert response.status_code == 502
+        assert "non-JSON or malformed" in response.json()["detail"]
+
+    def test_provider_empty_choices_returns_502(
+        self, client, candidate_application, applicant_headers, monkeypatch
+    ):
+        class EmptyChoicesResponse:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {"choices": []}
+
+        monkeypatch.setattr(interview_service, "AI_API_BASE_URL", "https://api.example.com/v1")
+        monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
+        monkeypatch.setattr(interview_service.httpx, "post", lambda *args, **kwargs: EmptyChoicesResponse())
+
+        response = client.post(
+            "/api/interview/sessions",
+            json={"application_id": candidate_application["application_id"]},
+            headers=applicant_headers,
+        )
+        assert response.status_code == 502
+        assert "missing choices" in response.json()["detail"]
+
+    def test_provider_missing_message_returns_502(
+        self, client, candidate_application, applicant_headers, monkeypatch
+    ):
+        class MissingMessageResponse:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {"choices": [{}]}
+
+        monkeypatch.setattr(interview_service, "AI_API_BASE_URL", "https://api.example.com/v1")
+        monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
+        monkeypatch.setattr(interview_service.httpx, "post", lambda *args, **kwargs: MissingMessageResponse())
+
+        response = client.post(
+            "/api/interview/sessions",
+            json={"application_id": candidate_application["application_id"]},
+            headers=applicant_headers,
+        )
+        assert response.status_code == 502
+        assert "malformed or missing" in response.json()["detail"]
+
+    def test_provider_empty_content_returns_502(
+        self, client, candidate_application, applicant_headers, monkeypatch
+    ):
+        class EmptyContentResponse:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {"choices": [{"message": {"content": "   "}}]}
+
+        monkeypatch.setattr(interview_service, "AI_API_BASE_URL", "https://api.example.com/v1")
+        monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
+        monkeypatch.setattr(interview_service.httpx, "post", lambda *args, **kwargs: EmptyContentResponse())
+
+        response = client.post(
+            "/api/interview/sessions",
+            json={"application_id": candidate_application["application_id"]},
+            headers=applicant_headers,
+        )
+        assert response.status_code == 502
+        assert "empty response" in response.json()["detail"]
+
+    def test_provider_http_error_returns_502(
+        self, client, candidate_application, applicant_headers, monkeypatch
+    ):
+        def fake_post_error(*args, **kwargs):
+            raise interview_service.httpx.ConnectError("Connection refused")
+
+        monkeypatch.setattr(interview_service, "AI_API_BASE_URL", "https://api.example.com/v1")
+        monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
+        monkeypatch.setattr(interview_service.httpx, "post", fake_post_error)
+
+        response = client.post(
+            "/api/interview/sessions",
+            json={"application_id": candidate_application["application_id"]},
+            headers=applicant_headers,
+        )
+        assert response.status_code == 502
+        assert "Could not reach the AI provider" in response.json()["detail"]
+

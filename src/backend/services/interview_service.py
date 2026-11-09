@@ -69,10 +69,10 @@ def build_system_prompt(job: Job, resume_text: str) -> str:
 
 
 def _chat_completion(system_prompt: str, messages: list[InterviewMessage]) -> str:
-    if not AI_API_KEY:
+    if not AI_API_BASE_URL:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="AI interview prep is not configured. Set AI_API_KEY (see .env.example).",
+            detail="AI interview prep is not configured. Set AI_API_BASE_URL (see .env.example).",
         )
 
     payload = {
@@ -83,11 +83,16 @@ def _chat_completion(system_prompt: str, messages: list[InterviewMessage]) -> st
         "max_tokens": 1500,
     }
 
+    headers = {}
+    if AI_API_KEY:
+        headers["Authorization"] = f"Bearer {AI_API_KEY}"
+
+    base_url = AI_API_BASE_URL.rstrip("/")
     try:
         response = httpx.post(
-            f"{AI_API_BASE_URL}/chat/completions",
+            f"{base_url}/chat/completions",
             json=payload,
-            headers={"Authorization": f"Bearer {AI_API_KEY}"},
+            headers=headers,
             timeout=30.0,
         )
         response.raise_for_status()
@@ -102,8 +107,43 @@ def _chat_completion(system_prompt: str, messages: list[InterviewMessage]) -> st
             detail="Could not reach the AI provider.",
         ) from err
 
-    content = response.json()["choices"][0]["message"].get("content")
-    if not content or not content.strip():
+    try:
+        data = response.json()
+    except Exception as err:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI provider returned a non-JSON or malformed response.",
+        ) from err
+
+    if not isinstance(data, dict):
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI provider returned an invalid response structure.",
+        )
+
+    choices = data.get("choices")
+    if not isinstance(choices, list) or not choices:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI provider response missing choices.",
+        )
+
+    first_choice = choices[0]
+    if not isinstance(first_choice, dict):
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI provider response choice is malformed.",
+        )
+
+    message = first_choice.get("message")
+    if not isinstance(message, dict):
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI provider message is malformed or missing.",
+        )
+
+    content = message.get("content")
+    if not isinstance(content, str) or not content.strip():
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="The AI provider returned an empty response.",

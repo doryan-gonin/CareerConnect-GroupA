@@ -30,3 +30,27 @@ def test_config_missing_jwt_secret_key_raises(monkeypatch):
         import importlib
         import backend.config
         importlib.reload(backend.config)
+
+
+def test_config_ai_base_url_unset(monkeypatch):
+    monkeypatch.delenv("AI_API_BASE_URL", raising=False)
+    monkeypatch.setattr("dotenv.load_dotenv", lambda *args, **kwargs: None)
+    if "backend.config" in sys.modules:
+        monkeypatch.delitem(sys.modules, "backend.config")
+    import importlib
+    import backend.config
+
+    reloaded = importlib.reload(backend.config)
+    assert reloaded.AI_API_BASE_URL is None
+
+
+def test_config_ai_base_url_override(monkeypatch):
+    monkeypatch.setenv("AI_API_BASE_URL", "http://localhost:11434/v1")
+    if "backend.config" in sys.modules:
+        monkeypatch.delitem(sys.modules, "backend.config")
+    import importlib
+    import backend.config
+
+    reloaded = importlib.reload(backend.config)
+    assert reloaded.AI_API_BASE_URL == "http://localhost:11434/v1"
+

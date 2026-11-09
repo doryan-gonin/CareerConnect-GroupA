@@ -21,7 +21,7 @@ DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'careercon
 UPLOAD_DIR: Path = Path(os.getenv("UPLOAD_DIR", BASE_DIR / "uploads" / "resumes"))
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-# Groq free tier, OpenAI-compatible API. Keys: https://console.groq.com/keys
+# OpenAI-compatible AI API Configuration
 AI_API_KEY: str | None = os.getenv("AI_API_KEY")
-AI_API_BASE_URL: str = "https://api.groq.com/openai/v1"
-AI_MODEL: str = os.getenv("AI_MODEL", "openai/gpt-oss-20b")
+AI_API_BASE_URL: str | None = os.getenv("AI_API_BASE_URL")
+AI_MODEL: str | None = os.getenv("AI_MODEL")
