@@ -97,25 +97,40 @@ def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_sessi
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.") # Generic 401 response
 
     # Locked out?
-    if user.locked_until and user.locked_until.replace(tzinfo=None) > datetime.now(timezone.utc).replace(tzinfo=None):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Too many failed attempts. Try again later."
+    now = datetime.now(timezone.utc)
+    if user.locked_until:
+        locked_until_utc = (
+            user.locked_until
+            if user.locked_until.tzinfo
+            else user.locked_until.replace(tzinfo=timezone.utc)
         )
+        if locked_until_utc > now:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Too many failed attempts. Try again later."
+            )
+        else:
+            # Lockout expired: reset failed attempts counter and clear lockout timestamp
+            user.failed_attempts = 0
+            user.locked_until = None
+            session.add(user)
+            session.commit()
 
     # bcrypt verification
-    if user:
-        if not bcrypt.checkpw(payload.password.encode("utf-8"), user.password_hash.encode("utf-8")):
-            user.failed_attempts += 1
-            if user.failed_attempts >= MAX_FAILED_ATTEMPTS:
-                user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=LOCKOUT_DURATION_MINUTES)
-            session.commit()
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
+    if not bcrypt.checkpw(payload.password.encode("utf-8"), user.password_hash.encode("utf-8")):
+        user.failed_attempts += 1
+        if user.failed_attempts >= MAX_FAILED_ATTEMPTS:
+            user.locked_until = now + timedelta(minutes=LOCKOUT_DURATION_MINUTES)
+        session.add(user)
+        session.commit()
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
 
     # Success: reset counters
-    user.failed_attempts = 0
-    user.locked_until = None
-    session.commit()
+    if user.failed_attempts != 0 or user.locked_until is not None:
+        user.failed_attempts = 0
+        user.locked_until = None
+        session.add(user)
+        session.commit()
     
     # JWT Generation and response
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)

@@ -54,6 +54,11 @@ def client():
     # Clears override after the test
     app.dependency_overrides.clear()
 
+@pytest.fixture
+def db_session():
+    with Session(engine) as session:
+        yield session
+
 # ---------------------------------- Users -------------------------------------
 @pytest.fixture
 def test_user():

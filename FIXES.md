@@ -16,7 +16,7 @@ To systematically resolve outstanding defects, tasks are organized into four pri
 Issues that directly break the build, crash the test suite, cause unhandled HTTP 500 errors during normal use, or cause persistent account lockout loops:
 - [4.8 AI Provider Unexpected Responses Causing HTTP 500 [FIXED]](#48-interview-provider-unexpected-responses-causing-http-500-fixed) — Malformed responses, empty choices, or missing fields crash the backend with an uncaught 500 instead of 502 Bad Gateway.
 - [4.7 Hardcoded AI Provider URL (`AI_API_BASE_URL`) [FIXED]](#47-interview-provider-configuration-base-url--offline-fallback-mocking) — Base URL is read dynamically from environment variables without any hardcoded provider default.
-- [2.2 Account Re-lockout Bug After Lockout Duration Expires](#22-account-re-lockout-bug-after-lockout-duration-expires) — `failed_attempts` is not reset after the 15-minute lockout elapses; a single typo re-locks the user indefinitely.
+- [2.2 Account Re-lockout Bug After Lockout Duration Expires [FIXED]](#22-account-re-lockout-bug-after-lockout-duration-expires-fixed) — `failed_attempts` is reset when the lockout duration elapses, preventing immediate re-lockout loops.
 - [2.6 Missing Profile Creation on User Registration](#26-missing-profile-creation-on-user-registration) — Registration does not insert a corresponding `Profile` row, leaving `User.profile` as `None` and leading to missing profile data.
 
 ### Tier 2: Functional Reliability & UX Polish
@@ -56,7 +56,7 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
    - [1.3 Duplicated Configuration and Credentials [FIXED]](#13-duplicated-configuration-and-credentials-fixed)
 2. [Data Integrity, Concurrency & Lifecycle](#2-data-integrity-concurrency--lifecycle)
    - [2.1 Timezone Inconsistencies (Naive vs. UTC Datetimes)](#21-timezone-inconsistencies-naive-vs-utc-datetimes)
-   - [2.2 Account Re-lockout Bug After Lockout Duration Expires](#22-account-re-lockout-bug-after-lockout-duration-expires)
+   - [2.2 Account Re-lockout Bug After Lockout Duration Expires [FIXED]](#22-account-re-lockout-bug-after-lockout-duration-expires-fixed)
    - [2.3 Relative Working Directory Dependencies (DB & Uploads)](#23-relative-working-directory-dependencies-db--uploads)
    - [2.4 Non-Atomic File Operations & Orphaned Files](#24-non-atomic-file-operations--orphaned-files)
    - [2.5 Race Conditions in Resume Count & Default Status](#25-race-conditions-in-resume-count--default-status)
@@ -180,7 +180,8 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
 
 ---
 
-### 2.2 Account Re-lockout Bug After Lockout Duration Expires
+### 2.2 Account Re-lockout Bug After Lockout Duration Expires [FIXED]
+- **Status**: ✅ Fixed (Reset `failed_attempts` and cleared `locked_until` upon lockout expiration in `login_user` in `src/backend/routers/auth.py`; added regression tests in `tests/test_auth.py`)
 - **Issue**:
   When an account gets locked out, `user.failed_attempts` reaches 5 and `user.locked_until` is set. After the 15-minute lockout period elapses, `user.failed_attempts` is still 5. If the user mistypes their password on their very first attempt after waiting 15 minutes, `user.failed_attempts += 1` makes it 6 (`>= 5`), immediately locking them out for another 15 minutes.
 - **Where to fix**:
