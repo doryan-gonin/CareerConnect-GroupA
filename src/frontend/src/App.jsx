@@ -8,6 +8,7 @@ import JobDetailPage from './components/JobDetailPage'
 import InterviewPrepPage from './components/InterviewPrepPage'
 import InterviewNewSession from './components/InterviewNewSession'
 import InterviewConversation from './components/InterviewConversation'
+import AnalyticsPage from './components/AnalyticsPage'
 import { logoutUser } from './api/auth'
 
 const TOKEN_STORAGE_KEY = 'accessToken'
@@ -18,7 +19,7 @@ function normalizePath(pathname) {
 }
 
 function isAllowedAppPath(path) {
-  return path === '/dashboard' || path === '/jobs' || /^\/jobs\/\d+$/.test(path) || /^\/interview(\/new|\/\d+)?$/.test(path)
+  return path === '/dashboard' || path === '/analytics' || path === '/jobs' || /^\/jobs\/\d+$/.test(path) || /^\/interview(\/new|\/\d+)?$/.test(path)
 }
 
 function App() {
@@ -140,7 +141,13 @@ function App() {
 
   if (token) {
     const interviewMatch = currentPath.match(/^\/interview\/(\d+)$/)
-    let page = <LoggedInScreen token={token} onLogout={handleLogout} />
+    let page = (
+      <LoggedInScreen
+        token={token}
+        onLogout={handleLogout}
+        onViewAnalytics={() => navigate('/analytics')}
+      />
+    )
     if (interviewMatch) {
       page = (
         <InterviewConversation
@@ -179,7 +186,11 @@ function App() {
           onDashboard={currentPath.startsWith('/interview') ? () => navigate('/dashboard') : undefined}
         />
         <main className="mx-auto max-w-5xl px-4 py-8">
-          {page}
+          {currentPath === '/analytics' ? (
+            <AnalyticsPage token={token} onBack={() => navigate('/dashboard')} />
+          ) : (
+            page
+          )}
         </main>
       </div>
     )
