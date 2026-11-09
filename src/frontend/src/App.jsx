@@ -141,7 +141,13 @@ function App() {
 
   if (token) {
     const interviewMatch = currentPath.match(/^\/interview\/(\d+)$/)
-    let page = <LoggedInScreen token={token} onLogout={handleLogout} />
+    let page = (
+      <LoggedInScreen
+        token={token}
+        onLogout={handleLogout}
+        onViewAnalytics={() => navigate('/analytics')}
+      />
+    )
     if (interviewMatch) {
       page = (
         <InterviewConversation
@@ -183,7 +189,7 @@ function App() {
           {currentPath === '/analytics' ? (
             <AnalyticsPage token={token} onBack={() => navigate('/dashboard')} />
           ) : (
-            <LoggedInScreen token={token} onLogout={handleLogout} onViewAnalytics={() => navigate('/analytics')} />
+            page
           )}
         </main>
       </div>
