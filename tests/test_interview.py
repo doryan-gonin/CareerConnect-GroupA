@@ -26,6 +26,7 @@ def ai_requests(monkeypatch):
         return FakeProviderResponse()
 
     monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
+    monkeypatch.setattr(interview_service, "AI_API_BASE_URL", "https://api.example.com/v1")
     monkeypatch.setattr(interview_service.httpx, "post", fake_post)
     return payloads
 
@@ -150,6 +151,19 @@ class TestContextPassing:
 
 
 class TestProviderFailureHandling:
+    def test_provider_not_configured_returns_503(
+        self, client, candidate_application, applicant_headers, monkeypatch
+    ):
+        monkeypatch.setattr(interview_service, "AI_API_BASE_URL", None)
+
+        response = client.post(
+            "/api/interview/sessions",
+            json={"application_id": candidate_application["application_id"]},
+            headers=applicant_headers,
+        )
+        assert response.status_code == 503
+        assert "AI interview prep is not configured" in response.json()["detail"]
+
     def test_provider_non_json_response_returns_502(
         self, client, candidate_application, applicant_headers, monkeypatch
     ):
@@ -160,6 +174,7 @@ class TestProviderFailureHandling:
             def json(self):
                 raise ValueError("No JSON object could be decoded")
 
+        monkeypatch.setattr(interview_service, "AI_API_BASE_URL", "https://api.example.com/v1")
         monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
         monkeypatch.setattr(interview_service.httpx, "post", lambda *args, **kwargs: NonJsonResponse())
 
@@ -181,6 +196,7 @@ class TestProviderFailureHandling:
             def json(self):
                 return {"choices": []}
 
+        monkeypatch.setattr(interview_service, "AI_API_BASE_URL", "https://api.example.com/v1")
         monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
         monkeypatch.setattr(interview_service.httpx, "post", lambda *args, **kwargs: EmptyChoicesResponse())
 
@@ -202,6 +218,7 @@ class TestProviderFailureHandling:
             def json(self):
                 return {"choices": [{}]}
 
+        monkeypatch.setattr(interview_service, "AI_API_BASE_URL", "https://api.example.com/v1")
         monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
         monkeypatch.setattr(interview_service.httpx, "post", lambda *args, **kwargs: MissingMessageResponse())
 
@@ -223,6 +240,7 @@ class TestProviderFailureHandling:
             def json(self):
                 return {"choices": [{"message": {"content": "   "}}]}
 
+        monkeypatch.setattr(interview_service, "AI_API_BASE_URL", "https://api.example.com/v1")
         monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
         monkeypatch.setattr(interview_service.httpx, "post", lambda *args, **kwargs: EmptyContentResponse())
 
@@ -240,6 +258,7 @@ class TestProviderFailureHandling:
         def fake_post_error(*args, **kwargs):
             raise interview_service.httpx.ConnectError("Connection refused")
 
+        monkeypatch.setattr(interview_service, "AI_API_BASE_URL", "https://api.example.com/v1")
         monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
         monkeypatch.setattr(interview_service.httpx, "post", fake_post_error)
 

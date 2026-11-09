@@ -69,10 +69,10 @@ def build_system_prompt(job: Job, resume_text: str) -> str:
 
 
 def _chat_completion(system_prompt: str, messages: list[InterviewMessage]) -> str:
-    if not AI_API_KEY:
+    if not AI_API_BASE_URL:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="AI interview prep is not configured. Set AI_API_KEY (see .env.example).",
+            detail="AI interview prep is not configured. Set AI_API_BASE_URL (see .env.example).",
         )
 
     payload = {
@@ -83,11 +83,16 @@ def _chat_completion(system_prompt: str, messages: list[InterviewMessage]) -> st
         "max_tokens": 1500,
     }
 
+    headers = {}
+    if AI_API_KEY:
+        headers["Authorization"] = f"Bearer {AI_API_KEY}"
+
+    base_url = AI_API_BASE_URL.rstrip("/")
     try:
         response = httpx.post(
-            f"{AI_API_BASE_URL}/chat/completions",
+            f"{base_url}/chat/completions",
             json=payload,
-            headers={"Authorization": f"Bearer {AI_API_KEY}"},
+            headers=headers,
             timeout=30.0,
         )
         response.raise_for_status()

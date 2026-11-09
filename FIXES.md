@@ -15,7 +15,7 @@ To systematically resolve outstanding defects, tasks are organized into four pri
 ### Tier 1: Immediate Blockers & Critical Runtime Bugs
 Issues that directly break the build, crash the test suite, cause unhandled HTTP 500 errors during normal use, or cause persistent account lockout loops:
 - [4.8 AI Provider Unexpected Responses Causing HTTP 500 [FIXED]](#48-interview-provider-unexpected-responses-causing-http-500-fixed) — Malformed responses, empty choices, or missing fields crash the backend with an uncaught 500 instead of 502 Bad Gateway.
-- [4.7 Interview Provider Configuration, Base URL & Offline Fallback Mocking](#47-interview-provider-configuration-base-url--offline-fallback-mocking) — Base URL is hardcoded to Groq; cannot be configured via `.env` to use local models or alternate providers.
+- [4.7 Hardcoded AI Provider URL (`AI_API_BASE_URL`) [FIXED]](#47-interview-provider-configuration-base-url--offline-fallback-mocking) — Base URL is read dynamically from environment variables without any hardcoded provider default.
 - [2.2 Account Re-lockout Bug After Lockout Duration Expires](#22-account-re-lockout-bug-after-lockout-duration-expires) — `failed_attempts` is not reset after the 15-minute lockout elapses; a single typo re-locks the user indefinitely.
 - [2.6 Missing Profile Creation on User Registration](#26-missing-profile-creation-on-user-registration) — Registration does not insert a corresponding `Profile` row, leaving `User.profile` as `None` and leading to missing profile data.
 
@@ -495,17 +495,18 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
 ---
 
 ### 4.7 Interview Provider Configuration, Base URL & Offline Fallback Mocking
+- **Status**: ⚠️ Base URL configuration fixed (resolved in `src/backend/config.py` and `.env.example` without any hardcoded provider default); offline fallback mock mode remains for Tier 2.
 - **Issue**:
-  1. **Hardcoded Base URL**: `AI_API_BASE_URL` is hardcoded to `"https://api.groq.com/openai/v1"` in `src/backend/config.py`. It cannot be overridden via environment variables to target alternative providers, local models (Ollama, LM Studio), or self-hosted tokenizers required for issue #136.
-  2. **Missing Key Service Failure (HTTP 503)**: If `AI_API_KEY` is omitted, all interview endpoints raise `HTTP 503 Service Unavailable`. In local development or test environments without access to live Groq credentials, the entire feature is non-functional.
+  1. **Hardcoded Base URL**: `AI_API_BASE_URL` was hardcoded to a specific external provider in `src/backend/config.py`. It must be read dynamically from environment variables to target arbitrary OpenAI-compatible endpoints or local models without any baked-in provider defaults.
+  2. **Missing Key Service Failure (HTTP 503)**: If `AI_API_BASE_URL` is omitted, all interview endpoints raise `HTTP 503 Service Unavailable`. In local development or test environments without access to live provider credentials, the entire feature is non-functional.
 - **Where to fix**:
   - `src/backend/config.py`
   - `src/backend/services/interview_service.py`
   - `.env.example`
 - **The Fix**:
-  1. Make `AI_API_BASE_URL` configurable via environment variable:
+  1. Make `AI_API_BASE_URL` purely environment-driven:
      ```python
-     AI_API_BASE_URL: str = os.getenv("AI_API_BASE_URL", "https://api.groq.com/openai/v1")
+     AI_API_BASE_URL: str | None = os.getenv("AI_API_BASE_URL")
      ```
   2. Add an optional mock/offline fallback mode when `AI_API_KEY` is not provided (or when `AI_MOCK_MODE=True`), returning deterministic mock coach responses so the frontend and API can be thoroughly evaluated without external network credentials:
      ```python
