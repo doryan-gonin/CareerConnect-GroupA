@@ -1,7 +1,22 @@
-function Navbar({ onLogout, isLoggingOut = false, onBrowseJobs }) {
+function NavLink({ href, onClick, children }) {
+  return (
+    <a
+      href={href}
+      onClick={(e) => {
+        e.preventDefault()
+        onClick()
+      }}
+      className="text-sm font-medium text-purple-600 hover:underline cursor-pointer"
+    >
+      {children}
+    </a>
+  )
+}
+
+function Navbar({ onLogout, isLoggingOut = false, onBrowseJobs, onInterviewPrep, onDashboard }) {
   return (
     <header className="border-b border-gray-200 bg-white">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-y-2 px-4 py-3">
         {/* Brand */}
         <div className="flex items-center gap-2">
           <span className="text-xl font-bold text-gray-900">
@@ -10,19 +25,10 @@ function Navbar({ onLogout, isLoggingOut = false, onBrowseJobs }) {
         </div>
 
         {/* User & Logout */}
-        <div className="flex items-center gap-4">
-          {onBrowseJobs && (
-            <a
-              href="/jobs"
-              onClick={(e) => {
-                e.preventDefault()
-                onBrowseJobs()
-              }}
-              className="text-sm font-medium text-purple-600 hover:underline cursor-pointer"
-            >
-              Browse Jobs
-            </a>
-          )}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          {onDashboard && <NavLink href="/dashboard" onClick={onDashboard}>Dashboard</NavLink>}
+          {onBrowseJobs && <NavLink href="/jobs" onClick={onBrowseJobs}>Browse Jobs</NavLink>}
+          {onInterviewPrep && <NavLink href="/interview" onClick={onInterviewPrep}>Interview Prep</NavLink>}
 
           <button
             type="button"
