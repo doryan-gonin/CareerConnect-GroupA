@@ -4,7 +4,7 @@
 * **Role**: Full-Stack Developer / Frontend & Backend
 * **Project**: CareerConnect (SOEN 341 - Fall 2026)
 * **Sprint**: Sprint 3
-* **Total Estimated Time Spent**: ~8.3 Hours
+* **Total Estimated Time Spent**: ~12.1 Hours
 
 ---
 
@@ -40,12 +40,16 @@
 | **11** | **Search Results Pagination & Multi-Page Navigation (Issue 7.10)**<br>Extended `searchJobs` in `api/jobs.js` to accept `page` and `limit`. Updated `JobSearchPageNavbar.jsx` to pass pagination metadata (`page`, `totalPages`, `total`, `limit`) and an `onPageChange` callback to `JobSearchPage.jsx`. Rendered full pagination controls ("Showing X–Y of Z jobs", Previous/Next buttons, and page number buttons). | 45 min | • Commit: [`5e36695`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/5e36695)<br>• Files: `src/frontend/src/api/jobs.js`, `src/frontend/src/components/JobSearchPageNavbar.jsx`, `src/frontend/src/components/JobSearchPage.jsx`<br>• Document: `FIXES.md` (Item 7.10) |
 | **12** | **Dedicated Full-Page Job Details Route `/jobs/:job_id` (Issue 7.7)**<br>Pivoted from an overlay modal popup to a dedicated, bookmarkable full-page route at `/jobs/:job_id` per user requirements. Implemented `getJobById` in `api/jobs.js`. Created `JobDetailPage.jsx` featuring top navbar, "← Back to Jobs" link, loading state, 404 error handling, complete specifications grid, full description, and integrated application submission with real-time feedback. Configured routing in `App.jsx` and updated `JobSearchPage.jsx` to link both job title and Expand button to `/jobs/:id`. Updated Section 7.7 in `FIXES.md`. | 1 hr 15 min | • Commit: [`57a4dc0`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/57a4dc0)<br>• Files: `src/frontend/src/api/jobs.js`, `src/frontend/src/components/JobDetailPage.jsx`, `src/frontend/src/App.jsx`, `src/frontend/src/components/JobSearchPage.jsx`<br>• Document: `FIXES.md` (Item 7.7) |
 | **13** | **Code Review, Linter Verification & Build Quality Assurance**<br>Conducted rigorous verification across all modified files using `oxlint` (0 errors, 0 warnings across all 20 frontend files) and verified clean Vite production builds (`vite build`). Tested responsive layouts, browser Back/Forward navigation, and deep linking across routes. | 45 min | • Quality Assurance Verification<br>• Linter: `oxlint` (clean)<br>• Bundler: `vite build` (clean) |
+| **14** | **Priority Roadmap Restructuring & Issue Reorganization (FIXES.md)**<br>Audited merged AI interview prep pull request review comments and synthesized issues with existing backend backlog. Restructured `FIXES.md` with an operational Priority Roadmap organizing tasks into four tiers (Tier 1: Blockers & Runtime Bugs, Tier 2: Functional Reliability & UX, Tier 3: Test Architecture & Data Integrity, Tier 4: Quality of Life & Scalability). Renumbered all sections sequentially (1.1–5.11), updated internal anchor links, and documented new AI interview items (4.8, 4.9, 4.10, 4.11). | 1 hr | • Branch: `fix/prioritize-fixes-and-interview-prep`<br>• Commits: [`6412078`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/6412078), [`32c1fba`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/32c1fba), [`a55813b`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/a55813b)<br>• Document: `FIXES.md` |
+| **15** | **Tier 1 Defect Remediation & Test Suite Expansion (Issues 4.8, 4.7, 2.2, 2.6)**<br>Sequentially resolved all Tier 1 critical runtime bugs with automated tests:<br>• **Issue 4.8**: Defensively validated AI provider JSON response structures in `interview_service.py` (checking dict, choices list, message dict, and non-empty content), converting unhandled HTTP 500 crashes to clean HTTP 502 Bad Gateway responses. Added 5 failure-path tests in `test_interview.py`.<br>• **Issue 4.7**: Decoupled `AI_API_BASE_URL` from hardcoded Groq provider in `config.py` and `.env.example`, enabling dynamic environment configuration and keyless local models. Added base URL config and 503 missing URL tests.<br>• **Issue 2.2**: Fixed account re-lockout loop in `routers/auth.py` by resetting `failed_attempts` upon lockout duration expiration. Added `db_session` fixture in `conftest.py` and regression tests in `test_auth.py`.<br>• **Issue 2.6**: Fixed missing profile creation on user registration in `routers/auth.py` by creating `Profile` atomically in the registration transaction, and typed `User.profile` as `Optional["Profile"]` in `models.py`. Added verification test in `test_auth.py`. | 2 hrs | • Commits: [`09ccaf9`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/09ccaf9), [`78f4aa9`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/78f4aa9), [`0f81e35`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/0f81e35), [`e28d0bb`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/e28d0bb)<br>• Files: `src/backend/services/interview_service.py`, `src/backend/config.py`, `.env.example`, `src/backend/routers/auth.py`, `src/backend/models.py`<br>• Tests: `tests/test_interview.py`, `tests/test_config.py`, `tests/test_auth.py`, `tests/conftest.py`<br>• Suite: 72/72 tests passing |
+| **16** | **Manual End-to-End Verification & API Edge-Case Testing**<br>Executed end-to-end manual verification using `curl`, local Python dummy HTTP servers, and SQLite inspection across all Tier 1 fixes: verified automatic profile row creation upon signup, validated account lockout triggering and 1-attempt reset after lockout expiration, verified HTTP 503 response when `AI_API_BASE_URL` is omitted, and confirmed HTTP 502 Bad Gateway handling on malformed upstream HTML responses. | 45 min | • Manual Quality Assurance<br>• Verification: End-to-end API & DB inspection |
 
 ---
 
 ## Summary of Deliverables & Artifacts Contributed
-* **Git Branch**:
-  * `fix/frontend-ui-job-search-issues`
+* **Git Branches**:
+  * `fix/frontend-ui-job-search-issues` (Frontend UX & routing fixes)
+  * `fix/prioritize-fixes-and-interview-prep` (Priority roadmap & Tier 1 fixes)
 * **Commits Authored in Sprint 3**:
   * [`8d25ad5`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/8d25ad5): `docs: add job search frontend deficiencies and UX enhancements to FIXES.md`
   * [`ceba1bd`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/ceba1bd): `refactor: align job search navbar layout and UI consistency with main application`
@@ -60,6 +64,13 @@
   * [`0d7f833`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/0d7f833): `fix: persist and revalidate selected job state during search queries and resets in JobSearchPage`
   * [`5e36695`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/5e36695): `feat: add pagination controls and metadata support for job search results`
   * [`57a4dc0`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/57a4dc0): `feat: add dedicated job detail page and routing for full-screen job postings`
+  * [`6412078`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/6412078): `docs: reorganize FIXES.md with urgency tiers, sequential numbering, and AI interview issues`
+  * [`32c1fba`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/32c1fba): `docs: streamline priority roadmap intro and tier definitions in FIXES.md`
+  * [`a55813b`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/a55813b): `docs: remove issue 3.5 pypdf dev environment sync from FIXES.md`
+  * [`09ccaf9`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/09ccaf9): `fix: handle unexpected AI provider responses with HTTP 502 in interview service`
+  * [`78f4aa9`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/78f4aa9): `refactor: make AI provider base URL configurable and remove hardcoded default`
+  * [`0f81e35`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/0f81e35): `fix: reset failed login attempts and lockout timestamp upon expiration`
+  * [`e28d0bb`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/e28d0bb): `fix: create profile record atomically during user registration`
 * **Source Code & Components**:
   * `src/frontend/src/App.jsx`: HTML5 History API client routing (`/dashboard`, `/jobs`, `/jobs/:job_id`, `/login`, `/signup`) with popstate listeners and route protection.
   * `src/frontend/src/api/jobs.js`: API client functions `searchJobs` (with pagination, sort, and filters), `getJobById`, and `applyToJob`.
@@ -67,10 +78,16 @@
   * `src/frontend/src/components/JobSearchPage.jsx`: Job search listing view with card selection, pagination controls, and deep-link routing.
   * `src/frontend/src/components/JobSearchPageNavbar.jsx`: Search and filter navigation bar with outside-click dismissal, curated categories, dynamic sorting, and auto-query on mount.
   * `src/frontend/src/components/Navbar.jsx`: Main navigation bar with history navigation to `/jobs`.
+  * `src/backend/services/interview_service.py`: Defensive JSON response validation converting unhandled 500s to 502 Bad Gateway; environment-based endpoint normalization and optional bearer authorization.
+  * `src/backend/config.py`: Environment-driven `AI_API_BASE_URL`, `AI_API_KEY`, and `AI_MODEL` configuration without hardcoded provider defaults.
+  * `src/backend/routers/auth.py`: Account lockout expiration counter reset preventing re-lockout loop; atomic profile record creation during user registration.
+  * `src/backend/models.py`: `User.profile` optional relationship typing.
+  * `.env.example`: Provider-agnostic OpenAI-compatible configuration template.
 * **Testing & Quality Verification**:
   * `oxlint`: 0 warnings, 0 errors across all 20 frontend components and modules.
   * `vite build`: Clean production bundle compilation in under 300ms.
+  * `pytest`: 72/72 passing tests across entire repository (unit tests covering auth, lockout reset, registration profile creation, config resolution, provider failure modes, and interview endpoints).
 * **Documentation & Planning**:
-  * `FIXES.md`: Section 5 documenting Items 7.1 to 7.11 with completed fix descriptions and code references.
-  * `AI_Log/Thomas/AI_Log_Sprint3_Thomas.md`: Complete 8-field AI usage and validation log for Sprint 3.
+  * `FIXES.md`: Priority & Urgency Roadmap (Tiers 1–4), sequential section renumbering (1.1–5.11), and comprehensive documentation of all Tier 1 fixes.
+  * `AI_Log/Thomas/AI_Log_Sprint3_Thomas.md`: Complete 8-field AI usage and validation log for Sprint 3 (Entries 1–10).
   * `SprintDeliverables/Sprint_3/Contribution Logs/activity_thomas.md`: Official Sprint 3 contribution and activity log.
