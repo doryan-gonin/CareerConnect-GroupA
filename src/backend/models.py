@@ -45,6 +45,10 @@ class NotificationType(str, Enum):
     APPLICATION_RECEIVED = "application_received"
     SYSTEM = "system"
 
+class InterviewRole(str, Enum):
+    USER = "user"
+    ASSISTANT = "assistant"
+
 class AnalyticsGranularity(str, Enum):
     DAY = "day"
     WEEK = "week"
@@ -159,6 +163,22 @@ class Notification(SQLModel, table=True):
     reference_type: str | None = Field(default=None)
 
     user: User | None = Relationship(back_populates="notifications")
+
+class InterviewSession(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True, nullable=False)
+    job_id: int = Field(foreign_key="job.id", index=True, nullable=False)
+    # No foreign key: resumes are hard-deleted and that must not be blocked by old sessions
+    resume_id: int | None = Field(default=None)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+
+class InterviewSessionMessage(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    session_id: int = Field(foreign_key="interviewsession.id", index=True, nullable=False)
+    role: InterviewRole = Field(nullable=False)
+    content: str = Field(nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # REQUEST/RESPONSES SCHEMAS
 
@@ -350,3 +370,26 @@ class NotificationListResponse(SQLModel):
     total_count: int
     unread_count: int
     notifications: List[NotificationResponse]
+
+# INTERVIEW PREP SCHEMAS
+
+class InterviewMessage(SQLModel):
+    role: InterviewRole
+    content: str
+
+class InterviewSessionCreate(SQLModel):
+    application_id: int
+
+class InterviewMessageCreate(SQLModel):
+    content: str
+
+class InterviewSessionSummary(SQLModel):
+    id: int
+    job_id: int
+    job_title: str
+    company_name: str
+    created_at: datetime
+    updated_at: datetime
+
+class InterviewSessionDetail(InterviewSessionSummary):
+    messages: List[InterviewMessage]
