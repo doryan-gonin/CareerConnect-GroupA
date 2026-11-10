@@ -11,6 +11,7 @@ import {
 import CreateJobForm from './CreateJobForm'
 import EditJobForm from './EditJobForm'
 import ApplicationStatusBadge from './ApplicationStatusBadge'
+import ResumeViewerModal from './ResumeViewerModal'
 
 
 
@@ -31,12 +32,31 @@ export default function RecruiterDashboard({ token }) {
   const [closingJobId, setClosingJobId] = useState(null)
   const applicantRequestId = useRef(0)
 
-  const [openingResumeId, setOpeningResumeId] = useState(null)
-  const [resumeError, setResumeError] = useState('')
-
+  // Status feedback scoped per application: { [applicationId]: { type: 'success' | 'error', message: string } }
+  const [statusFeedback, setStatusFeedback] = useState({})
+  const feedbackTimers = useRef({})
   const [updatingApplicationId, setUpdatingApplicationId] = useState(null)
-  const [statusError, setStatusError] = useState('')
-  const [statusSuccess, setStatusSuccess] = useState('')
+
+  // Inline expanded cover letter per application
+  const [expandedCoverLetterId, setExpandedCoverLetterId] = useState(null)
+
+  // In-app resume viewer modal state
+  const [resumeModal, setResumeModal] = useState({
+    isOpen: false,
+    applicantName: '',
+    resumeName: '',
+    blob: null,
+    isLoading: false,
+    error: '',
+  })
+
+  // Clean up feedback timers on unmount
+  useEffect(() => {
+    const timers = feedbackTimers.current
+    return () => {
+      Object.values(timers).forEach(clearTimeout)
+    }
+  }, [])
 
   // Load the recruiter's jobs, including inactive jobs.
   useEffect(() => {
@@ -214,93 +234,113 @@ async function handleViewApplicants(jobId) {
 }
 
 
-async function handleViewResume(jobId, applicationId) {
-  setResumeError('')
-  setOpeningResumeId(applicationId)
+  async function handleOpenResumeModal(jobId, application) {
+    setResumeModal({
+      isOpen: true,
+      applicantName:
+        application.applicant_name ||
+        `Applicant #${application.applicant_id}`,
+      resumeName:
+        application.resume_name || `Resume #${application.resume_id}`,
+      blob: null,
+      isLoading: true,
+      error: '',
+    })
 
-  // Open a blank tab immediately so popup blockers do not
-  // block the PDF after the asynchronous request.
-  const resumeTab = window.open('', '_blank')
-
-  if (resumeTab) {
-    resumeTab.opener = null
-    resumeTab.document.title = 'Loading Resume'
-    resumeTab.document.body.textContent = 'Loading resume...'
+    try {
+      const blob = await getApplicantResume(token, jobId, application.id)
+      setResumeModal((prev) => ({
+        ...prev,
+        blob,
+        isLoading: false,
+      }))
+    } catch (err) {
+      setResumeModal((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: err.message || 'Failed to load resume.',
+      }))
+    }
   }
 
-  try {
-    const blob = await getApplicantResume(
-      token,
-      jobId,
-      applicationId
-    )
-
-    const pdfUrl = URL.createObjectURL(
-      new Blob([blob], { type: 'application/pdf' })
-    )
-
-    if (resumeTab && !resumeTab.closed) {
-      resumeTab.location.replace(pdfUrl)
-    } else {
-      // If the browser blocked the new tab, download instead.
-      const link = document.createElement('a')
-      link.href = pdfUrl
-      link.download = `application-${applicationId}-resume.pdf`
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-    }
-
-    // Do not revoke the URL immediately: the PDF viewer
-    // may still be loading it.
-    window.setTimeout(() => {
-      URL.revokeObjectURL(pdfUrl)
-    }, 60000)
-  } catch (err) {
-    if (resumeTab && !resumeTab.closed) {
-      resumeTab.close()
-    }
-
-    setResumeError(err.message)
-  } finally {
-    setOpeningResumeId(null)
+  function handleCloseResumeModal() {
+    setResumeModal({
+      isOpen: false,
+      applicantName: '',
+      resumeName: '',
+      blob: null,
+      isLoading: false,
+      error: '',
+    })
   }
-}
 
-
-async function handleUpdateApplicationStatus(applicationId, newStatus) {
-  setStatusError('')
-  setStatusSuccess('')
-  setUpdatingApplicationId(applicationId)
-
-  try {
-    const updatedApplication = await updateApplicantStatus(
-      token,
-      applicationId,
-      newStatus
+  function toggleCoverLetter(applicationId) {
+    setExpandedCoverLetterId((prev) =>
+      prev === applicationId ? null : applicationId
     )
+  }
 
-    setApplicants((previousApplicants) =>
-      previousApplicants.map((application) =>
-        application.id === applicationId
-          ? {
-              ...application,
-              status: updatedApplication.status,
-              updated_at: updatedApplication.updated_at,
-            }
-          : application
+  async function handleUpdateApplicationStatus(jobId, applicationId, newStatus) {
+    setUpdatingApplicationId(applicationId)
+
+    if (feedbackTimers.current[applicationId]) {
+      clearTimeout(feedbackTimers.current[applicationId])
+    }
+
+    try {
+      const updatedApplication = await updateApplicantStatus(
+        token,
+        applicationId,
+        newStatus
       )
-    )
 
-    setStatusSuccess(
-      `Application #${applicationId} updated to ${updatedApplication.status}.`
-    )
-  } catch (error) {
-    setStatusError(error.message)
-  } finally {
-    setUpdatingApplicationId(null)
+      setApplicants((previousApplicants) =>
+        previousApplicants.map((application) =>
+          application.id === applicationId
+            ? {
+                ...application,
+                status: updatedApplication.status,
+                updated_at: updatedApplication.updated_at,
+              }
+            : application
+        )
+      )
+
+      setStatusFeedback((prev) => ({
+        ...prev,
+        [applicationId]: {
+          type: 'success',
+          message: `Status: ${updatedApplication.status}`,
+        },
+      }))
+
+      feedbackTimers.current[applicationId] = setTimeout(() => {
+        setStatusFeedback((prev) => {
+          const next = { ...prev }
+          delete next[applicationId]
+          return next
+        })
+      }, 3500)
+    } catch (error) {
+      setStatusFeedback((prev) => ({
+        ...prev,
+        [applicationId]: {
+          type: 'error',
+          message: error.message || 'Failed to update',
+        },
+      }))
+
+      feedbackTimers.current[applicationId] = setTimeout(() => {
+        setStatusFeedback((prev) => {
+          const next = { ...prev }
+          delete next[applicationId]
+          return next
+        })
+      }, 5000)
+    } finally {
+      setUpdatingApplicationId(null)
+    }
   }
-}
 
 
   return (
@@ -535,14 +575,21 @@ async function handleUpdateApplicationStatus(applicationId, newStatus) {
             {/* Applicants section */}
             {selectedJobId === job.id && (
               <div className="mt-5 border-t border-gray-100 pt-4">
-                <h4 className="mb-3 text-sm font-semibold text-gray-900">
-                  Applicants for {job.title}
-                </h4>
+                <div className="mb-3 flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-gray-900">
+                    Applicants for {job.title}
+                    {!applicantsLoading && applicants.length > 0 && (
+                      <span className="ml-2 rounded-full bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">
+                        {applicants.length}
+                      </span>
+                    )}
+                  </h4>
+                </div>
 
                 {applicantsLoading && (
-                  <p className="py-3 text-sm text-gray-500">
+                  <div className="py-4 text-center text-xs text-gray-500">
                     Loading applicants…
-                  </p>
+                  </div>
                 )}
 
                 {applicantsError && (
@@ -551,24 +598,6 @@ async function handleUpdateApplicationStatus(applicationId, newStatus) {
                     className="mb-3 rounded-md bg-red-50 p-2.5 text-xs text-red-700"
                   >
                     {applicantsError}
-                  </p>
-                )}
-
-                {statusError && (
-                  <p
-                    role="alert"
-                    className="mb-3 rounded-md bg-red-50 p-2.5 text-xs text-red-700"
-                  >
-                    {statusError}
-                  </p>
-                )}
-
-                {statusSuccess && (
-                  <p
-                    role="status"
-                    className="mb-3 rounded-md bg-green-50 p-2.5 text-xs text-green-700"
-                  >
-                    {statusSuccess}
                   </p>
                 )}
 
@@ -582,115 +611,137 @@ async function handleUpdateApplicationStatus(applicationId, newStatus) {
 
                 {!applicantsLoading &&
                   !applicantsError &&
-                  applicants.map(application => (
-                    <div
-                      key={application.id}
-                      className="mb-3 rounded-md border border-gray-200 bg-white p-3.5 shadow-2xs"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-gray-900">
-                              {application.applicant_name ||
-                                `Applicant #${application.applicant_id}`}
-                            </span>
-                            <ApplicationStatusBadge status={application.status} />
+                  applicants.length > 0 && (
+                    <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 rounded-md border border-gray-200 bg-white">
+                      {applicants.map((application) => (
+                        <div
+                          key={application.id}
+                          className="p-3 transition hover:bg-gray-50/70"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                            {/* Left: Applicant details */}
+                            <div className="flex min-w-0 items-center gap-2">
+                              <ApplicationStatusBadge status={application.status} />
+                              <span className="truncate text-sm font-medium text-gray-900">
+                                {application.applicant_name ||
+                                  `Applicant #${application.applicant_id}`}
+                              </span>
+                              {application.applicant_email && (
+                                <span
+                                  className="hidden text-xs text-gray-500 sm:inline truncate max-w-[200px]"
+                                  title={application.applicant_email}
+                                >
+                                  · {application.applicant_email}
+                                </span>
+                              )}
+                              <span className="text-xs text-gray-400">
+                                · {new Date(application.applied_at).toLocaleDateString()}
+                              </span>
+                            </div>
+
+                            {/* Right: Actions & Status */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              {/* Scoped status feedback notice */}
+                              {statusFeedback[application.id] && (
+                                <span
+                                  role={
+                                    statusFeedback[application.id].type === 'error'
+                                      ? 'alert'
+                                      : 'status'
+                                  }
+                                  className={`rounded px-2 py-0.5 text-xs font-medium ${
+                                    statusFeedback[application.id].type === 'error'
+                                      ? 'bg-red-50 text-red-700'
+                                      : 'bg-green-50 text-green-700'
+                                  }`}
+                                >
+                                  {statusFeedback[application.id].type === 'success' ? '✓ ' : '⚠ '}
+                                  {statusFeedback[application.id].message}
+                                </span>
+                              )}
+
+                              <label htmlFor={`application-status-${application.id}`} className="sr-only">
+                                Application Status
+                              </label>
+                              <select
+                                id={`application-status-${application.id}`}
+                                value={application.status}
+                                onChange={(event) =>
+                                  handleUpdateApplicationStatus(
+                                    job.id,
+                                    application.id,
+                                    event.target.value
+                                  )
+                                }
+                                disabled={updatingApplicationId === application.id}
+                                className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 disabled:opacity-50"
+                              >
+                                <option value="Applied">Applied</option>
+                                <option value="Under Review">Under Review</option>
+                                <option value="Interview">Interview</option>
+                                <option value="Offered">Offered</option>
+                                <option value="Rejected">Rejected</option>
+                              </select>
+
+                              {application.resume_id != null && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenResumeModal(job.id, application)}
+                                  className="rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-50 hover:text-purple-600"
+                                >
+                                  View Resume
+                                </button>
+                              )}
+
+                              {application.cover_letter && (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleCoverLetter(application.id)}
+                                  className={`rounded-md border px-2 py-1 text-xs font-medium transition ${
+                                    expandedCoverLetterId === application.id
+                                      ? 'border-purple-300 bg-purple-50 text-purple-700'
+                                      : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {expandedCoverLetterId === application.id
+                                    ? 'Hide Letter'
+                                    : 'Cover Letter'}
+                                </button>
+                              )}
+                            </div>
                           </div>
 
-                          {application.applicant_email && (
-                            <p className="text-xs text-gray-500">
-                              {application.applicant_email}
-                            </p>
+                          {/* Expanded Cover Letter */}
+                          {expandedCoverLetterId === application.id && (
+                            <div className="mt-2.5 rounded-md border border-gray-200 bg-gray-50 p-3 text-xs">
+                              <p className="font-semibold text-gray-700 mb-1">
+                                Cover Letter:
+                              </p>
+                              <p className="whitespace-pre-wrap text-gray-600">
+                                {application.cover_letter}
+                              </p>
+                            </div>
                           )}
-                          <p className="text-xs text-gray-400">
-                            Applied on {new Date(application.applied_at).toLocaleDateString()} · Application #{application.id}
-                          </p>
                         </div>
-
-                        {/* Manage Application Status */}
-                        <div className="flex items-center gap-2">
-                          <label
-                            htmlFor={`application-status-${application.id}`}
-                            className="text-xs font-medium text-gray-600"
-                          >
-                            Status:
-                          </label>
-
-                          <select
-                            id={`application-status-${application.id}`}
-                            value={application.status}
-                            onChange={(event) =>
-                              handleUpdateApplicationStatus(
-                                application.id,
-                                event.target.value
-                              )
-                            }
-                            disabled={updatingApplicationId !== null}
-                            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-                          >
-                            <option value="Applied">Applied</option>
-                            <option value="Under Review">Under Review</option>
-                            <option value="Interview">Interview</option>
-                            <option value="Offered">Offered</option>
-                            <option value="Rejected">Rejected</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      {updatingApplicationId === application.id && (
-                        <p className="mt-1 text-xs text-gray-500">
-                          Updating application status…
-                        </p>
-                      )}
-
-                      {application.resume_id != null && (
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md bg-gray-50 px-3 py-2">
-                          <span className="text-xs text-gray-700">
-                            📄 {application.resume_name ||
-                              `Resume #${application.resume_id}`}
-                          </span>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleViewResume(job.id, application.id)
-                            }
-                            disabled={openingResumeId !== null}
-                            className="rounded-md bg-purple-600 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-purple-700 disabled:opacity-50"
-                          >
-                            {openingResumeId === application.id
-                              ? 'Opening…'
-                              : 'View Resume'}
-                          </button>
-                        </div>
-                      )}
-
-                      {resumeError && (
-                        <p
-                          role="alert"
-                          className="mt-2 text-xs text-red-600"
-                        >
-                          {resumeError}
-                        </p>
-                      )}
-
-                      {application.cover_letter && (
-                        <div className="mt-2.5 rounded bg-gray-50 p-2.5">
-                          <p className="text-xs font-medium text-gray-700">
-                            Cover Letter:
-                          </p>
-                          <p className="mt-1 whitespace-pre-wrap text-xs text-gray-600">
-                            {application.cover_letter}
-                          </p>
-                        </div>
-                      )}
+                      ))}
                     </div>
-                  ))}
+                  )}
               </div>
             )}
           </article>
         ))}
       </section>
+
+      {/* In-app Resume Viewer Modal */}
+      <ResumeViewerModal
+        isOpen={resumeModal.isOpen}
+        onClose={handleCloseResumeModal}
+        pdfBlob={resumeModal.blob}
+        applicantName={resumeModal.applicantName}
+        resumeName={resumeModal.resumeName}
+        isLoading={resumeModal.isLoading}
+        error={resumeModal.error}
+      />
     </div>
   )
 }
