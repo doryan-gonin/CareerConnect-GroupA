@@ -90,7 +90,8 @@ def second_user():
     with Session(engine) as session:
         db_user = User(
             email_address="second@example.com",
-            password_hash=hashed_password
+            password_hash=hashed_password,
+            is_recruiter=False,
         )
         session.add(db_user)
         session.commit()
@@ -99,7 +100,30 @@ def second_user():
         return {
             "id": db_user.id,
             "email_address": db_user.email_address,
-            "password": plain_password
+            "password": plain_password,
+            "is_recruiter": False,
+        }
+
+@pytest.fixture
+def recruiter_user():
+    plain_password = "Test@123"
+    hashed_password = bcrypt.hashpw(plain_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+    with Session(engine) as session:
+        db_user = User(
+            email_address="recruiter@example.com",
+            password_hash=hashed_password,
+            is_recruiter=True,
+        )
+        session.add(db_user)
+        session.commit()
+        session.refresh(db_user)
+
+        return {
+            "id": db_user.id,
+            "email_address": db_user.email_address,
+            "password": plain_password,
+            "is_recruiter": True,
         }
 
 # ---------------------------------- Resumes -----------------------------------
@@ -234,14 +258,27 @@ def test_views(test_user, test_jobs):
 
 # ------------------------------- Applications ---------------------------------
 @pytest.fixture
-def candidate_application(client, test_user, second_user, test_jobs, add_resumes_for_user):
+def candidate_application(client, recruiter_user, second_user, add_resumes_for_user):
     """
-    Creates an application where test_user is recruiter and second_user is applicant.
+    Creates an application where recruiter_user is recruiter and second_user is applicant.
     Returns recruiter_user, applicant_user, and the created application object.
     """
     with Session(engine) as session:
-        job = test_jobs[0]
-        # Resume was created for test_user in add_resumes_for_user fixture; let's create a resume for second_user
+        job = Job(
+            recruiter_id=recruiter_user["id"],
+            title="Job Title 1",
+            company_name="Company 1",
+            description="Description for job 1",
+            location="Location 1",
+            category="Engineering",
+            job_type=JobType.PERMANENT,
+            job_schedule=JobSchedule.FULL_TIME,
+            posted_at=TEST_NOW,
+        )
+        session.add(job)
+        session.commit()
+        session.refresh(job)
+
         resume = Resume(
             user_id=second_user["id"],
             file_name="applicant_resume.pdf",
@@ -263,8 +300,9 @@ def candidate_application(client, test_user, second_user, test_jobs, add_resumes
         session.refresh(application)
 
         return {
-            "recruiter": test_user,
+            "recruiter": recruiter_user,
             "applicant": second_user,
+            "job": job,
             "job_id": job.id,
             "application_id": application.id,
         }

@@ -14,8 +14,8 @@ function LoginForm({ successMessage, onLoggedIn, onSwitchToSignup }) {
     setError('')
     setIsSubmitting(true)
     try {
-      const { access_token: accessToken } = await loginUser(email, password)
-      onLoggedIn(accessToken)
+      const data = await loginUser(email, password)
+      onLoggedIn(data.access_token, data.is_recruiter)
     } catch (err) {
       setError(err.message)
     } finally {

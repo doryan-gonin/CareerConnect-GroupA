@@ -14,7 +14,7 @@ from backend.models import (
     ViewAnalyticsResponse,
 )
 
-from backend.dependencies import get_current_user
+from backend.dependencies import get_current_applicant
 from backend.services.analytics_service import (
     compute_application_analytics,
     compute_application_summary,
@@ -36,7 +36,7 @@ def validate_dates(start_date: date, end_date: date) -> None:
 # Endpoints
 @router.get("/applications", response_model=ApplicationAnalyticsResponse)
 def get_application_analytics(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_applicant)],
     session: Annotated[Session, Depends(get_session)],
     start_date: date,
     end_date: date,
@@ -48,7 +48,7 @@ def get_application_analytics(
 
 @router.get("/searches", response_model=SearchAnalyticsResponse)
 def get_search_analytics(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_applicant)],
     session: Annotated[Session, Depends(get_session)],
     start_date: date,
     end_date: date,
@@ -60,7 +60,7 @@ def get_search_analytics(
 
 @router.get("/views", response_model=ViewAnalyticsResponse)
 def get_view_analytics(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_applicant)],
     session: Annotated[Session, Depends(get_session)],
     start_date: date,
     end_date: date,
@@ -72,7 +72,7 @@ def get_view_analytics(
 
 @router.get("/salary-distribution", response_model=SalaryDistributionResponse)
 def get_salary_distribution(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_applicant)],
     session: Annotated[Session, Depends(get_session)],
     start_date: date,
     end_date: date,
@@ -83,7 +83,7 @@ def get_salary_distribution(
 
 @router.get("/application-summary", response_model=ApplicationSummaryResponse)
 def get_application_summary(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_applicant)],
     session: Annotated[Session, Depends(get_session)],
     start_date: date,
     end_date: date,

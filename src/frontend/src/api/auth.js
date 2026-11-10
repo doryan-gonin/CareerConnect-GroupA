@@ -38,10 +38,11 @@ async function postJson(path, payload) {
   return body
 }
 
-export function registerUser(emailAddress, password) {
+export function registerUser(emailAddress, password, isRecruiter = false) {
   return postJson(`${API_BASE_URL}/api/auth/register`, {
     email_address: emailAddress,
     password,
+    is_recruiter: isRecruiter,
   })
 }
 

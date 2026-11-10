@@ -54,6 +54,26 @@ def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found.")
     return user
 
+def get_current_recruiter(
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> User:
+    if not current_user.is_recruiter:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only recruiters can perform this action.",
+        )
+    return current_user
+
+def get_current_applicant(
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> User:
+    if current_user.is_recruiter:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Recruiters cannot perform candidate actions.",
+        )
+    return current_user
+
 # Jobs GET endpoints can be accessed without being registered as a user
 def get_optional_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(optional_bearer_scheme)],

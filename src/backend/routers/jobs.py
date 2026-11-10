@@ -26,13 +26,18 @@ from backend.models import (
     SearchLog,
     JobViewLog,
 )
-from backend.dependencies import get_current_user, get_optional_current_user
+from backend.dependencies import (
+    get_current_user,
+    get_optional_current_user,
+    get_current_recruiter,
+    get_current_applicant,
+)
 from backend.services.notification_service import notify_new_application_received
 
 router = APIRouter(tags=["Jobs"])
 @router.get("/mine", response_model=List[JobResponse])
 def list_my_jobs(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_recruiter)],
     session: Annotated[Session, Depends(get_session)],
 ):
     """
@@ -184,7 +189,7 @@ def list_jobs(
 @router.get("/{job_id}/applications")
 def get_job_applications(
     job_id: int,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_recruiter)],
     session: Annotated[Session, Depends(get_session)],
 ):
     # Verify that the job exists.
@@ -259,7 +264,7 @@ def get_job_applications(
 def view_applicant_resume(
     job_id: int,
     application_id: int,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_recruiter)],
     session: Annotated[Session, Depends(get_session)],
 ):
     # Step 1: Find the job.
@@ -394,7 +399,7 @@ def record_job_view(
 @router.post("", response_model=JobResponse, status_code=status.HTTP_201_CREATED)
 def create_job(
     payload: JobCreate,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_recruiter)],
     session: Annotated[Session, Depends(get_session)],
 ):
     """
@@ -425,7 +430,7 @@ def create_job(
 def update_job(
     job_id: int,
     payload: JobUpdate,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_recruiter)],
     session: Annotated[Session, Depends(get_session)],
 ):
     """
@@ -456,7 +461,7 @@ def update_job(
 @router.delete("/{job_id}", status_code=status.HTTP_200_OK)
 def delete_job(
     job_id: int,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_recruiter)],
     session: Annotated[Session, Depends(get_session)],
 ):
     """
@@ -485,7 +490,7 @@ def delete_job(
 def apply_to_job(
     job_id: int,
     session: Annotated[Session, Depends(get_session)],
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_applicant)],
     payload: Annotated[ApplicationCreate | None, Body()] = None,
 ):
     """

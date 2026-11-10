@@ -99,9 +99,12 @@ function App() {
     navigate('/login')
   }
 
-  function handleLoggedIn(accessToken) {
+  function handleLoggedIn(accessToken, isRecruiter) {
     setToken(accessToken)
     localStorage.setItem(TOKEN_STORAGE_KEY, accessToken)
+    if (typeof isRecruiter === 'boolean') {
+      localStorage.setItem('isRecruiter', String(isRecruiter))
+    }
     const target = intendedPathRef.current || '/dashboard'
     intendedPathRef.current = '/dashboard'
     navigate(target)
@@ -115,6 +118,7 @@ function App() {
       }
     } finally {
       localStorage.removeItem(TOKEN_STORAGE_KEY)
+      localStorage.removeItem('isRecruiter')
       setToken('')
       setSignupSuccessMessage('')
       setIsLoggingOut(false)

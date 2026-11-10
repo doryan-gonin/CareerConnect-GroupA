@@ -79,7 +79,8 @@ def register_user(payload: UserCreate, session: Annotated[Session, Depends(get_s
 
     new_user: User = User(
         email_address = clean_email,
-        password_hash = pw_hash_str
+        password_hash = pw_hash_str,
+        is_recruiter = payload.is_recruiter,
     )
 
     session.add(new_user)
@@ -145,10 +146,10 @@ def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_sessi
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
     access_token = create_access_token(
-        data={"sub": str(user.id)}, # We use the ID as the email might change AND is PII
+        data={"sub": str(user.id), "is_recruiter": user.is_recruiter}, # We use the ID as the email might change AND is PII
         expires_delta=access_token_expires)
     
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "is_recruiter": user.is_recruiter}
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(
@@ -175,7 +176,11 @@ def refresh_token(
         expires_at=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
     ))
     session.commit()
-    return {"access_token": create_access_token(data={"sub": str(user.id)}), "token_type": "bearer"}
+    return {
+        "access_token": create_access_token(data={"sub": str(user.id), "is_recruiter": user.is_recruiter}),
+        "token_type": "bearer",
+        "is_recruiter": user.is_recruiter,
+    }
 @router.get("/me", response_model=UserResponse)
 def get_authenticated_user(
     current_user: Annotated[User, Depends(get_current_user)],

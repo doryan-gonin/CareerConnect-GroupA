@@ -18,7 +18,7 @@ from backend.models import (
     InterviewSessionSummary,
     InterviewSessionDetail,
 )
-from backend.dependencies import get_current_user
+from backend.dependencies import get_current_applicant
 from backend.services.interview_service import get_interview_reply, get_opening_message, validate_new_message
 
 router = APIRouter(tags=["Interview Prep"])
@@ -67,7 +67,7 @@ def _summary_fields(interview: InterviewSession, job: Job) -> dict:
 
 @router.get("/sessions", response_model=List[InterviewSessionSummary])
 def list_sessions(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_applicant)],
     session: Annotated[Session, Depends(get_session)],
 ):
     rows = session.exec(
@@ -82,7 +82,7 @@ def list_sessions(
 @router.post("/sessions", response_model=InterviewSessionDetail, status_code=status.HTTP_201_CREATED)
 def create_session(
     payload: InterviewSessionCreate,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_applicant)],
     session: Annotated[Session, Depends(get_session)],
 ):
     application = session.get(Application, payload.application_id)
@@ -113,7 +113,7 @@ def create_session(
 @router.get("/sessions/{session_id}", response_model=InterviewSessionDetail)
 def get_session_detail(
     session_id: int,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_applicant)],
     session: Annotated[Session, Depends(get_session)],
 ):
     interview = _get_owned_session(session_id, current_user, session)
@@ -125,7 +125,7 @@ def get_session_detail(
 def send_message(
     session_id: int,
     payload: InterviewMessageCreate,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_applicant)],
     session: Annotated[Session, Depends(get_session)],
 ):
     interview = _get_owned_session(session_id, current_user, session)

@@ -60,6 +60,7 @@ class User(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     email_address: EmailStr = Field(unique=True, index=True, nullable=False)
     password_hash: str = Field(nullable=False)
+    is_recruiter: bool = Field(default=False, nullable=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     failed_attempts: int = Field(default=0)
     locked_until: datetime | None = Field(default=None)
@@ -185,10 +186,12 @@ class InterviewSessionMessage(SQLModel, table=True):
 class UserCreate(SQLModel):
     email_address: EmailStr
     password: str
+    is_recruiter: bool = False
 
 class UserResponse(SQLModel):
     id: int
     email_address: EmailStr
+    is_recruiter: bool
     created_at: datetime
 
 class UserLogin(SQLModel): # We don't need user's name for login
@@ -206,6 +209,7 @@ class ResumeReponse(SQLModel):
 class Token(SQLModel):
     access_token: str
     token_type: str
+    is_recruiter: bool = False
 
 class TokenData(SQLModel):
     id: str | None = None
