@@ -216,6 +216,122 @@
 * **Reflection**: Manual testing against live HTTP endpoints and real databases complements automated unit tests by verifying middleware pipelines, JSON serialization, and realistic upstream network failure modes.
 * **Responsible Person**: Thomas Martel
 
+### Entry 11: Recruiter Role Separation & Backend RBAC Architecture (Issue #122)
+* **Task ID / Title**: Recruiter Role Separation & Backend RBAC Architecture (Issue #122)
+* **Purpose of AI Use**: Requirements analysis, backend data modeling, authorization architecture, dependency injection, and automated unit testing.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `6ee922f5-3dfb-43fc-9c2d-5d18e017fb1e`). Reference: Appendix 11.
+* **AI-Suggested Content**: 
+  - Formulated a 6-step phased implementation roadmap to resolve candidate/recruiter account conflation and recruiter dashboard deficiencies without disrupting existing flows.
+  - Added boolean `is_recruiter: bool = Field(default=False)` to `User` and `UserResponse` models in `src/backend/models.py`.
+  - Added SQLite schema migration in `src/backend/database.py` with `server_default="0"` ensuring compatibility with existing user databases.
+  - Implemented reusable FastAPI dependency guards `get_current_recruiter_user` and `get_current_applicant_user` in `src/backend/dependencies.py` returning HTTP 403 Forbidden with clear error payloads for role violations.
+  - Enforced RBAC protection across recruiter endpoints (`POST /api/jobs`, `PUT /api/jobs/{id}`, `DELETE /api/jobs/{id}`, `GET /api/jobs/recruiter/my-jobs`, and applicant review endpoints) and applicant job application submission endpoints in `src/backend/routers/jobs.py`.
+  - Added recruiter account selection checkbox in `SignupForm.jsx` passing `is_recruiter` during user registration.
+  - Authored automated tests in `tests/test_auth.py` verifying recruiter flag persistence and access control restrictions (77/77 tests passing).
+* **Validation**: 
+  - Executed backend test suite (`pytest`) confirming all 77 tests pass with zero regressions.
+  - Tested candidate and recruiter registration through the UI and confirmed database rows reflected expected boolean values.
+  - Confirmed candidates attempting recruiter actions receive HTTP 403 Forbidden.
+* **Decision**: Accepted (reviewed data model changes and verified dependency-level security checks).
+* **Reflection**: Enforcing role-based access control at the FastAPI dependency layer guarantees centralized, auditable authorization checks that cannot be circumvented by missing checks inside individual route handlers.
+* **Responsible Person**: Thomas Martel
+
+### Entry 12: Unified Dashboard Routing & Role-Based Navigation Guard
+* **Task ID / Title**: Unified Dashboard Routing & Role-Based Navigation Guard
+* **Purpose of AI Use**: Frontend architecture, client-side routing, state synchronization, and permission-based UI rendering.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `6ee922f5-3dfb-43fc-9c2d-5d18e017fb1e`). Reference: Appendix 12.
+* **AI-Suggested Content**: 
+  - Consolidated recruiter and candidate dashboard access under the canonical `/dashboard` route in `App.jsx`, eliminating redundant separate navigation buttons.
+  - Implemented role synchronization on initial application mount and route transitions via `GET /api/auth/me` to persist user role across browser refreshes.
+  - Dynamically rendered `RecruiterDashboard` for recruiters and the candidate dashboard for applicants when visiting `/dashboard`.
+  - Updated brand logo click handler in `Navbar.jsx` to navigate recruiters directly to `/dashboard`.
+  - Suppressed candidate-exclusive actions (e.g. "Apply Now" button and application submission forms in `JobDetailPage.jsx` and `JobSearchPage.jsx`) for recruiter accounts, displaying an informative "Recruiter Account: Candidate actions are disabled" notice.
+* **Validation**: 
+  - Logged in as candidate and verified `/dashboard` displays applicant applications and job tracking.
+  - Logged in as recruiter and verified `/dashboard` renders `RecruiterDashboard`.
+  - Verified clicking logo as a recruiter returns to `/dashboard`.
+  - Verified candidate application forms are cleanly disabled for recruiters with clear informational notices.
+  - Verified clean linter (`oxlint`) and production build (`vite build`).
+* **Decision**: Accepted.
+* **Reflection**: Providing a single entry point for dashboards with dynamic role-based rendering prevents fragmented routing and delivers a much more intuitive user experience.
+* **Responsible Person**: Thomas Martel
+
+### Entry 13: Recruiter Dashboard UI Alignment & Design System Harmonization
+* **Task ID / Title**: Recruiter Dashboard UI Alignment & Design System Harmonization
+* **Purpose of AI Use**: Design system harmonization, Tailwind CSS styling, responsive layout design, and component refactoring.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `6ee922f5-3dfb-43fc-9c2d-5d18e017fb1e`). Reference: Appendix 13.
+* **AI-Suggested Content**: 
+  - Redesigned `RecruiterDashboard.jsx` to adhere strictly to the CareerConnect design system established in earlier sprints.
+  - Constrained layout within a centered `max-w-5xl mx-auto px-4 sm:px-6 lg:px-8` container.
+  - Eliminated high-contrast gradients, thick borders, and oversized controls, replacing them with refined Tailwind CSS utility classes (`border-slate-200`, `rounded-xl`, soft shadows, purple brand palette `#7c3aed`).
+  - Standardized action buttons with uniform padding (`px-4 py-2.5 text-sm font-medium`) and transition effects.
+  - Replaced ad-hoc status text with standard `ApplicationStatusBadge` components for consistent status color coding across the entire platform.
+* **Validation**: 
+  - In-browser visual inspection: verified typography, card borders, color palettes, and spacing match the rest of the application.
+  - Verified responsive layout across mobile and desktop breakpoints.
+  - Ran `oxlint` confirming 0 warnings and 0 errors.
+* **Decision**: Accepted.
+* **Reflection**: Enforcing consistent design patterns across all features—especially newly built administrative interfaces—elevates overall product maturity and aesthetic cohesion.
+* **Responsible Person**: Thomas Martel
+
+### Entry 14: Compact Applicant List, Scoped Status Feedback & In-App PDF Resume Viewer
+* **Task ID / Title**: Compact Applicant List, Scoped Status Feedback & In-App PDF Resume Viewer
+* **Purpose of AI Use**: Frontend UI component design, React state management, PDF rendering, and memory lifecycle optimization.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `6ee922f5-3dfb-43fc-9c2d-5d18e017fb1e`). Reference: Appendix 14.
+* **AI-Suggested Content**: 
+  - Replaced bulky nested applicant cards with a compact, 1-line scrollable list container (`max-h-80 overflow-y-auto`) with sticky headers in `RecruiterDashboard.jsx`, supporting high-volume applicant review.
+  - Fixed a state bleed bug where updating an applicant's status displayed feedback across all applicant lists for every posting; keyed feedback state to `jobId-applicationId` with automatic 3.5s dismissal.
+  - Created a collapsible inline drawer for viewing applicant cover letters without navigating away.
+  - Designed and built `ResumeViewerModal.jsx` enabling recruiters to inspect PDF resumes directly inside an embedded modal dialog, utilizing `URL.createObjectURL` with proper unmount cleanup, printable view, and fallback download button.
+* **Validation**: 
+  - Tested updating candidate status across multiple job listings; confirmed status feedback appeared only for the target candidate and auto-dismissed.
+  - Tested viewing resumes: modal opened cleanly, loaded PDF blob, and cleaned up blob URLs upon modal close without memory leaks.
+  - Verified zero linter warnings and clean Vite build.
+* **Decision**: Accepted.
+* **Reflection**: Managing blob object URL lifecycles carefully with React hooks prevents browser memory leaks when viewing multiple heavy documents during recruiting sessions.
+* **Responsible Person**: Thomas Martel
+
+### Entry 15: Job Form Enhancements (All Types, Category "Other", Schedule Autofill & Dual Sliders)
+* **Task ID / Title**: Job Form Enhancements: All Job Types, Category "Other", Schedule Autofill & Dual Sliders
+* **Purpose of AI Use**: Form UX design, interactive component creation, synchronized inputs, and data validation.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `6ee922f5-3dfb-43fc-9c2d-5d18e017fb1e`). Reference: Appendix 15.
+* **AI-Suggested Content**: 
+  - Exposed all 5 `JobType` enum options (Permanent, Contract, Internship, Part-Time, Temporary) in `CreateJobForm.jsx` and `EditJobForm.jsx` using centralized constants in `src/frontend/src/constants/jobs.js`.
+  - Replaced freeform category input with a curated category dropdown and an "Other" option triggering a custom text field with auto-focus.
+  - Enabled hours per week and salary fields during job creation (previously only available on modification).
+  - Added schedule-to-hours autofill logic (e.g. Full-Time automatically sets 35–40 hrs/wk, Part-Time sets 15–25 hrs/wk) while allowing manual recruiter adjustments.
+  - Designed `SliderNumberInput.jsx` pairing an interactive range slider with a numeric input, featuring configured min/max boundaries and an "override" badge when recruiters enter values exceeding standard limits (e.g., 80 hrs/wk).
+* **Validation**: 
+  - Tested creating and updating job postings with all 5 job types and custom "Other" categories.
+  - Tested schedule selection autofill and verified slider synchronization with manual numeric typing.
+  - Ran backend test suite and frontend linter (`oxlint`).
+* **Decision**: Accepted.
+* **Reflection**: Providing sensible defaults with autofill while offering non-restrictive overrides strikes the right balance between user guidance and recruiter flexibility.
+* **Responsible Person**: Thomas Martel
+
+### Entry 16: Markdown Job Description Support & Smart Location Autocomplete Component
+* **Task ID / Title**: Markdown Job Description Support & Smart Location Autocomplete Component
+* **Purpose of AI Use**: Rich text rendering, custom text editor design, search autocomplete algorithms, diacritics normalization, and keyboard accessibility.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `6ee922f5-3dfb-43fc-9c2d-5d18e017fb1e`). Reference: Appendix 16.
+* **AI-Suggested Content**: 
+  - Resolved single-line job description truncation by implementing Markdown rendering across the platform.
+  - Created a safe, zero-dependency `MarkdownView.jsx` parser supporting headings, lists, bold/italic, links, quotes, and code blocks, and integrated it into `JobDetailPage.jsx`, `JobSearchPage.jsx`, and `RecruiterDashboard.jsx`.
+  - Built `MarkdownEditor.jsx` with Write/Preview toggle tabs and a formatting toolbar (Bold, Italic, Heading, List, Link, Code) for `CreateJobForm.jsx` and `EditJobForm.jsx`.
+  - Replaced plain text location inputs with a custom `LocationAutocomplete.jsx` component featuring:
+    - Diacritic and accent-insensitive matching (e.g., typing "Montreal" or "Montréal" matches "Montreal, QC").
+    - Popular Canadian locations quick picks shown when the input is focused empty.
+    - Common shorthand aliases (`mtl` $\rightarrow$ Montreal, `gta` $\rightarrow$ Toronto, `van` $\rightarrow$ Vancouver, `wfh` $\rightarrow$ Remote).
+    - Bold substring match highlighting.
+    - Full keyboard navigation (Arrow Up/Down, Enter to select, Escape to close) and outside-click dismissal.
+* **Validation**: 
+  - Verified Markdown rendering on job details, preview panels, and recruiter dashboard.
+  - Tested typing accented and unaccented strings in location inputs across job creation, editing, and search navbar.
+  - Verified complete keyboard navigation and outside-click closing.
+  - Ran `oxlint` (0 errors, 0 warnings across all 26 frontend files) and confirmed clean Vite production build.
+* **Decision**: Accepted.
+* **Reflection**: Diacritic normalization and alias expansion drastically improve data consistency for geographical queries without frustrating users with strict validation errors or spelling discrepancies.
+* **Responsible Person**: Thomas Martel
+
 ---
 
 ## Appendix: Extended Prompts & Responses (Optional)
@@ -294,3 +410,51 @@
   2. Simulating malformed upstream HTML error responses using a lightweight local Python HTTP server.
   3. Resolving 404 "Application not found" by linking a test job application to the authenticated user.
   4. Diagnosing a curl JSON syntax typo to verify successful 502 Bad Gateway handling.
+
+### Appendix 11: Context for Entry 11
+* **Context**: Role separation and backend RBAC architecture for candidate vs. recruiter accounts.
+* **Key Queries**:
+  1. Database schema migration: adding `is_recruiter: bool` column with server default `0` in `models.py` and `database.py`.
+  2. Implementing `get_current_recruiter_user` and `get_current_applicant_user` dependencies in `dependencies.py`.
+  3. Securing recruiter endpoints (job create, edit, delete, applicant reviews) and candidate endpoints (application submission) with HTTP 403 checks.
+  4. Adding role selection checkbox in `SignupForm.jsx` and automated test verification in `test_auth.py`.
+
+### Appendix 12: Context for Entry 12
+* **Context**: Unified `/dashboard` client routing and role-based navigation guards.
+* **Key Queries**:
+  1. Unifying dashboard routing under `/dashboard` in `App.jsx` and removing redundant navbar buttons.
+  2. Synchronizing user role from backend `/api/auth/me` on mount.
+  3. Dynamically rendering `RecruiterDashboard` vs. applicant dashboard based on user role.
+  4. Brand logo navigation routing recruiters directly to `/dashboard`.
+  5. Suppressing application actions for recruiter accounts in `JobDetailPage.jsx` and `JobSearchPage.jsx`.
+
+### Appendix 13: Context for Entry 13
+* **Context**: Recruiter Dashboard UI alignment with the CareerConnect design system.
+* **Key Queries**:
+  1. Aligning dashboard container within `max-w-5xl mx-auto` and standardizing spacing.
+  2. Replacing high-contrast cards and oversized buttons with standard purple palette, soft slate borders, and compact typography.
+  3. Integrating `ApplicationStatusBadge` for consistent status color coding across pages.
+
+### Appendix 14: Context for Entry 14
+* **Context**: Compact applicant list, scoped status feedback, and in-app resume PDF preview.
+* **Key Queries**:
+  1. Redesigning applicant list into a 1-line scrollable container (`max-h-80 overflow-y-auto`) to support high-volume postings.
+  2. Scoping applicant review status feedback to `jobId-applicationId` with automatic 3.5s dismissal to eliminate global feedback bug.
+  3. Collapsible inline drawer for applicant cover letters.
+  4. Building `ResumeViewerModal.jsx` for in-browser PDF rendering with blob URL lifecycle management and printable view.
+
+### Appendix 15: Context for Entry 15
+* **Context**: Job form enhancements: all job types, category "Other", schedule autofill, and dual slider inputs.
+* **Key Queries**:
+  1. Supporting all 5 `JobType` options and standardizing categories with an "Other" option in `constants/jobs.js`.
+  2. Enabling hours and salary inputs during job creation in `CreateJobForm.jsx`.
+  3. Automatic autofill of min/max weekly hours based on selected schedule (Full-Time vs. Part-Time).
+  4. Creating reusable `SliderNumberInput.jsx` with synchronized range slider, numeric input, and manual override badges.
+
+### Appendix 16: Context for Entry 16
+* **Context**: Markdown job descriptions and smart location autocomplete with diacritics normalization.
+* **Key Queries**:
+  1. Resolving single-line description formatting with zero-dependency `MarkdownView.jsx` renderer.
+  2. Implementing `MarkdownEditor.jsx` with Write/Preview tabs and toolbar for job forms.
+  3. Building `LocationAutocomplete.jsx` with accent/diacritics normalization, shorthand alias matching (`mtl`, `gta`, `wfh`), bold match highlighting, and full keyboard navigation.
+  4. Integrating autocomplete into `CreateJobForm.jsx`, `EditJobForm.jsx`, and `JobSearchPageNavbar.jsx`.
