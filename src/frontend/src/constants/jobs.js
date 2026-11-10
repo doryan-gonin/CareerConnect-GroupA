@@ -25,31 +25,23 @@ export const PRESET_CATEGORIES = [
   'Finance',
 ]
 
-export const COMMON_LOCATIONS = [
-  'Montreal, QC',
-  'Montreal',
-  'Toronto, ON',
-  'Toronto',
-  'Vancouver, BC',
-  'Vancouver',
-  'Ottawa, ON',
-  'Ottawa',
-  'Calgary, AB',
-  'Calgary',
-  'Edmonton, AB',
-  'Edmonton',
-  'Quebec City, QC',
-  'Quebec City',
-  'Winnipeg, MB',
-  'Winnipeg',
-  'Halifax, NS',
-  'Halifax',
-  'Victoria, BC',
-  'Victoria',
-  'Kitchener-Waterloo, ON',
-  'Remote - Canada',
-  'Remote',
+export const CANONICAL_LOCATIONS = [
+  { name: 'Montreal, QC', aliases: ['montreal', 'montréal', 'mtl', 'quebec', 'qc'] },
+  { name: 'Toronto, ON', aliases: ['toronto', 'gta', 'ontario', 'on', 'yyz'] },
+  { name: 'Vancouver, BC', aliases: ['vancouver', 'bc', 'british columbia', 'yvr'] },
+  { name: 'Ottawa, ON', aliases: ['ottawa', 'gatineau', 'ncr', 'capital', 'on'] },
+  { name: 'Calgary, AB', aliases: ['calgary', 'alberta', 'ab', 'yyc'] },
+  { name: 'Edmonton, AB', aliases: ['edmonton', 'alberta', 'ab', 'yeg'] },
+  { name: 'Quebec City, QC', aliases: ['quebec city', 'québec', 'ville de quebec', 'qc'] },
+  { name: 'Winnipeg, MB', aliases: ['winnipeg', 'manitoba', 'mb'] },
+  { name: 'Halifax, NS', aliases: ['halifax', 'nova scotia', 'ns'] },
+  { name: 'Victoria, BC', aliases: ['victoria', 'vancouver island', 'bc'] },
+  { name: 'Kitchener-Waterloo, ON', aliases: ['kitchener', 'waterloo', 'kw', 'on'] },
+  { name: 'Remote - Canada', aliases: ['remote', 'telework', 'work from home', 'wfh', 'canada'] },
+  { name: 'Remote', aliases: ['remote', 'anywhere', 'wfh'] },
 ]
+
+export const COMMON_LOCATIONS = CANONICAL_LOCATIONS.map((loc) => loc.name)
 
 export const SCHEDULE_HOURS_MAP = {
   'Full-time': { min: 35, max: 40 },

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { searchJobs } from '../api/jobs'
+import LocationAutocomplete from './LocationAutocomplete'
 
 const CATEGORIES = [
     'Software Engineering',
@@ -215,12 +216,15 @@ function JobSearchPageNavbar({ token, onLogout, isLoggingOut = false, onJobsLoad
                                 className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 w-52"
                             />
 
-                            <input
-                                type="text"
-                                placeholder="City, province, or remote"
+                            <LocationAutocomplete
+                                id="search-navbar-location"
+                                name="location"
                                 value={location}
-                                onChange={(event) => setLocation(event.target.value)}
-                                className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 w-48"
+                                onChange={(val) => setLocation(val)}
+                                onSelect={(val) => triggerSearch({ location: val })}
+                                placeholder="City, province, or remote"
+                                compact
+                                className="w-52"
                             />
 
                             <div ref={categoryRef} className="relative inline-block">

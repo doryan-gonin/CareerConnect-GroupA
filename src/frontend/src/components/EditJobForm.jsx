@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { updateJob } from '../api/jobs'
 import SliderNumberInput from './SliderNumberInput'
 import MarkdownEditor from './MarkdownEditor'
+import LocationAutocomplete from './LocationAutocomplete'
 import {
   JOB_TYPES,
   JOB_SCHEDULES,
   PRESET_CATEGORIES,
-  COMMON_LOCATIONS,
   SCHEDULE_HOURS_MAP,
   HOURS_EXTREMUMS,
   SALARY_EXTREMUMS,
@@ -168,35 +168,14 @@ export default function EditJobForm({
           <label htmlFor={`edit-job-location-${job.id}`} className="mb-1 block text-xs font-medium text-gray-700">
             Location
           </label>
-          <input
+          <LocationAutocomplete
             id={`edit-job-location-${job.id}`}
             name="location"
-            list={`edit-location-suggestions-${job.id}`}
             value={form.location}
-            onChange={handleChange}
+            onChange={(val) => setForm(prev => ({ ...prev, location: val }))}
             placeholder="e.g. Montreal, QC or Remote"
             required
-            autoComplete="off"
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
           />
-          <datalist id={`edit-location-suggestions-${job.id}`}>
-            {COMMON_LOCATIONS.map((loc) => (
-              <option key={loc} value={loc} />
-            ))}
-          </datalist>
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] text-gray-400">Suggestions:</span>
-            {['Montreal, QC', 'Toronto, ON', 'Vancouver, BC', 'Remote'].map((city) => (
-              <button
-                key={city}
-                type="button"
-                onClick={() => setForm(prev => ({ ...prev, location: city }))}
-                className="rounded bg-gray-200/70 px-1.5 py-0.5 text-[11px] font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition"
-              >
-                {city}
-              </button>
-            ))}
-          </div>
         </div>
 
         <div>
