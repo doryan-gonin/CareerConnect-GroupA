@@ -159,6 +159,63 @@
 * **Reflection**: Dedicated page routing provides a superior experience over modals by enabling direct bookmarking, URL sharing, seamless back-button navigation, and clean separation of concerns.
 * **Responsible Person**: Thomas Martel
 
+### Entry 8: Priority Roadmap Restructuring & Issue Reorganization (FIXES.md)
+* **Task ID / Title**: Priority Roadmap Restructuring & Issue Reorganization (FIXES.md)
+* **Purpose of AI Use**: Code review analysis, prioritization roadmap design, and documentation refactoring.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `e3ce2ccb-15fc-478c-8a92-a77155b38367`). Full prompt and summary maintained in project workspace session.
+* **AI-Suggested Content**: 
+  - Audited code review findings on the merged AI interview preparation pull request and integrated newly identified defects with the existing backlog.
+  - Restructured `FIXES.md` with an operational Priority Roadmap grouping items into four clear urgency tiers:
+    - **Tier 1: Blockers & Runtime Bugs** (Issues 4.8, 4.7, 2.2, 2.6).
+    - **Tier 2: Functional Reliability & UX** (Issues 4.7 fallback, 4.9, 4.10, 3.1).
+    - **Tier 3: Test Architecture & Data Integrity** (Issues 1.1, 1.2, 1.3, 3.2, 3.3, 3.4, 4.2).
+    - **Tier 4: Quality of Life & Scalability** (Issues 2.1, 2.3, 2.4, 2.5, 2.7, 4.1, 4.3, 4.4, 4.5, 4.6, 4.11).
+  - Sequentially renumbered all document sections (Sections 1.1–5.11) and updated all cross-references and internal anchor links.
+  - Authored detailed issue specifications for new AI interview items (4.8 defensive parsing, 4.9 turn-based history truncation, 4.10 chat Markdown rendering, 4.11 mock/offline fallback).
+  - Removed dev-environment-only dependency issue 3.5 (`pypdf` sync) upon user request.
+* **Validation**: 
+  - Verified document markdown formatting, sequential numbering accuracy, and internal anchor navigation.
+  - Verified git diff across `FIXES.md` to ensure clarity and preservation of all active issues.
+* **Decision**: Accepted (reviewed roadmap tiers, verified clear separation of concerns, and authorized proceeding sequentially through Tier 1).
+* **Reflection**: Establishing an explicit, tiered roadmap prior to fixing bugs prevents scope creep and ensures critical runtime crashes and authentication blockers are eliminated before secondary enhancements are introduced.
+* **Responsible Person**: Thomas Martel
+
+### Entry 9: Tier 1 Defect Remediation & Automated Test Suite Expansion (Issues 4.8, 4.7, 2.2, 2.6)
+* **Task ID / Title**: Tier 1 Defect Remediation & Automated Test Suite Expansion (Issues 4.8, 4.7, 2.2, 2.6)
+* **Purpose of AI Use**: Backend defect fixing, defensive API integration, dynamic configuration, SQLModel database relationship modeling, and automated test suite expansion.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `e3ce2ccb-15fc-478c-8a92-a77155b38367`). Full prompt and summary maintained in project workspace session.
+* **AI-Suggested Content**: 
+  - **Issue 4.8 (Defensive AI Response Parsing)**: Added comprehensive payload validation in `src/backend/services/interview_service.py` (`_chat_completion`) checking for valid JSON dict, non-empty `choices` list, valid `message` dict, and non-empty `content` string. Converted unhandled 500 crashes into clean HTTP 502 Bad Gateway responses with actionable error detail. Added 5 failure-path tests in `tests/test_interview.py`.
+  - **Issue 4.7 (Decouple Provider & Base URL Config)**: Removed hardcoded Groq provider references from `src/backend/config.py` and `.env.example`. Configured `AI_API_BASE_URL` dynamically from the environment, stripped trailing slashes, allowed keyless local models, and raised HTTP 503 Service Unavailable when the base URL is unset. Added tests in `tests/test_config.py` and `tests/test_interview.py`.
+  - **Issue 2.2 (Account Lockout Reset on Expiry)**: Fixed persistent re-lockout loop in `src/backend/routers/auth.py`. When `user.locked_until <= now`, reset `failed_attempts = 0` and cleared `locked_until = None` before password validation. Created shared `db_session` fixture in `tests/conftest.py` and regression tests in `tests/test_auth.py`.
+  - **Issue 2.6 (Atomic Profile Creation on Registration)**: Fixed missing profile records on registration in `src/backend/routers/auth.py` by flushing `new_user.id` and inserting a linked `Profile` row atomically within the transaction. Corrected SQLModel relationship typing in `src/backend/models.py` to `Optional["Profile"] = Relationship(...)` to prevent class registry resolution errors. Added verification test in `tests/test_auth.py`.
+* **Validation**: 
+  - Executed automated test suite (`.venv/bin/pytest`), verifying all 72/72 tests pass cleanly with zero regressions.
+  - Inspected code diffs to confirm no hardcoded credentials or provider URLs remained.
+* **Decision**: Accepted (reviewed each fix and automated test sequentially with user confirmation at each step).
+* **Reflection**: Writing regression unit tests alongside each bug fix provided immediate proof of correctness and surfaced subtle framework-level edge cases (such as SQLModel forward reference parsing) before reaching production.
+* **Responsible Person**: Thomas Martel
+
+### Entry 10: Manual End-to-End Verification & API Edge-Case Testing
+* **Task ID / Title**: Manual End-to-End Verification & API Edge-Case Testing
+* **Purpose of AI Use**: End-to-end verification planning, curl command generation, dummy server script creation, and API error debugging.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `e3ce2ccb-15fc-478c-8a92-a77155b38367`). Full prompt and summary maintained in project workspace session.
+* **AI-Suggested Content**: 
+  - Designed a 4-step manual verification procedure covering all Tier 1 fixes in a live running environment:
+    1. **Registration & Profile Creation**: Executed signup via `POST /api/auth/register` and verified atomic creation of linked `Profile` row via SQLite query (`SELECT * FROM profile WHERE user_id = ?`).
+    2. **Lockout Counter Reset**: Simulated 5 failed logins to trigger lockout, confirmed 403 Forbidden with lockout timestamp, waited for expiration, and verified successful login resets `failed_attempts` to 0.
+    3. **Unset AI Base URL Handling**: Unset `AI_API_BASE_URL` in `.env`, restarted backend, and confirmed `POST /api/interview/sessions` returns HTTP 503 Service Unavailable with descriptive JSON error message.
+    4. **Malformed AI Provider Response Handling**: Configured `AI_API_BASE_URL` pointing to a local Python dummy server returning HTML error pages, and confirmed backend returns HTTP 502 Bad Gateway rather than crashing with an unhandled 500 error.
+  - Guided debugging of runtime edge cases encountered during testing:
+    - Diagnosed initial 404 "Application not found" by providing a script to create an application linked to the authenticated user.
+    - Diagnosed a 422 JSON parsing typo in user's curl payload, enabling successful 502 Bad Gateway verification.
+* **Validation**: 
+  - User executed all 4 manual test scenarios against the running FastAPI application.
+  - Confirmed expected HTTP status codes (200, 403, 503, 502) and SQLite database state changes.
+* **Decision**: Accepted (verified all Tier 1 fixes behave robustly end-to-end).
+* **Reflection**: Manual testing against live HTTP endpoints and real databases complements automated unit tests by verifying middleware pipelines, JSON serialization, and realistic upstream network failure modes.
+* **Responsible Person**: Thomas Martel
+
 ---
 
 ## Appendix: Extended Prompts & Responses (Optional)
@@ -212,3 +269,28 @@
   2. Implementation of `getJobById(jobId)` API function.
   3. Creation of `JobDetailPage.jsx` and integration with `App.jsx` router.
   4. Updating `JobSearchPage.jsx` Expand action and title link.
+
+### Appendix 8: Context for Entry 8
+* **Context**: Priority Roadmap Restructuring and Issue Reorganization in `FIXES.md`.
+* **Key Queries**:
+  1. Synthesizing pull request code review items for AI interview prep with the general backend backlog.
+  2. Defining 4 operational urgency tiers (Blockers, Reliability/UX, Test Architecture, Scalability).
+  3. Renumbering all document sections sequentially (1.1 through 5.11) with updated internal anchor links.
+  4. Incorporating new AI interview prep issues (4.8, 4.9, 4.10, 4.11) and removing dev-env dependency sync (3.5).
+
+### Appendix 9: Context for Entry 9
+* **Context**: Tier 1 Defect Remediation and Automated Test Suite Expansion (Issues 4.8, 4.7, 2.2, 2.6).
+* **Key Queries**:
+  1. Defensive JSON response validation in `_chat_completion` converting unhandled 500s into HTTP 502 Bad Gateway.
+  2. Decoupling `AI_API_BASE_URL` from Groq, supporting dynamic base URLs and keyless local models, and returning 503 on missing config.
+  3. Resetting `failed_attempts` upon lockout expiration in `login_user` to eliminate persistent lockout loop.
+  4. Atomic `Profile` insertion upon registration and `Optional["Profile"]` SQLModel relationship typing.
+  5. Creating unit and regression tests in `test_interview.py`, `test_config.py`, and `test_auth.py` (72/72 tests passing).
+
+### Appendix 10: Context for Entry 10
+* **Context**: Manual End-to-End Verification and API Edge-Case Testing.
+* **Key Queries**:
+  1. Designing manual verification protocols for registration profile creation, account lockout expiration reset, missing base URL (503), and malformed upstream AI responses (502).
+  2. Simulating malformed upstream HTML error responses using a lightweight local Python HTTP server.
+  3. Resolving 404 "Application not found" by linking a test job application to the authenticated user.
+  4. Diagnosing a curl JSON syntax typo to verify successful 502 Bad Gateway handling.

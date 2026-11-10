@@ -1,4 +1,4 @@
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from math import sqrt
 from sqlmodel import Session, select
 
@@ -52,8 +52,8 @@ def _periods_between(
 
 def _date_range(start_date: date, end_date: date) -> tuple[datetime, datetime]:
     return (
-        datetime.combine(start_date, time.min),
-        datetime.combine(end_date + timedelta(days=1), time.min),
+        datetime.combine(start_date, time.min, tzinfo=timezone.utc),
+        datetime.combine(end_date + timedelta(days=1), time.min, tzinfo=timezone.utc),
     )
 
 # ---------------------------------- Compute -----------------------------------

@@ -1,10 +1,10 @@
 # Sprint 3 Contribution & Activity Log
 
 * **Team Member**: Doryan Gonin
-* **Role**: ScrumMaster - Documentation - Testing - Backend
+* **Role**: ScrumMaster - Documentation - Acceptance & Unit Testing - Backend - Deployment
 * **Project**: CareerConnect (SOEN 341 - Fall 2026)
 * **Sprint**: Sprint 3
-* **Time Spent**: 8h50
+* **Time Spent**: ~33 hours
 
 ---
 
@@ -21,4 +21,22 @@
 | **8**  | PRs for analytics and testing                         | 10 min     |            | #115        | #111     | 03/11/26      |
 | **9**  | Created sub-issues for Analytics frontend             | 15 min     | Project    |               |  #116    | 03/11/26      |
 | **10** | Team Point (discord message)                          | 30 min     |            |               |            | 03/11/26      |
-| **11** | 
+| **11** | **Initial deployment attempt** (Vercel & HF) [FAILED] <br> - Rewrote frontend endpoints to allow remote deployment <br> - Configured prod env variables <br> - Updated CORS and added Uvicorn startup script <br> - ~~Added Dockerfile and YAML config file for HF~~ <br> - ~~Test deployed frontend on Vercel (no free support for path rewrites)~~ <br> - ~~Tried to deploy backend on HF (free plan doesn't support Docker and AI model hosting anymore)~~   | 2 hr       | [`e8e9520`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/e8e9520) <br> to <br> [`a721ab2`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/a721ab2) | #119 | #117 <br> #118 | 04/11/26 |
+| **12** | **Correct Deployment** (Render and Neon) (see #120 for more info) <br> - Cleaned up stale configs <br> - Migrated DB to PostgreSQL so it could be hosted online (on Neon) <br> - Created Render static site for frontend <br> - Created Render web service for backend <br> - Connected DB, backend, frontend with paths as environment variables <br> - Set-up autodeploy | 5 hr | [`695e6cc`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/695e6cc) <br> to <br> [`7426855`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/7426855) | #123 <br> to <br> #126 | #120 | 04/11/26 |
+| **13** | Update relevant issues, project board, and contribution logs | 1 hr | Project | | | 04/11/26
+| **14** | Board update and refactoring of tasks                | 1 hr        | Project   |               |            | 05/11/26      |
+| **15** | DB Seeding (add seedscript to deploy commands)       | 30 min      |           |               |            | 05/11/26      |
+| **16** | **Analytics backend fixes** <br> - Stop counting empty searches <br> - Refactor frontend endpoints to count job views even when not expanded | 45 min | [`01a0471`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/01a0471) <br> [`bc6e9e5`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/bc6e9e5) | #128 | #127 | 05/11/26
+| **17** | Board update & team point                            | 45 min      | Project   |               |            | 05/11/26      |
+| **18** | **Analytics backend fixes** <br> - Add endpoint call from frontend to count views | 45 min | [`96eb9f3`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/96eb9f3) | #129 | #127 | 06/11/26 | 
+| **19** | **PR #130 review and fixes** <br> - Pulled `main` to resolve stale branch (2 weeks old) <br> - Fixed merge conflicts (+317 -70) <br> - Isolated needed feature from erroneuous backend and frontend modifications <br> - Redirect apply button to application form <br> - Documented pre-merge fixes (see comments #130) <br> - Documented issues to be addressed (see #131) - Accepted PR #130 with aforementioned fixes <br> - Left a review outlining the fixes and issues to be addressed <br> | 2 hr | [`565c36c`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/565c36c) <br> [`06af154`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/06af154) | #130 | #94 <br> #131 | 06/11/26 |
+| **20** | **Project board & Acceptance Tests** <br> - Final update of project board for Sprint 3 <br> - Added acceptance tests documentation in each relevant User Story to keep it readable and organized | 1.5 hr | Project | | | 07/11/26 |
+| **21** | **Notification Feature Backend** <br> - Created Notifications table in DB <br> - Created notification model and schema <br> - Created service (handler) to create notifications <br> - Created endpoints for retrival <br> - Added notification creation to job application <br> | 1 hr | [`894895a`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/894895a) <br> to <br> [`cd912fd`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/cd912fd) | #142 | #137 | 07/11/26 |
+| **22** | **Notification Test Cases** <br> - Added test cases for notification endpoints and service <br> - Added test fixtures for notifications <br> | 1 hr | [`a150f3`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/a150f3) <br> [`a1f439d`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/a1f439d) | #141 | #140 | 07/11/26 
+| **23** | **Sprint Documentation** <br> - Uploaded meeting minutes for meetings 3 and 4 <br> - Wrote sprint 3 report | 1.5 hr | [`0f1dd4a`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/0f1dd4a) | | | 08/11/26
+| **24** | **PR #143 review and fixes** <br> - Reviewed PR <br> - Documented issues to be addressed (see FIXES.md) <br> - Accepted PR #143 with aforementioned fixes <br> - Left a review outlining the fixes and issues to be addressed | 1.5 hr | [`oe3f83b`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/oe3f83b) | #143 | | 08/11/26
+| **25** | **PR #144 review and fixes** <br> - Reviewed PR <br> - Manually solved merge conflicts <br> - Fix broken props and missing connections | 20 min | [`7ef7f50`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/7ef7f50) <br> [`c4b143d`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/c4b143d) | #144 | | 08/11/26
+| **26** | **PR #145 review and fixes** <br> - Reviewed PR <br> - Manually solved merge conflicts <br> | 20 min | [`b1ea337`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/b1ea337) | #145 | | 08/11/26
+| **27** | Fix wrong date conversion to test PR | 30 min | [`f4e9207`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/f4e9207) | #147 | | 08/11/26
+| **28** | **PR Review & AI deploy** <br> - Reviewed urgent fixes <br> - Configured local `.env` for testing and reviewing <br> - Configured `.env` and AI path on Render for deployment <br> - Manual deploy <br> - Testing and validation on prod | 1 hr | | #148 | | 09/11/26  
+| **29** | **Last minute report changes** <br> - Added missing contribution logs (Vlad) <br> - Added missing entries in logs (Thomas & Doryan) <br> - Added missing information on AI feature <br> - Added personnal log entries <br> - Uploaded report on GitHub  | 1 hr | [`e3818f0`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/e3818f0) | | | 09/11/26 

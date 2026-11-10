@@ -1,9 +1,3 @@
-> **IMPORTANT SUBMISSION NOTE:**
-> According to the SOEN 341 project guidelines, each team member must upload a **PDF report** of their AI log to their personal subdirectory (`AI_Log/<Name>/`). 
-> Please export or convert this Markdown document into `AI_Log_Sprint3_Doryan.pdf` (e.g., using VS Code Markdown PDF export, pandoc, or browser print-to-PDF) before the final sprint evaluation.
-
----
-
 # AI Usage & Validation Log — Sprint 3
 
 * **Student Name**: Doryan Gonin
@@ -94,3 +88,25 @@
 * **Responsible Person**: Doryan Gonin
 
 ---
+
+### Entry 6: General Deployment Help and Guidance
+* **Task ID / Title**: General Deployment Help and Guidance
+* **Purpose of AI Use**: Brainstorming / Requirements Analysis / Coding
+* **Chat Link or Prompt/Response**: Local session
+* **AI-Suggested Content**: Provided guidance on deployment strategies, including Dockerization, cloud hosting, free hosting options, code modifications to align with host changes ...
+* **Validation**: Couldn't be validated, the "free" hosts and suggested requirements were wrong and/or outdated.
+* **Decision**: Rejected.
+* **Reflection**: The AI provided some useful guidance on deployment strategies, but the information was outdated and not applicable to our project. Everything had to be reworked to align with the limited free options available.
+* **Responsible Person**: Doryan Gonin
+
+---
+
+### Entry 7: Frontend Merge Conflict Resolution (#130)
+* **Task ID / Title**: Frontend Merge Conflict Resolution (#130)
+* **Purpose of AI Use**: Review / Testing / Requirement Analysis / Coding / Brainstorming
+* **Chat Link or Prompt/Response**: Local Copilot session
+* **AI-Suggested Content**: Resolved conflicts in the frontend routing, job search page, dashboard screen, and applications API while treating the incoming `main` branch as the source of truth. Preserved the application submission form and rewired both job-search Apply actions and the job-detail Apply Now action to open the form instead of submitting immediately.
+* **Validation**: Reviewed the three-way conflict stages, confirmed no unresolved paths or conflict markers remained, ran `git diff --check`, ran frontend lint, ran production build.
+* **Decision**: Accepted with modifications. Stale dashboard/navigation artifacts were discarded, application-form integration was retained and adjusted to match the existing `main` routing and design.
+* **Reflection**: The merge showed why each conflict must be resolved according to the current branch's behavior rather than by combining both sides blindly. The final validation also exposed that the listing-page Apply button needed separate rewiring after the first integration, which was corrected before accepting the changes.
+* **Responsible Person**: Doryan Gonin
