@@ -4,7 +4,7 @@ import ApplicationStatusBadge from './ApplicationStatusBadge'
 import { getMyApplications } from '../api/applications'
 import { recordJobView } from '../api/jobs'
 
-function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onViewJob, onApplyJob }) {
+function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onViewJob, onApplyJob, isRecruiter = false }) {
     const [jobs, setJobs] = useState([])
     const [hasLoaded, setHasLoaded] = useState(false)
     const [selectedJob, setSelectedJob] = useState(null)
@@ -13,6 +13,7 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
     const selectedStatus = selectedJob ? statusByJobId[selectedJob.id] : null
 
     useEffect(() => {
+        if (isRecruiter) return
         let active = true
 
         getMyApplications(token)
@@ -26,7 +27,7 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
         return () => {
             active = false
         }
-    }, [token])
+    }, [token, isRecruiter])
 
     function handleSelectJob(job) {
         setSelectedJob(job)
@@ -201,14 +202,16 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
                             )}
                             <p className="mt-2">Description: {selectedJob.description}</p>
 
-                            <button
-                                type="button"
-                                onClick={() => onApplyJob?.(selectedJob.id)}
-                                disabled={Boolean(selectedStatus)}
-                                className="mt-3 rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-600"
-                            >
-                                {selectedStatus ? 'Already applied' : 'Apply'}
-                            </button>
+                            {!isRecruiter && (
+                                <button
+                                    type="button"
+                                    onClick={() => onApplyJob?.(selectedJob.id)}
+                                    disabled={Boolean(selectedStatus)}
+                                    className="mt-3 rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-600"
+                                >
+                                    {selectedStatus ? 'Already applied' : 'Apply'}
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
