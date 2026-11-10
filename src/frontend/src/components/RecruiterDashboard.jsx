@@ -12,6 +12,7 @@ import CreateJobForm from './CreateJobForm'
 import EditJobForm from './EditJobForm'
 import ApplicationStatusBadge from './ApplicationStatusBadge'
 import ResumeViewerModal from './ResumeViewerModal'
+import MarkdownView from './MarkdownView'
 
 
 
@@ -39,6 +40,9 @@ export default function RecruiterDashboard({ token }) {
 
   // Inline expanded cover letter per application
   const [expandedCoverLetterId, setExpandedCoverLetterId] = useState(null)
+
+  // Expanded job description preview per job
+  const [expandedDescJobId, setExpandedDescJobId] = useState(null)
 
   // In-app resume viewer modal state
   const [resumeModal, setResumeModal] = useState({
@@ -538,6 +542,22 @@ async function handleViewApplicants(jobId) {
                   : 'View Applicants'}
               </button>
 
+              <button
+                type="button"
+                onClick={() =>
+                  setExpandedDescJobId(prev => (prev === job.id ? null : job.id))
+                }
+                className={`rounded-md border px-3 py-1.5 text-xs sm:text-sm font-medium transition ${
+                  expandedDescJobId === job.id
+                    ? 'border-purple-300 bg-purple-50 text-purple-700'
+                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {expandedDescJobId === job.id
+                  ? 'Hide Description'
+                  : 'View Description'}
+              </button>
+
               {job.is_active ? (
                 <button
                   type="button"
@@ -558,6 +578,21 @@ async function handleViewApplicants(jobId) {
                 </button>
               )}
             </div>
+
+            {/* Expanded Job Description preview */}
+            {expandedDescJobId === job.id && (
+              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50/70 p-4">
+                <div className="flex items-center justify-between border-b border-gray-200/80 pb-2 mb-3">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">
+                    Job Description
+                  </span>
+                  <span className="text-[11px] text-gray-400">Formatted Markdown Preview</span>
+                </div>
+                <div className="max-h-72 overflow-y-auto">
+                  <MarkdownView content={job.description} />
+                </div>
+              </div>
+            )}
 
             {/* Edit Job form */}
             {editingJobId === job.id && (

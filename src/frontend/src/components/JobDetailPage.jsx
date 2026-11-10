@@ -3,6 +3,7 @@ import { getJobById, applyToJob } from '../api/jobs'
 import { getMyApplications } from '../api/applications'
 import ApplicationForm from './ApplicationForm'
 import ApplicationStatusBadge from './ApplicationStatusBadge'
+import MarkdownView from './MarkdownView'
 
 function formatSalary(min, max) {
   if (min && max) {
@@ -277,8 +278,8 @@ function JobDetailPage({
             {/* Description */}
             <div className="space-y-3 border-b border-gray-100 pb-8">
               <h2 className="text-lg font-semibold text-gray-900">Job Description</h2>
-              <div className="text-sm leading-relaxed text-gray-700 whitespace-pre-line">
-                {job.description}
+              <div className="text-sm leading-relaxed text-gray-700">
+                <MarkdownView content={job.description} />
               </div>
             </div>
 

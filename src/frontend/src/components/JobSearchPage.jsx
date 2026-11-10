@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import JobSearchPageNavbar from './JobSearchPageNavbar'
 import ApplicationStatusBadge from './ApplicationStatusBadge'
+import MarkdownView from './MarkdownView'
 import { getMyApplications } from '../api/applications'
 import { recordJobView } from '../api/jobs'
 
@@ -200,7 +201,14 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
                                     Salary: ${selectedJob.salary_min?.toLocaleString() ?? '?'} - ${selectedJob.salary_max?.toLocaleString() ?? '?'}
                                 </p>
                             )}
-                            <p className="mt-2">Description: {selectedJob.description}</p>
+                            <div className="mt-3 border-t border-gray-100 pt-3">
+                                <span className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+                                    Job Description
+                                </span>
+                                <div className="max-h-60 overflow-y-auto rounded-md bg-gray-50 p-3 text-xs text-gray-700">
+                                    <MarkdownView content={selectedJob.description} />
+                                </div>
+                            </div>
 
                             {!isRecruiter && (
                                 <button

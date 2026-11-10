@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { updateJob } from '../api/jobs'
 import SliderNumberInput from './SliderNumberInput'
+import MarkdownEditor from './MarkdownEditor'
 import {
   JOB_TYPES,
   JOB_SCHEDULES,
@@ -230,19 +231,18 @@ export default function EditJobForm({
       </div>
 
       {/* Row 3: Description */}
-      <label className="mt-4 block">
-        <span className="mb-1 block text-xs font-medium text-gray-700">
-          Job Description
-        </span>
-        <textarea
-          name="description"
+      <div className="mt-4">
+        <label className="mb-1 block text-xs font-medium text-gray-700">
+          Job Description <span className="text-[11px] text-gray-400 font-normal">(Markdown supported)</span>
+        </label>
+        <MarkdownEditor
           value={form.description}
-          onChange={handleChange}
-          rows={6}
+          onChange={(val) => setForm(prev => ({ ...prev, description: val }))}
+          rows={7}
           required
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+          placeholder="Describe the responsibilities, requirements, qualifications..."
         />
-      </label>
+      </div>
 
       {/* Row 4: Job Type & Schedule */}
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
