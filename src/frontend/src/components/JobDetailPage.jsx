@@ -3,6 +3,7 @@ import { getJobById, applyToJob } from '../api/jobs'
 import { getMyApplications } from '../api/applications'
 import ApplicationForm from './ApplicationForm'
 import ApplicationStatusBadge from './ApplicationStatusBadge'
+import MarkdownView from './MarkdownView'
 
 function formatSalary(min, max) {
   if (min && max) {
@@ -53,6 +54,7 @@ function JobDetailPage({
   isApplying = false,
   onApply,
   onBackToPosting,
+  isRecruiter = false,
 }) {
   const [jobState, setJobState] = useState({ id: null, job: null, isLoading: true, error: '' })
   const [applicationState, setApplicationState] = useState({ id: null, status: null })
@@ -81,6 +83,7 @@ function JobDetailPage({
   }, [token, jobId])
 
   useEffect(() => {
+    if (isRecruiter) return
     let active = true
 
     getMyApplications(token)
@@ -96,7 +99,7 @@ function JobDetailPage({
     return () => {
       active = false
     }
-  }, [token, jobId])
+  }, [token, jobId, isRecruiter])
 
   async function handleSubmitApplication({ job_id, resume_id }) {
     await applyToJob(token, job_id, { resumeId: resume_id })
@@ -112,7 +115,7 @@ function JobDetailPage({
       {/* Top Navigation Bar */}
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <a
               href="/dashboard"
               onClick={(e) => {
@@ -125,6 +128,11 @@ function JobDetailPage({
             >
               Career<span className="text-purple-600">Connect</span>
             </a>
+            {isRecruiter && (
+              <span className="rounded-full bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">
+                Recruiter
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-4">
@@ -270,22 +278,24 @@ function JobDetailPage({
             {/* Description */}
             <div className="space-y-3 border-b border-gray-100 pb-8">
               <h2 className="text-lg font-semibold text-gray-900">Job Description</h2>
-              <div className="text-sm leading-relaxed text-gray-700 whitespace-pre-line">
-                {job.description}
+              <div className="text-sm leading-relaxed text-gray-700">
+                <MarkdownView content={job.description} />
               </div>
             </div>
 
             {/* Application Section */}
             <div className="pt-6">
               <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={onApply}
-                  disabled={isCheckingApplication || Boolean(applicationStatus)}
-                  className="rounded-md bg-purple-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-600"
-                >
-                  {applicationStatus ? 'Already applied' : 'Apply Now'}
-                </button>
+                {!isRecruiter && (
+                  <button
+                    type="button"
+                    onClick={onApply}
+                    disabled={isCheckingApplication || Boolean(applicationStatus)}
+                    className="rounded-md bg-purple-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-600"
+                  >
+                    {applicationStatus ? 'Already applied' : 'Apply Now'}
+                  </button>
+                )}
 
                 <a
                   href="/jobs"

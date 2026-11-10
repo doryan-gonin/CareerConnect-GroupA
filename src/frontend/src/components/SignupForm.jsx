@@ -9,6 +9,7 @@ function SignupForm({ onSignedUp, onSwitchToLogin }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [isRecruiter, setIsRecruiter] = useState(false)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -27,8 +28,8 @@ function SignupForm({ onSignedUp, onSwitchToLogin }) {
 
     setIsSubmitting(true)
     try {
-      await registerUser(email, password)
-      onSignedUp(email)
+      await registerUser(email, password, isRecruiter)
+      onSignedUp(email, isRecruiter)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -45,6 +46,41 @@ function SignupForm({ onSignedUp, onSwitchToLogin }) {
           {error}
         </p>
       )}
+
+      <div className="flex flex-col gap-1.5">
+        <span className="text-sm font-medium text-gray-700">Account Type</span>
+        <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Account Type">
+          <button
+            type="button"
+            role="radio"
+            aria-checked={!isRecruiter}
+            onClick={() => setIsRecruiter(false)}
+            className={`flex flex-col items-center justify-center rounded-lg border p-3 text-center transition cursor-pointer ${
+              !isRecruiter
+                ? 'border-purple-600 bg-purple-50 text-purple-900 ring-1 ring-purple-600'
+                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <span className="text-sm font-semibold">Job Seeker</span>
+            <span className="text-xs text-gray-500">Apply for jobs</span>
+          </button>
+
+          <button
+            type="button"
+            role="radio"
+            aria-checked={isRecruiter}
+            onClick={() => setIsRecruiter(true)}
+            className={`flex flex-col items-center justify-center rounded-lg border p-3 text-center transition cursor-pointer ${
+              isRecruiter
+                ? 'border-purple-600 bg-purple-50 text-purple-900 ring-1 ring-purple-600'
+                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <span className="text-sm font-semibold">Recruiter</span>
+            <span className="text-xs text-gray-500">Post & manage jobs</span>
+          </button>
+        </div>
+      </div>
 
       <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
         Email

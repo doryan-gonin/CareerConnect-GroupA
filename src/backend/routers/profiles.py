@@ -12,7 +12,7 @@ from sqlmodel import Session, select
 
 from backend.database import get_session
 from backend.models import User, Profile, Resume, ProfileUpdate, ProfileResponse, ResumeReponse
-from backend.dependencies import get_current_user
+from backend.dependencies import get_current_user, get_current_applicant
 from backend.config import UPLOAD_DIR
 
 router = APIRouter(tags=["Profiles"])
@@ -56,13 +56,13 @@ def update_profile(payload: ProfileUpdate, current_user: Annotated[User, Depends
 
 # Get all resumes
 @router.get("/me/resumes", response_model=List[ResumeReponse])
-def list_resumes(current_user: Annotated[User, Depends(get_current_user)], session: Annotated[Session, Depends(get_session)]):
+def list_resumes(current_user: Annotated[User, Depends(get_current_applicant)], session: Annotated[Session, Depends(get_session)]):
     resumes = session.exec(select(Resume).where(Resume.user_id == current_user.id).order_by(Resume.is_default.desc(), Resume.uploaded_at.desc())).all()
     return resumes
 
 # Get specific resume
 @router.get("/me/resumes/{resume_id}")
-def download_resume(resume_id: int, current_user: Annotated[User, Depends(get_current_user)], session: Annotated[Session, Depends(get_session)]):
+def download_resume(resume_id: int, current_user: Annotated[User, Depends(get_current_applicant)], session: Annotated[Session, Depends(get_session)]):
     resume = session.exec(select(Resume).where(Resume.id == resume_id, Resume.user_id == current_user.id)).first()
 
     if not resume or not os.path.exists(resume.file_path):
@@ -73,7 +73,7 @@ def download_resume(resume_id: int, current_user: Annotated[User, Depends(get_cu
 # Upload resume
 @router.post("/me/resumes", response_model=ResumeReponse, status_code=status.HTTP_201_CREATED)
 async def upload_resume(file: Annotated[UploadFile, File(...)],
-                  current_user: Annotated[User, Depends(get_current_user)], 
+                  current_user: Annotated[User, Depends(get_current_applicant)], 
                   session: Annotated[Session, Depends(get_session)],
                   make_default: bool = False):
     
@@ -135,7 +135,7 @@ async def upload_resume(file: Annotated[UploadFile, File(...)],
 
 # Set default resume
 @router.patch("/me/resumes/{resume_id}/default", response_model=ResumeReponse)
-def set_default_resume(resume_id: int, current_user: Annotated[User, Depends(get_current_user)], session: Annotated[Session, Depends(get_session)]):
+def set_default_resume(resume_id: int, current_user: Annotated[User, Depends(get_current_applicant)], session: Annotated[Session, Depends(get_session)]):
     target_resume = session.exec(select(Resume).where(Resume.id == resume_id, Resume.user_id == current_user.id)).first()
 
     if not target_resume:
@@ -152,7 +152,7 @@ def set_default_resume(resume_id: int, current_user: Annotated[User, Depends(get
 
 # Delete resume
 @router.delete("/me/resumes/{resume_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_resume(resume_id: int, current_user: Annotated[User, Depends(get_current_user)], session: Annotated[Session, Depends(get_session)]):
+def delete_resume(resume_id: int, current_user: Annotated[User, Depends(get_current_applicant)], session: Annotated[Session, Depends(get_session)]):
     resume = session.exec(select(Resume).where(Resume.id == resume_id, Resume.user_id == current_user.id)).first()
 
     if not resume:

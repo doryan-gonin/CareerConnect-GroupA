@@ -14,7 +14,7 @@ from backend.models import (
     ApplicationDetailResponse,
     ApplicationStatusUpdate,
 )
-from backend.dependencies import get_current_user
+from backend.dependencies import get_current_user, get_current_applicant, get_current_recruiter
 from backend.services.notification_service import notify_status_change
 
 router = APIRouter(tags=["Applications"])
@@ -23,7 +23,7 @@ router = APIRouter(tags=["Applications"])
 @router.get("/me", response_model=List[ApplicationDetailResponse])
 def list_my_applications(
     session: Annotated[Session, Depends(get_session)],
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_applicant)],
     status_filter: ApplicationStatus | None = Query(default=None, alias="status", description="Filter by status (Applied, Under Review, Interview, Offered, Rejected)"),
 ):
     """
@@ -124,7 +124,7 @@ def get_application(
 def withdraw_application(
     application_id: int,
     session: Annotated[Session, Depends(get_session)],
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_applicant)],
 ):
     """
     Withdraw a submitted job application.
@@ -153,7 +153,7 @@ def update_application_status(
     application_id: int,
     payload: ApplicationStatusUpdate,
     session: Annotated[Session, Depends(get_session)],
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_recruiter)],
 ):
     """
     Update the status of an application (e.g. Applied -> Under Review -> Interview -> Offered / Rejected).

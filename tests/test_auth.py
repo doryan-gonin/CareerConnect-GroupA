@@ -144,3 +144,157 @@ class TestRegistration:
         }
         response = client.post("/api/auth/register", json=payload)
         assert response.status_code == 422
+
+    def test_registration_as_recruiter(self, client, db_session):
+        from sqlmodel import select
+        from backend.models import User
+
+        payload = {
+            "email_address": "newrecruiter@example.com",
+            "password": "Recruiter@123",
+            "is_recruiter": True,
+        }
+        response = client.post("/api/auth/register", json=payload)
+        assert response.status_code == 201
+        data = response.json()
+        assert data["is_recruiter"] is True
+
+        user = db_session.exec(select(User).where(User.email_address == "newrecruiter@example.com")).first()
+        assert user is not None
+        assert user.is_recruiter is True
+
+    def test_registration_as_applicant_default(self, client):
+        payload = {
+            "email_address": "newapplicant@example.com",
+            "password": "Applicant@123",
+        }
+        response = client.post("/api/auth/register", json=payload)
+        assert response.status_code == 201
+        assert response.json()["is_recruiter"] is False
+
+
+# ==============================================================================
+# Test Cases for Recruiter vs Applicant Role Permissions
+# ==============================================================================
+class TestRolePermissions:
+    def test_login_and_me_return_is_recruiter(self, client, test_user, recruiter_user):
+        # Applicant login
+        app_res = client.post("/api/auth/login", json={"email_address": test_user["email_address"], "password": test_user["password"]})
+        assert app_res.status_code == 200
+        assert app_res.json()["is_recruiter"] is False
+        app_token = app_res.json()["access_token"]
+
+        me_app = client.get("/api/auth/me", headers={"Authorization": f"Bearer {app_token}"})
+        assert me_app.status_code == 200
+        assert me_app.json()["is_recruiter"] is False
+
+        # Recruiter login
+        rec_res = client.post("/api/auth/login", json={"email_address": recruiter_user["email_address"], "password": recruiter_user["password"]})
+        assert rec_res.status_code == 200
+        assert rec_res.json()["is_recruiter"] is True
+        rec_token = rec_res.json()["access_token"]
+
+        me_rec = client.get("/api/auth/me", headers={"Authorization": f"Bearer {rec_token}"})
+        assert me_rec.status_code == 200
+        assert me_rec.json()["is_recruiter"] is True
+
+    def test_recruiter_can_post_and_applicant_cannot(self, client, test_user, recruiter_user):
+        app_res = client.post("/api/auth/login", json={"email_address": test_user["email_address"], "password": test_user["password"]})
+        app_token = app_res.json()["access_token"]
+
+        rec_res = client.post("/api/auth/login", json={"email_address": recruiter_user["email_address"], "password": recruiter_user["password"]})
+        rec_token = rec_res.json()["access_token"]
+
+        job_payload = {
+            "title": "Backend Developer",
+            "company_name": "Acme Corp",
+            "description": "Build high performance APIs",
+            "location": "Montreal",
+            "category": "Engineering",
+            "job_type": "Permanent",
+            "job_schedule": "Full-time",
+        }
+
+        # Applicant cannot post a job
+        app_post = client.post("/api/jobs", json=job_payload, headers={"Authorization": f"Bearer {app_token}"})
+        assert app_post.status_code == 403
+        assert "Only recruiters" in app_post.json()["detail"]
+
+        # Recruiter can post a job
+        rec_post = client.post("/api/jobs", json=job_payload, headers={"Authorization": f"Bearer {rec_token}"})
+        assert rec_post.status_code == 201
+        created_job = rec_post.json()
+        assert created_job["title"] == "Backend Developer"
+
+        # Applicant cannot list recruiter jobs
+        app_mine = client.get("/api/jobs/mine", headers={"Authorization": f"Bearer {app_token}"})
+        assert app_mine.status_code == 403
+
+        # Recruiter can list recruiter jobs
+        rec_mine = client.get("/api/jobs/mine", headers={"Authorization": f"Bearer {rec_token}"})
+        assert rec_mine.status_code == 200
+        assert len(rec_mine.json()) >= 1
+
+    def test_applicant_can_apply_and_recruiter_cannot(self, client, test_user, recruiter_user):
+        app_res = client.post("/api/auth/login", json={"email_address": test_user["email_address"], "password": test_user["password"]})
+        app_token = app_res.json()["access_token"]
+
+        rec_res = client.post("/api/auth/login", json={"email_address": recruiter_user["email_address"], "password": recruiter_user["password"]})
+        rec_token = rec_res.json()["access_token"]
+
+        # Recruiter posts a job
+        job_res = client.post(
+            "/api/jobs",
+            json={
+                "title": "Frontend Engineer",
+                "company_name": "Test Co",
+                "description": "React developer",
+                "location": "Montreal",
+                "category": "Engineering",
+                "job_type": "Permanent",
+                "job_schedule": "Full-time",
+            },
+            headers={"Authorization": f"Bearer {rec_token}"},
+        )
+        assert job_res.status_code == 201
+        job_id = job_res.json()["id"]
+
+        # Recruiter cannot upload a resume
+        rec_upload = client.post(
+            "/api/profiles/me/resumes",
+            files={"file": ("resume.pdf", b"%PDF-1.4 test", "application/pdf")},
+            headers={"Authorization": f"Bearer {rec_token}"},
+        )
+        assert rec_upload.status_code == 403
+
+        # Recruiter cannot apply to a job
+        rec_apply = client.post(
+            f"/api/jobs/{job_id}/apply",
+            json={"cover_letter": "I want to apply"},
+            headers={"Authorization": f"Bearer {rec_token}"},
+        )
+        assert rec_apply.status_code == 403
+
+        # Recruiter cannot view candidate applications list
+        rec_apps = client.get("/api/applications/me", headers={"Authorization": f"Bearer {rec_token}"})
+        assert rec_apps.status_code == 403
+
+        # Applicant can upload a resume and apply
+        app_upload = client.post(
+            "/api/profiles/me/resumes",
+            files={"file": ("applicant.pdf", b"%PDF-1.4 test", "application/pdf")},
+            headers={"Authorization": f"Bearer {app_token}"},
+        )
+        assert app_upload.status_code == 201
+
+        app_apply = client.post(
+            f"/api/jobs/{job_id}/apply",
+            json={"cover_letter": "I am a candidate"},
+            headers={"Authorization": f"Bearer {app_token}"},
+        )
+        assert app_apply.status_code == 201
+
+        # Applicant can view their applications list
+        app_apps = client.get("/api/applications/me", headers={"Authorization": f"Bearer {app_token}"})
+        assert app_apps.status_code == 200
+        assert len(app_apps.json()) == 1

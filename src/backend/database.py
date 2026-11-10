@@ -36,6 +36,14 @@ if is_sqlite:
 def init_db():
     from backend import models
     SQLModel.metadata.create_all(engine)
+    # Lightweight schema migration for existing SQLite databases
+    with Session(engine) as session:
+        try:
+            from sqlalchemy import text
+            session.exec(text("ALTER TABLE user ADD COLUMN is_recruiter BOOLEAN DEFAULT 0 NOT NULL"))
+            session.commit()
+        except Exception:
+            pass
 
 def get_session():
     with Session(engine) as session:
