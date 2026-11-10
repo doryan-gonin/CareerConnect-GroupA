@@ -275,7 +275,7 @@ function App() {
           onDashboard={currentPath !== '/dashboard' ? () => navigate('/dashboard') : undefined}
           isRecruiter={isRecruiter}
         />
-        <main className={`mx-auto px-4 py-8 ${isRecruiter ? 'max-w-6xl' : 'max-w-5xl'}`}>
+        <main className="mx-auto max-w-5xl px-4 py-8">
           {pageContent}
         </main>
       </div>

@@ -10,6 +10,7 @@ import {
 } from '../api/jobs'
 import CreateJobForm from './CreateJobForm'
 import EditJobForm from './EditJobForm'
+import ApplicationStatusBadge from './ApplicationStatusBadge'
 
 
 
@@ -303,64 +304,64 @@ async function handleUpdateApplicationStatus(applicationId, newStatus) {
 
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-
+    <div className="flex flex-col gap-6">
       {/* Dashboard heading */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
-          Recruiter Dashboard
-        </h1>
-
-        <p className="mt-2 text-gray-600">
-          Create jobs, manage postings, and review applicants.
-        </p>
-      </div>
-
-      {/* Create Job */}
-      <div className="mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Recruiter Dashboard
+          </h1>
+          <p className="text-sm text-gray-600">
+            Create jobs, manage postings, and review applicants.
+          </p>
+        </div>
         <button
           type="button"
           onClick={() => {
             setShowCreateForm(previous => !previous)
             setEditingJobId(null)
           }}
-          className="rounded-lg bg-violet-600 px-5 py-3 font-medium text-white hover:bg-violet-700"
+          className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700"
         >
-          {showCreateForm ? 'Cancel Creating' : '+ Create Job'}
+          {showCreateForm ? 'Cancel' : '+ Create Job'}
         </button>
       </div>
 
       {showCreateForm && (
-        <div className="mb-8">
-          <CreateJobForm
-            token={token}
-            onCreated={handleJobCreated}
-            onCancel={() => setShowCreateForm(false)}
-          />
-        </div>
+        <CreateJobForm
+          token={token}
+          onCreated={handleJobCreated}
+          onCancel={() => setShowCreateForm(false)}
+        />
       )}
 
       {/* Statistics */}
-      <div className="mb-10 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
-          <h2 className="text-3xl font-bold">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wider text-gray-500">
+            Total Jobs
+          </p>
+          <p className="mt-1 text-2xl font-semibold text-gray-900">
             {jobs.length}
-          </h2>
-          <p className="mt-2 text-gray-600">Total Jobs</p>
+          </p>
         </div>
 
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
-          <h2 className="text-3xl font-bold text-green-600">
+        <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wider text-gray-500">
+            Active Jobs
+          </p>
+          <p className="mt-1 text-2xl font-semibold text-emerald-600">
             {activeJobs.length}
-          </h2>
-          <p className="mt-2 text-gray-600">Active Jobs</p>
+          </p>
         </div>
 
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
-          <h2 className="text-3xl font-bold text-gray-600">
+        <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wider text-gray-500">
+            Closed Jobs
+          </p>
+          <p className="mt-1 text-2xl font-semibold text-gray-600">
             {closedJobs.length}
-          </h2>
-          <p className="mt-2 text-gray-600">Closed Jobs</p>
+          </p>
         </div>
       </div>
 
@@ -368,112 +369,115 @@ async function handleUpdateApplicationStatus(applicationId, newStatus) {
       {actionError && (
         <p
           role="alert"
-          className="mb-5 rounded-lg bg-red-50 p-4 text-red-700"
+          className="rounded-md bg-red-50 p-3 text-sm text-red-700"
         >
           {actionError}
         </p>
       )}
 
       {/* Job postings */}
-      <section>
-        <h2 className="mb-5 text-2xl font-bold">
-          My Job Postings
-        </h2>
+      <section className="flex flex-col gap-4">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+          <h2 className="text-lg font-medium text-gray-900">
+            My Job Postings
+          </h2>
+          <span className="text-xs text-gray-500">
+            {jobs.length} {jobs.length === 1 ? 'posting' : 'postings'}
+          </span>
+        </div>
 
         {loading && (
-          <p className="text-gray-600">
-            Loading your jobs...
-          </p>
+          <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
+            Loading your jobs…
+          </div>
         )}
 
         {error && (
           <p
             role="alert"
-            className="rounded-lg bg-red-50 p-4 text-red-700"
+            className="rounded-md bg-red-50 p-3 text-sm text-red-700"
           >
             {error}
           </p>
         )}
 
         {!loading && !error && jobs.length === 0 && (
-          <div className="rounded-xl border bg-white p-8 text-center">
-            <p className="text-gray-600">
-              You haven't created any job postings yet.
-            </p>
+          <div className="rounded-lg border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
+            You haven't created any job postings yet.
           </div>
         )}
 
         {!loading && !error && jobs.map(job => (
           <article
             key={job.id}
-            className="mb-5 rounded-xl border bg-white p-6 shadow-sm"
+            className="rounded-lg border border-gray-200 bg-white p-5 sm:p-6 shadow-sm"
           >
             {/* Job header */}
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h3 className="text-xl font-semibold text-gray-900">
-                  {job.title}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-semibold text-gray-900">
+                    {job.title}
+                  </h3>
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      job.is_active
+                        ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    {job.is_active ? 'Active' : 'Closed'}
+                  </span>
+                </div>
 
-                <p className="mt-1 text-gray-600">
-                  {job.company_name} — {job.location}
+                <p className="mt-1 text-xs text-gray-500">
+                  {job.company_name} · {job.location} · <span className="text-gray-400">Job ID #{job.id}</span>
                 </p>
+              </div>
+            </div>
 
-                <p className="mt-1 text-sm text-gray-500">
-                  Job ID: {job.id}
+            {/* Specifications Grid */}
+            <div className="my-4 grid grid-cols-2 gap-3 rounded-lg bg-gray-50 p-3.5 text-xs sm:grid-cols-4">
+              <div>
+                <span className="text-gray-500">Category:</span>
+                <p className="font-medium text-gray-900">{job.category || '—'}</p>
+              </div>
+
+              <div>
+                <span className="text-gray-500">Job Type:</span>
+                <p className="font-medium text-gray-900">{job.job_type || '—'}</p>
+              </div>
+
+              <div>
+                <span className="text-gray-500">Schedule:</span>
+                <p className="font-medium text-gray-900">{job.job_schedule || '—'}</p>
+              </div>
+
+              <div>
+                <span className="text-gray-500">Work Hours:</span>
+                <p className="font-medium text-gray-900">
+                  {job.min_hours_per_week != null || job.max_hours_per_week != null
+                    ? `${job.min_hours_per_week ?? 'N/A'} – ${job.max_hours_per_week ?? 'N/A'} hrs/wk`
+                    : 'N/A'}
                 </p>
               </div>
 
-              <span
-                className={`rounded-full px-3 py-1 text-sm font-medium ${
-                  job.is_active
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-200 text-gray-700'
-                }`}
-              >
-                {job.is_active ? 'Active' : 'Closed'}
-              </span>
-            </div>
-
-            {/* Job details */}
-            <div className="mt-5 grid gap-3 text-sm text-gray-700 sm:grid-cols-2">
-              <p>
-                <strong>Category:</strong> {job.category}
-              </p>
-
-              <p>
-                <strong>Job Type:</strong> {job.job_type}
-              </p>
-
-              <p>
-                <strong>Schedule:</strong> {job.job_schedule}
-              </p>
-
-              <p>
-                <strong>Working Hours:</strong>{' '}
-                {job.min_hours_per_week ?? 'N/A'} –{' '}
-                {job.max_hours_per_week ?? 'N/A'} hours/week
-              </p>
-
-              <p>
-                <strong>Salary Range:</strong>{' '}
-                {job.salary_min != null
-                  ? `$${job.salary_min.toLocaleString()}`
-                  : 'N/A'}
-                {' – '}
-                {job.salary_max != null
-                  ? `$${job.salary_max.toLocaleString()}`
-                  : 'N/A'}
-                {' CAD'}
-              </p>
+              <div className="col-span-2 sm:col-span-4">
+                <span className="text-gray-500">Salary Range:</span>
+                <p className="font-medium text-gray-900">
+                  {job.salary_min != null || job.salary_max != null
+                    ? `$${job.salary_min?.toLocaleString() ?? 'N/A'} – $${job.salary_max?.toLocaleString() ?? 'N/A'} CAD`
+                    : 'N/A'}
+                </p>
+              </div>
             </div>
 
             {/* Job action buttons */}
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-4 flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => handleEditClick(job.id)}
-                className="rounded-lg bg-violet-600 px-4 py-2 font-medium text-white hover:bg-violet-700"
+                className="rounded-md bg-purple-600 px-3 py-1.5 text-xs sm:text-sm font-medium text-white transition hover:bg-purple-700"
               >
                 {editingJobId === job.id
                   ? 'Cancel Editing'
@@ -483,40 +487,41 @@ async function handleUpdateApplicationStatus(applicationId, newStatus) {
               <button
                 type="button"
                 onClick={() => handleViewApplicants(job.id)}
-                className="rounded-lg border border-violet-600 px-4 py-2 font-medium text-violet-700 hover:bg-violet-50"
+                className={`rounded-md border px-3 py-1.5 text-xs sm:text-sm font-medium transition ${
+                  selectedJobId === job.id
+                    ? 'border-purple-300 bg-purple-50 text-purple-700'
+                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
               >
                 {selectedJobId === job.id
                   ? 'Hide Applicants'
                   : 'View Applicants'}
               </button>
 
-              
-{job.is_active ? (
-  <button
-    type="button"
-    onClick={() => handleCloseJob(job)}
-    disabled={closingJobId !== null}
-    className="rounded-lg bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700 disabled:opacity-50"
-  >
-    {closingJobId === job.id ? 'Closing...' : 'Close Job'}
-  </button>
-) : (
-  <button
-    type="button"
-    onClick={() => handleReopenJob(job)}
-    disabled={closingJobId !== null}
-    className="rounded-lg bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700 disabled:opacity-50"
-  >
-    {closingJobId === job.id ? 'Reopening...' : 'Reopen Job'}
-  </button>
-)}
-
-              
+              {job.is_active ? (
+                <button
+                  type="button"
+                  onClick={() => handleCloseJob(job)}
+                  disabled={closingJobId !== null}
+                  className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs sm:text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:opacity-50"
+                >
+                  {closingJobId === job.id ? 'Closing…' : 'Close Job'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleReopenJob(job)}
+                  disabled={closingJobId !== null}
+                  className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs sm:text-sm font-medium text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50"
+                >
+                  {closingJobId === job.id ? 'Reopening…' : 'Reopen Job'}
+                </button>
+              )}
             </div>
 
             {/* Edit Job form */}
             {editingJobId === job.id && (
-              <div className="mt-5 border-t pt-5">
+              <div className="mt-4 border-t border-gray-100 pt-3">
                 <EditJobForm
                   key={job.id}
                   token={token}
@@ -529,176 +534,152 @@ async function handleUpdateApplicationStatus(applicationId, newStatus) {
 
             {/* Applicants section */}
             {selectedJobId === job.id && (
-              <div className="mt-6 border-t pt-5">
-                <h4 className="mb-4 text-lg font-semibold">
+              <div className="mt-5 border-t border-gray-100 pt-4">
+                <h4 className="mb-3 text-sm font-semibold text-gray-900">
                   Applicants for {job.title}
                 </h4>
 
                 {applicantsLoading && (
-                  <p className="text-gray-600">
-                    Loading applicants...
+                  <p className="py-3 text-sm text-gray-500">
+                    Loading applicants…
                   </p>
                 )}
 
-              
-{applicantsError && (
-  <p
-    role="alert"
-    className="rounded-lg bg-red-50 p-3 text-red-700"
-  >
-    {applicantsError}
-  </p>
-)}
+                {applicantsError && (
+                  <p
+                    role="alert"
+                    className="mb-3 rounded-md bg-red-50 p-2.5 text-xs text-red-700"
+                  >
+                    {applicantsError}
+                  </p>
+                )}
 
-{/* Application status update error */}
-{statusError && (
-  <p
-    role="alert"
-    className="mb-3 rounded-lg bg-red-50 p-3 text-red-700"
-  >
-    {statusError}
-  </p>
-)}
+                {statusError && (
+                  <p
+                    role="alert"
+                    className="mb-3 rounded-md bg-red-50 p-2.5 text-xs text-red-700"
+                  >
+                    {statusError}
+                  </p>
+                )}
 
-{/* Application status update success */}
-{statusSuccess && (
-  <p
-    role="status"
-    className="mb-3 rounded-lg bg-green-50 p-3 text-green-700"
-  >
-    {statusSuccess}
-  </p>
-)}
+                {statusSuccess && (
+                  <p
+                    role="status"
+                    className="mb-3 rounded-md bg-green-50 p-2.5 text-xs text-green-700"
+                  >
+                    {statusSuccess}
+                  </p>
+                )}
 
-{!applicantsLoading &&
-  !applicantsError &&
-  applicants.length === 0 && (
-    <p className="rounded-lg bg-gray-50 p-4 text-gray-600">
-      No applicants yet.
-    </p>
-  )}
-
+                {!applicantsLoading &&
+                  !applicantsError &&
+                  applicants.length === 0 && (
+                    <p className="rounded-md bg-gray-50 p-3 text-xs text-gray-500">
+                      No applicants yet.
+                    </p>
+                  )}
 
                 {!applicantsLoading &&
                   !applicantsError &&
                   applicants.map(application => (
                     <div
                       key={application.id}
-
-                      className="mb-3 rounded-lg border p-4"
+                      className="mb-3 rounded-md border border-gray-200 bg-white p-3.5 shadow-2xs"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
-  <h5 className="font-semibold">
-    {application.applicant_name ||
-      `Applicant #${application.applicant_id}`}
-  </h5>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-900">
+                              {application.applicant_name ||
+                                `Applicant #${application.applicant_id}`}
+                            </span>
+                            <ApplicationStatusBadge status={application.status} />
+                          </div>
 
-  {application.applicant_email && (
-    <p className="mt-1 text-sm text-gray-600">
-      {application.applicant_email}
-    </p>
-  )}
-</div>
+                          {application.applicant_email && (
+                            <p className="text-xs text-gray-500">
+                              {application.applicant_email}
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-400">
+                            Applied on {new Date(application.applied_at).toLocaleDateString()} · Application #{application.id}
+                          </p>
+                        </div>
 
-                        <span className="rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
-                          {application.status}
-                        </span>
-                
+                        {/* Manage Application Status */}
+                        <div className="flex items-center gap-2">
+                          <label
+                            htmlFor={`application-status-${application.id}`}
+                            className="text-xs font-medium text-gray-600"
+                          >
+                            Status:
+                          </label>
 
-                       {/* Manage Application Status */}
-  <div className="mt-4">
-    <label
-      htmlFor={`application-status-${application.id}`}
-      className="mb-2 block text-sm font-semibold text-gray-800"
-    >
-      Manage Application Status
-    </label>
+                          <select
+                            id={`application-status-${application.id}`}
+                            value={application.status}
+                            onChange={(event) =>
+                              handleUpdateApplicationStatus(
+                                application.id,
+                                event.target.value
+                              )
+                            }
+                            disabled={updatingApplicationId !== null}
+                            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                          >
+                            <option value="Applied">Applied</option>
+                            <option value="Under Review">Under Review</option>
+                            <option value="Interview">Interview</option>
+                            <option value="Offered">Offered</option>
+                            <option value="Rejected">Rejected</option>
+                          </select>
+                        </div>
+                      </div>
 
-    <select
-      id={`application-status-${application.id}`}
-      value={application.status}
-      onChange={(event) =>
-        handleUpdateApplicationStatus(
-          application.id,
-          event.target.value
-        )
-      }
-      disabled={updatingApplicationId !== null}
-      className="w-full max-w-xs rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900"
-    >
-      <option value="Applied">Applied</option>
-      <option value="Under Review">Under Review</option>
-      <option value="Interview">Interview</option>
-      <option value="Offered">Offered</option>
-      <option value="Rejected">Rejected</option>
-    </select>
+                      {updatingApplicationId === application.id && (
+                        <p className="mt-1 text-xs text-gray-500">
+                          Updating application status…
+                        </p>
+                      )}
 
-    {updatingApplicationId === application.id && (
-      <p className="mt-2 text-sm text-gray-500">
-        Updating application...
-      </p>
-    )}
-  </div>
-</div>
+                      {application.resume_id != null && (
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md bg-gray-50 px-3 py-2">
+                          <span className="text-xs text-gray-700">
+                            📄 {application.resume_name ||
+                              `Resume #${application.resume_id}`}
+                          </span>
 
-                      <p className="mt-2 text-sm text-gray-600">
-                        Application ID: {application.id}
-                      </p>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleViewResume(job.id, application.id)
+                            }
+                            disabled={openingResumeId !== null}
+                            className="rounded-md bg-purple-600 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-purple-700 disabled:opacity-50"
+                          >
+                            {openingResumeId === application.id
+                              ? 'Opening…'
+                              : 'View Resume'}
+                          </button>
+                        </div>
+                      )}
 
-                      <p className="mt-1 text-sm text-gray-600">
-                        Applied:{' '}
-                        {new Date(
-                          application.applied_at
-                        ).toLocaleDateString()}
-                      </p>
-
-                      
-{application.resume_id != null && (
-  <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-gray-50 p-4">
-    <div>
-      <p className="font-medium text-gray-900">
-  Submitted Resume
-</p>
-
-      <p className="mt-1 text-sm text-gray-600">
-        {application.resume_name ||
-          `Resume #${application.resume_id}`}
-      </p>
-    </div>
-
-    <button
-      type="button"
-      onClick={() =>
-        handleViewResume(job.id, application.id)
-      }
-      disabled={openingResumeId !== null}
-      className="rounded-lg bg-violet-600 px-4 py-2 font-medium text-white hover:bg-violet-700 disabled:opacity-50"
-    >
-      {openingResumeId === application.id
-        ? 'Opening...'
-        : 'View Resume'}
-    </button>
-  </div>
-)}
-
-
-{resumeError && (
-  <p
-    role="alert"
-    className="mb-4 rounded-lg bg-red-50 p-3 text-red-700"
-  >
-    {resumeError}
-  </p>
-)}
+                      {resumeError && (
+                        <p
+                          role="alert"
+                          className="mt-2 text-xs text-red-600"
+                        >
+                          {resumeError}
+                        </p>
+                      )}
 
                       {application.cover_letter && (
-                        <div className="mt-3">
-                          <p className="font-medium">
-                            Cover Letter
+                        <div className="mt-2.5 rounded bg-gray-50 p-2.5">
+                          <p className="text-xs font-medium text-gray-700">
+                            Cover Letter:
                           </p>
-
-                          <p className="mt-1 whitespace-pre-wrap text-sm text-gray-700">
+                          <p className="mt-1 whitespace-pre-wrap text-xs text-gray-600">
                             {application.cover_letter}
                           </p>
                         </div>
