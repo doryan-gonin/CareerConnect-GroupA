@@ -76,9 +76,12 @@ def _generate_mock_reply(messages: list[InterviewMessage]) -> str:
     # If this is the opener message request:
     if len(messages) == 1 and "Greet me briefly" in messages[0].content:
         return (
-            "Hello! I am your AI interview preparation coach (offline mock mode). "
-            "I'm here to help you practice and prepare for your upcoming interview. "
-            "To get started, tell me a little about yourself and what excites you about this role."
+            "Hello! I am your **AI interview preparation coach** *(offline mock mode)*.\n\n"
+            "I'm here to help you practice and prepare for your upcoming interview. Here is our plan:\n"
+            "- **Review**: Discuss role expectations and experience\n"
+            "- **Practice**: Answer behavioral and technical questions\n"
+            "- **Refine**: Apply the STAR method for impactful answers\n\n"
+            "To get started, tell me a little about yourself and what excites you most about this role!"
         )
 
     # Deterministic rotation based on user turn count:
@@ -86,22 +89,32 @@ def _generate_mock_reply(messages: list[InterviewMessage]) -> str:
 
     mock_responses = [
         (
-            "That's a great overview! A strong technique for answering interview questions "
-            "is the STAR method (Situation, Task, Action, Result). Could you share a specific "
-            "example from your past experience where you solved a challenging problem relevant to this role?"
+            "That's a great overview! A proven technique for answering behavioral questions "
+            "is the **STAR method**:\n\n"
+            "- **Situation**: Set the scene and background context\n"
+            "- **Task**: Describe your responsibility in that scenario\n"
+            "- **Action**: Explain the specific steps you took\n"
+            "- **Result**: Highlight measurable outcomes and impact\n\n"
+            "Could you share a specific example from your past experience where you solved a challenging problem relevant to this role?"
         ),
         (
-            "Excellent example. When discussing your actions, make sure to emphasize your specific "
-            "individual contribution and any tools or frameworks you used. What was the tangible outcome "
-            "or impact of that project?"
+            "Excellent example! To make your answer stand out to interviewers:\n\n"
+            "1. **Highlight individual ownership**: Clarify what *you* specifically drove versus the wider team.\n"
+            "2. **Quantify results**: Mention metrics, percentage improvements, or feedback received.\n\n"
+            "What was the tangible outcome or key metric from that project?"
         ),
         (
-            "Very clear! Employers often ask behavioral questions to assess collaboration. "
-            "How do you typically handle conflicting priorities or disagreements with team members or stakeholders?"
+            "Very clear! Employers often assess **collaboration** and **adaptability**:\n\n"
+            "- How do you handle conflicting priorities under tight deadlines?\n"
+            "- How do you approach constructive disagreements with team members?\n\n"
+            "Pick one of these and walk me through your typical approach."
         ),
         (
-            "Well structured response. To make it even stronger, mention how you aligned the solution "
-            "with the overall team or company goals. What questions do you plan to ask the interviewers about this position?"
+            "Well structured response! As we wrap up this practice session, remember to prepare thoughtful questions for your interviewers:\n\n"
+            "- *Team dynamics & culture*\n"
+            "- *Immediate priorities in the first 90 days*\n"
+            "- *Engineering practices and tooling*\n\n"
+            "What questions do you plan to ask them about this position?"
         ),
     ]
 
@@ -192,8 +205,7 @@ def _chat_completion(system_prompt: str, messages: list[InterviewMessage]) -> st
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="The AI provider returned an empty response.",
         )
-    # The model sometimes ignores the plain-text rule, and the chat window shows raw text
-    return re.sub(r"^#+\s+", "", content.replace("**", ""), flags=re.MULTILINE).strip()
+    return content.strip()
 
 
 def validate_new_message(content: str) -> None:

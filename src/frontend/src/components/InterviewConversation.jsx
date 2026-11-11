@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { getInterviewSession, sendInterviewMessage } from '../api/interview'
+import MarkdownView from './MarkdownView'
 
 const MAX_MESSAGE_CHARS = 2000
 
@@ -90,13 +91,17 @@ function InterviewConversation({ token, sessionId, onBack }) {
             {messages.map((message, index) => (
               <div
                 key={index}
-                className={`max-w-[85%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm ${
+                className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
                   message.role === 'user'
-                    ? 'self-end bg-purple-600 text-white'
+                    ? 'self-end bg-purple-600 text-white whitespace-pre-wrap'
                     : 'self-start bg-gray-100 text-gray-900'
                 }`}
               >
-                {message.content}
+                {message.role === 'user' ? (
+                  message.content
+                ) : (
+                  <MarkdownView content={message.content} />
+                )}
               </div>
             ))}
             {isSending && <div className="self-start rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-500">Thinking…</div>}

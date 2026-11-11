@@ -23,7 +23,7 @@ Issues that directly break the build, crash the test suite, cause unhandled HTTP
 Issues that impact feature usability, cause HTTP 503 errors on unconfigured deployments, or degrade conversation flow:
 - [4.7 Fallback Mocking when `AI_API_KEY` is Unset [FIXED]](#47-interview-provider-configuration-base-url--offline-fallback-mocking-fixed) — Avoid returning 503 during offline usage or when external provider keys are not provisioned.
 - [4.9 Interview Conversation History Truncation by Turn [FIXED]](#49-interview-conversation-history-truncation-by-turn-fixed) — Slicing by raw message count can start prompt context with an assistant response rather than an alternating user turn.
-- [4.10 Chat Plaintext vs. Markdown Formatting Mismatch](#410-chat-plaintext-vs-markdown-formatting-mismatch) — The backend only strips `#` and `**`, leaving lists and italics, while the frontend displays unparsed raw text in a plain `<div>`.
+- [4.10 Chat Plaintext vs. Markdown Formatting Mismatch [FIXED]](#410-chat-plaintext-vs-markdown-formatting-mismatch-fixed) — The backend only strips `#` and `**`, leaving lists and italics, while the frontend displays unparsed raw text in a plain `<div>`.
 - [3.1 Test Suite Lifespan Modifying Development Database [FIXED]](#31-test-suite-lifespan-modifying-development-database-fixed) — `TestClient(app)` triggers `init_db()` against the physical disk database `careerconnect_test.db` during test runs.
 
 ### Tier 3: Test Architecture, Quality & Data Integrity Edge Cases
@@ -77,7 +77,7 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
    - [4.7 Interview Provider Configuration, Base URL & Offline Fallback Mocking [FIXED]](#47-interview-provider-configuration-base-url--offline-fallback-mocking-fixed)
    - [4.8 Interview Provider Unexpected Responses Causing HTTP 500 [FIXED]](#48-interview-provider-unexpected-responses-causing-http-500-fixed)
    - [4.9 Interview Conversation History Truncation by Turn [FIXED]](#49-interview-conversation-history-truncation-by-turn-fixed)
-   - [4.10 Chat Plaintext vs. Markdown Formatting Mismatch](#410-chat-plaintext-vs-markdown-formatting-mismatch)
+   - [4.10 Chat Plaintext vs. Markdown Formatting Mismatch [FIXED]](#410-chat-plaintext-vs-markdown-formatting-mismatch-fixed)
    - [4.11 Interview Prompt Untrusted Data Delimitation & Fact Guarantees](#411-interview-prompt-untrusted-data-delimitation--fact-guarantees)
 5. [Job Search Frontend Deficiencies & UX Enhancements](#5-job-search-frontend-deficiencies--ux-enhancements)
    - [5.1 Empty State UI & Feedback [FIXED]](#51-empty-state-ui--feedback-fixed)
@@ -584,7 +584,8 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
 
 ---
 
-### 4.10 Chat Plaintext vs. Markdown Formatting Mismatch
+### 4.10 Chat Plaintext vs. Markdown Formatting Mismatch [FIXED]
+- **Status**: ✅ Fixed (Preserved bold markers and markdown formatting in `_chat_completion` in `src/backend/services/interview_service.py`, and integrated `MarkdownView` in `src/frontend/src/components/InterviewConversation.jsx` to render assistant messages with rich formatting; verified with frontend build, oxlint, and integration tests in `tests/test_interview.py`)
 - **Issue**:
   The backend attempts to sanitize model replies with basic regex:
   ```python

@@ -169,6 +169,40 @@ class TestContextPassing:
         assert history_in_payload[-1]["role"] == "user"
         assert history_in_payload[-1]["content"] == "Message 10"
 
+    def test_markdown_formatting_preserved_in_reply(
+        self, client, candidate_application, applicant_headers, monkeypatch
+    ):
+        class MarkdownProviderResponse:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {
+                    "choices": [
+                        {
+                            "message": {
+                                "content": "Here is a **bold recommendation**:\n- Practice STAR\n- Review metrics"
+                            }
+                        }
+                    ]
+                }
+
+        monkeypatch.setattr(interview_service, "AI_API_BASE_URL", "https://api.example.com/v1")
+        monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
+        monkeypatch.setattr(interview_service, "AI_MOCK_MODE", False)
+        monkeypatch.setattr(interview_service.httpx, "post", lambda *args, **kwargs: MarkdownProviderResponse())
+
+        response = client.post(
+            "/api/interview/sessions",
+            json={"application_id": candidate_application["application_id"]},
+            headers=applicant_headers,
+        )
+        assert response.status_code == 201
+        session_data = response.json()
+        content = session_data["messages"][0]["content"]
+        assert "**bold recommendation**" in content
+        assert "- Practice STAR" in content
+
 
 class TestProviderFailureHandling:
     def test_provider_not_configured_returns_503(
