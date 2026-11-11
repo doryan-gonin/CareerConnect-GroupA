@@ -155,6 +155,8 @@ class TestProviderFailureHandling:
         self, client, candidate_application, applicant_headers, monkeypatch
     ):
         monkeypatch.setattr(interview_service, "AI_API_BASE_URL", None)
+        monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
+        monkeypatch.setattr(interview_service, "AI_MOCK_MODE", False)
 
         response = client.post(
             "/api/interview/sessions",
@@ -163,6 +165,50 @@ class TestProviderFailureHandling:
         )
         assert response.status_code == 503
         assert "AI interview prep is not configured" in response.json()["detail"]
+
+    def test_fallback_mocking_when_api_key_unset(
+        self, client, candidate_application, applicant_headers, monkeypatch
+    ):
+        monkeypatch.setattr(interview_service, "AI_API_KEY", None)
+        monkeypatch.setattr(interview_service, "AI_MOCK_MODE", False)
+
+        # Session creation should succeed and return mock opening message
+        response = client.post(
+            "/api/interview/sessions",
+            json={"application_id": candidate_application["application_id"]},
+            headers=applicant_headers,
+        )
+        assert response.status_code == 201
+        session_data = response.json()
+        assert len(session_data["messages"]) == 1
+        assert "offline mock mode" in session_data["messages"][0]["content"]
+
+        # Sending a message in mock mode should return mock reply
+        msg_response = client.post(
+            f"/api/interview/sessions/{session_data['id']}/messages",
+            json={"content": "I am interested in this role because I have 3 years of React experience."},
+            headers=applicant_headers,
+        )
+        assert msg_response.status_code == 200
+        reply = msg_response.json()
+        assert reply["role"] == "assistant"
+        assert "STAR method" in reply["content"]
+
+    def test_fallback_mocking_when_mock_mode_flag_enabled(
+        self, client, candidate_application, applicant_headers, monkeypatch
+    ):
+        monkeypatch.setattr(interview_service, "AI_MOCK_MODE", True)
+        monkeypatch.setattr(interview_service, "AI_API_KEY", "any-key")
+        monkeypatch.setattr(interview_service, "AI_API_BASE_URL", None)
+
+        response = client.post(
+            "/api/interview/sessions",
+            json={"application_id": candidate_application["application_id"]},
+            headers=applicant_headers,
+        )
+        assert response.status_code == 201
+        session_data = response.json()
+        assert "offline mock mode" in session_data["messages"][0]["content"]
 
     def test_provider_non_json_response_returns_502(
         self, client, candidate_application, applicant_headers, monkeypatch

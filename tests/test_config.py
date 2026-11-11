@@ -55,6 +55,17 @@ def test_config_ai_base_url_override(monkeypatch):
     assert reloaded.AI_API_BASE_URL == "http://localhost:11434/v1"
 
 
+def test_config_ai_mock_mode(monkeypatch):
+    monkeypatch.setenv("AI_MOCK_MODE", "true")
+    if "backend.config" in sys.modules:
+        monkeypatch.delitem(sys.modules, "backend.config")
+    import importlib
+    import backend.config
+
+    reloaded = importlib.reload(backend.config)
+    assert reloaded.AI_MOCK_MODE is True
+
+
 def test_init_db_with_target_engine():
     from sqlmodel import create_engine
     from sqlalchemy import inspect

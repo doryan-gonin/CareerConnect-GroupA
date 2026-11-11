@@ -9,8 +9,8 @@ except ImportError:  # pragma: no cover
     PdfReadError = Exception
 from fastapi import HTTPException, status
 
-from backend.config import AI_API_KEY, AI_API_BASE_URL, AI_MODEL
-from backend.models import Job, Resume, InterviewMessage
+from backend.config import AI_API_KEY, AI_API_BASE_URL, AI_MODEL, AI_MOCK_MODE
+from backend.models import Job, Resume, InterviewMessage, InterviewRole
 
 # Keeps token usage (and therefore free-tier rate limits) bounded regardless
 # of how large the resume or job description is.
@@ -72,7 +72,47 @@ def build_system_prompt(job: Job, resume_text: str) -> str:
     )
 
 
+def _generate_mock_reply(messages: list[InterviewMessage]) -> str:
+    # If this is the opener message request:
+    if len(messages) == 1 and "Greet me briefly" in messages[0].content:
+        return (
+            "Hello! I am your AI interview preparation coach (offline mock mode). "
+            "I'm here to help you practice and prepare for your upcoming interview. "
+            "To get started, tell me a little about yourself and what excites you about this role."
+        )
+
+    # Deterministic rotation based on user turn count:
+    user_turn_count = sum(1 for m in messages if getattr(m, "role", None) in (InterviewRole.USER, "user"))
+
+    mock_responses = [
+        (
+            "That's a great overview! A strong technique for answering interview questions "
+            "is the STAR method (Situation, Task, Action, Result). Could you share a specific "
+            "example from your past experience where you solved a challenging problem relevant to this role?"
+        ),
+        (
+            "Excellent example. When discussing your actions, make sure to emphasize your specific "
+            "individual contribution and any tools or frameworks you used. What was the tangible outcome "
+            "or impact of that project?"
+        ),
+        (
+            "Very clear! Employers often ask behavioral questions to assess collaboration. "
+            "How do you typically handle conflicting priorities or disagreements with team members or stakeholders?"
+        ),
+        (
+            "Well structured response. To make it even stronger, mention how you aligned the solution "
+            "with the overall team or company goals. What questions do you plan to ask the interviewers about this position?"
+        ),
+    ]
+
+    index = (user_turn_count - 1) % len(mock_responses)
+    return mock_responses[index]
+
+
 def _chat_completion(system_prompt: str, messages: list[InterviewMessage]) -> str:
+    if AI_MOCK_MODE or not AI_API_KEY:
+        return _generate_mock_reply(messages)
+
     if not AI_API_BASE_URL:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

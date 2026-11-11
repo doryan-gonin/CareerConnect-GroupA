@@ -21,7 +21,7 @@ Issues that directly break the build, crash the test suite, cause unhandled HTTP
 
 ### Tier 2: Functional Reliability & UX Polish
 Issues that impact feature usability, cause HTTP 503 errors on unconfigured deployments, or degrade conversation flow:
-- [4.7 Fallback Mocking when `AI_API_KEY` is Unset](#47-interview-provider-configuration-base-url--offline-fallback-mocking) — Avoid returning 503 during offline usage or when external provider keys are not provisioned.
+- [4.7 Fallback Mocking when `AI_API_KEY` is Unset [FIXED]](#47-interview-provider-configuration-base-url--offline-fallback-mocking-fixed) — Avoid returning 503 during offline usage or when external provider keys are not provisioned.
 - [4.9 Interview Conversation History Truncation by Turn](#49-interview-conversation-history-truncation-by-turn) — Slicing by raw message count can start prompt context with an assistant response rather than an alternating user turn.
 - [4.10 Chat Plaintext vs. Markdown Formatting Mismatch](#410-chat-plaintext-vs-markdown-formatting-mismatch) — The backend only strips `#` and `**`, leaving lists and italics, while the frontend displays unparsed raw text in a plain `<div>`.
 - [3.1 Test Suite Lifespan Modifying Development Database [FIXED]](#31-test-suite-lifespan-modifying-development-database-fixed) — `TestClient(app)` triggers `init_db()` against the physical disk database `careerconnect_test.db` during test runs.
@@ -74,7 +74,7 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
    - [4.4 Typo in Model Name `ResumeReponse`](#44-typo-in-model-name-resumereponse)
    - [4.5 Unbounded Growth of `RevokedToken` Table](#45-unbounded-growth-of-revokedtoken-table)
    - [4.6 Recruiter Inactive Job Visibility & Reactivation](#46-recruiter-inactive-job-visibility--reactivation)
-   - [4.7 Interview Provider Configuration, Base URL & Offline Fallback Mocking](#47-interview-provider-configuration-base-url--offline-fallback-mocking)
+   - [4.7 Interview Provider Configuration, Base URL & Offline Fallback Mocking [FIXED]](#47-interview-provider-configuration-base-url--offline-fallback-mocking-fixed)
    - [4.8 Interview Provider Unexpected Responses Causing HTTP 500 [FIXED]](#48-interview-provider-unexpected-responses-causing-http-500-fixed)
    - [4.9 Interview Conversation History Truncation by Turn](#49-interview-conversation-history-truncation-by-turn)
    - [4.10 Chat Plaintext vs. Markdown Formatting Mismatch](#410-chat-plaintext-vs-markdown-formatting-mismatch)
@@ -497,8 +497,8 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
 
 ---
 
-### 4.7 Interview Provider Configuration, Base URL & Offline Fallback Mocking
-- **Status**: ⚠️ Base URL configuration fixed (resolved in `src/backend/config.py` and `.env.example` without any hardcoded provider default); offline fallback mock mode remains for Tier 2.
+### 4.7 Interview Provider Configuration, Base URL & Offline Fallback Mocking [FIXED]
+- **Status**: ✅ Fixed (Configured environment-driven `AI_API_BASE_URL` and `AI_MOCK_MODE` in `src/backend/config.py` and `.env.example`, implemented deterministic offline mock interview coach fallback in `src/backend/services/interview_service.py` when `AI_API_KEY` is not provided or `AI_MOCK_MODE=True`, and added automated tests in `tests/test_interview.py` and `tests/test_config.py`)
 - **Issue**:
   1. **Hardcoded Base URL**: `AI_API_BASE_URL` was hardcoded to a specific external provider in `src/backend/config.py`. It must be read dynamically from environment variables to target arbitrary OpenAI-compatible endpoints or local models without any baked-in provider defaults.
   2. **Missing Key Service Failure (HTTP 503)**: If `AI_API_BASE_URL` is omitted, all interview endpoints raise `HTTP 503 Service Unavailable`. In local development or test environments without access to live provider credentials, the entire feature is non-functional.
