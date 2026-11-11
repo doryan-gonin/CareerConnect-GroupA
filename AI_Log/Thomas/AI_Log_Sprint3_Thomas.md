@@ -332,6 +332,25 @@
 * **Reflection**: Diacritic normalization and alias expansion drastically improve data consistency for geographical queries without frustrating users with strict validation errors or spelling discrepancies.
 * **Responsible Person**: Thomas Martel
 
+### Entry 17: Tier 2 Functional Reliability, AI Fallback Mocking & UX Remediation (Issues 3.1, 4.7, 4.9, 4.10)
+* **Task ID / Title**: Tier 2 Functional Reliability, AI Fallback Mocking & UX Remediation (Issues 3.1, 4.7, 4.9, 4.10)
+* **Purpose of AI Use**: Test database isolation, environment configuration, fallback simulation, conversational context truncation, rich Markdown UI rendering, and regression test authoring.
+* **Chat Link or Prompt/Response**: Local AI Assistant session (Conversation ID: `fe396fd0-4129-4809-9b95-104313727825`). Reference: Appendix 17.
+* **AI-Suggested Content**: 
+  - Systematically resolved all four Tier 2 defects from `FIXES.md` on branch `fix/tier-2-reliability-and-ux`:
+    1. **Issue 3.1 (Test Database Isolation)**: Parameterized `init_db(target_engine)` in `database.py` and conditioned lifespan execution in `main.py` on `TESTING != 1`. Set `TESTING="1"` in `conftest.py` and added a safe import fallback for `pypdf` in `interview_service.py` to ensure local environments without PDF libraries do not abort test collection. Added test cases in `test_config.py` verifying in-memory table creation and lifespan skip behavior.
+    2. **Issue 4.7 (Fallback Mocking when AI_API_KEY is Unset)**: Added `AI_MOCK_MODE` configuration in `config.py` and `.env.example`. Implemented deterministic STAR-method mock coach responses in `interview_service.py` when `AI_API_KEY` is not provided or `AI_MOCK_MODE=True`, eliminating unhandled HTTP 503 errors during offline and unkeyed evaluation while preserving 503 when external base URLs are missing.
+    3. **Issue 4.9 (Turn Truncation Alignment)**: Updated `get_interview_reply` in `interview_service.py` so slicing past `MAX_MESSAGES` drops any leading orphaned assistant turn while preserving opening context when under the limit, ensuring conversation payloads sent to LLM APIs always begin cleanly on a candidate user turn. Added integration tests in `test_interview.py`.
+    4. **Issue 4.10 (Chat Plaintext vs. Markdown Formatting Mismatch)**: Preserved bold and list markdown syntax in `interview_service.py` and integrated `MarkdownView.jsx` in `InterviewConversation.jsx` to render assistant messages with rich formatting while preserving raw candidate input. Enriched mock coach responses with bolding, lists, and italics.
+* **Validation**: 
+  - Ran entire pytest suite: 82/82 passing tests across repository.
+  - Verified `careerconnect_test.db` disk modification timestamp remained untouched during test execution.
+  - Built frontend with `vite build` (229ms compilation) and checked with `oxlint` (0 errors).
+  - Manually tested offline mock coaching in-browser, confirming rich Markdown rendering (bold, italics, and lists).
+* **Decision**: Accepted (reviewed each fix incrementally, validated tests, and committed one issue at a time).
+* **Reflection**: Slicing conversational context by turn boundaries and establishing graceful offline fallbacks significantly improves platform resilience when external third-party services are unprovisioned or unavailable.
+* **Responsible Person**: Thomas Martel
+
 ---
 
 ## Appendix: Extended Prompts & Responses (Optional)
@@ -458,3 +477,12 @@
   2. Implementing `MarkdownEditor.jsx` with Write/Preview tabs and toolbar for job forms.
   3. Building `LocationAutocomplete.jsx` with accent/diacritics normalization, shorthand alias matching (`mtl`, `gta`, `wfh`), bold match highlighting, and full keyboard navigation.
   4. Integrating autocomplete into `CreateJobForm.jsx`, `EditJobForm.jsx`, and `JobSearchPageNavbar.jsx`.
+
+### Appendix 17: Context for Entry 17
+* **Context**: Resolving Tier 2 issues: database isolation during testing, offline interview fallback mock mode, turn-aligned conversation truncation, and rich Markdown rendering.
+* **Key Queries**:
+  1. Test database isolation: parameterizing `init_db(target_engine)` and suppressing lifespan `init_db` during test runs via `TESTING=1`.
+  2. Adding `AI_MOCK_MODE` and deterministic mock responses for keyless offline evaluation.
+  3. Turn-aligned conversation truncation (`messages[-MAX_MESSAGES:]` starting on user turn while preserving opening context).
+  4. Preserving backend Markdown syntax and rendering assistant chat bubbles with `MarkdownView.jsx`.
+  5. Formatting mock interview coach replies with rich Markdown (bolding, lists, italics) for realistic browser evaluation.
