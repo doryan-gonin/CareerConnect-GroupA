@@ -1,3 +1,6 @@
+import os
+os.environ["TESTING"] = "1"
+
 import pytest
 import bcrypt
 from fastapi.testclient import TestClient

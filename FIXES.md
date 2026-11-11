@@ -24,7 +24,7 @@ Issues that impact feature usability, cause HTTP 503 errors on unconfigured depl
 - [4.7 Fallback Mocking when `AI_API_KEY` is Unset](#47-interview-provider-configuration-base-url--offline-fallback-mocking) — Avoid returning 503 during offline usage or when external provider keys are not provisioned.
 - [4.9 Interview Conversation History Truncation by Turn](#49-interview-conversation-history-truncation-by-turn) — Slicing by raw message count can start prompt context with an assistant response rather than an alternating user turn.
 - [4.10 Chat Plaintext vs. Markdown Formatting Mismatch](#410-chat-plaintext-vs-markdown-formatting-mismatch) — The backend only strips `#` and `**`, leaving lists and italics, while the frontend displays unparsed raw text in a plain `<div>`.
-- [3.1 Test Suite Lifespan Modifying Development Database](#31-test-suite-lifespan-modifying-development-database) — `TestClient(app)` triggers `init_db()` against the physical disk database `careerconnect_test.db` during test runs.
+- [3.1 Test Suite Lifespan Modifying Development Database [FIXED]](#31-test-suite-lifespan-modifying-development-database-fixed) — `TestClient(app)` triggers `init_db()` against the physical disk database `careerconnect_test.db` during test runs.
 
 ### Tier 3: Test Architecture, Quality & Data Integrity Edge Cases
 Deficits that prevent thorough regression verification or affect edge-case integrity:
@@ -63,7 +63,7 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
    - [2.6 Missing Profile Creation on User Registration [FIXED]](#26-missing-profile-creation-on-user-registration-fixed)
    - [2.7 Resume Deletion vs. Active Application Retention](#27-resume-deletion-vs-active-application-retention)
 3. [Testing & Database Infrastructure](#3-testing--database-infrastructure)
-   - [3.1 Test Suite Lifespan Modifying Development Database](#31-test-suite-lifespan-modifying-development-database)
+   - [3.1 Test Suite Lifespan Modifying Development Database [FIXED]](#31-test-suite-lifespan-modifying-development-database-fixed)
    - [3.2 Foreign Keys Disabled in Test In-Memory Database](#32-foreign-keys-disabled-in-test-in-memory-database)
    - [3.3 Missing Test Coverage (Profiles, Resumes, Lockout, Revocation)](#33-missing-test-coverage-profiles-resumes-lockout-revocation)
    - [3.4 Interview Prep Failure-Path and Authorization Coverage](#34-interview-prep-failure-path-and-authorization-coverage)
@@ -349,7 +349,8 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
 
 ## 3. Testing & Database Infrastructure
 
-### 3.1 Test Suite Lifespan Modifying Development Database
+### 3.1 Test Suite Lifespan Modifying Development Database [FIXED]
+- **Status**: ✅ Fixed (Configured `init_db(target_engine)` in `src/backend/database.py`, conditioned lifespan startup execution on `TESTING` flag in `src/backend/main.py`, set `TESTING="1"` in `tests/conftest.py`, and added fallback import handling for `pypdf` in `src/backend/services/interview_service.py`; verified via regression tests in `tests/test_config.py`)
 - **Issue**:
   `tests/conftest.py` overrides `get_session` with an in-memory database (`sqlite://`), but `TestClient(app)` triggers the FastAPI app lifespan (`src/backend/main.py:10-14`). That lifespan calls `init_db()`, which runs `SQLModel.metadata.create_all(engine)` using the production/development disk engine in `database.py`. Running `pytest` modifies and writes `careerconnect_test.db` to disk.
 - **Where to fix**:

@@ -33,11 +33,12 @@ if is_sqlite:
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
 
-def init_db():
+def init_db(target_engine: Engine | None = None):
+    target = target_engine or engine
     from backend import models
-    SQLModel.metadata.create_all(engine)
+    SQLModel.metadata.create_all(target)
     # Lightweight schema migration for existing SQLite databases
-    with Session(engine) as session:
+    with Session(target) as session:
         try:
             from sqlalchemy import text
             session.exec(text("ALTER TABLE user ADD COLUMN is_recruiter BOOLEAN DEFAULT 0 NOT NULL"))

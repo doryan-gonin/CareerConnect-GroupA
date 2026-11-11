@@ -1,8 +1,12 @@
 import os
 import re
 import httpx
-from pypdf import PdfReader
-from pypdf.errors import PdfReadError
+try:
+    from pypdf import PdfReader
+    from pypdf.errors import PdfReadError
+except ImportError:  # pragma: no cover
+    PdfReader = None
+    PdfReadError = Exception
 from fastapi import HTTPException, status
 
 from backend.config import AI_API_KEY, AI_API_BASE_URL, AI_MODEL
@@ -20,7 +24,7 @@ def extract_resume_text(resume: Resume | None) -> str:
     """Pull plain text out of a candidate's PDF resume to use as interview context.
     Returns an empty string if there is no resume or it can't be parsed, rather
     than failing the whole interview prep request over a bad PDF."""
-    if resume is None or not os.path.exists(resume.file_path):
+    if resume is None or not os.path.exists(resume.file_path) or PdfReader is None:
         return ""
 
     try:

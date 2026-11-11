@@ -9,7 +9,8 @@ from backend.routers import auth, profiles, jobs, applications, analytics, notif
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Code here runs once on startup
-    init_db()
+    if getenv("TESTING", "").lower() not in ("true", "1"):
+        init_db()
 
     yield
 
