@@ -149,6 +149,26 @@ class TestContextPassing:
             {"role": "user", "content": "Second question"},
         ]
 
+    def test_history_truncation_starts_on_user_turn(
+        self, client, interview_session, applicant_headers, ai_requests
+    ):
+        url = f"/api/interview/sessions/{interview_session['id']}/messages"
+        # Send 11 messages. Together with the opener and AI replies:
+        # Before 11th send: 1 opener + 10 user + 10 assistant replies = 21 messages.
+        # When 11th message is appended: total = 22 messages.
+        # Slicing the last 20 would start at index 2 (an assistant message).
+        # Turn truncation drops index 2 so it starts at index 3 (a user message).
+        for i in range(11):
+            response = client.post(url, json={"content": f"Message {i}"}, headers=applicant_headers)
+            assert response.status_code == 200
+
+        last_payload = ai_requests[-1]
+        history_in_payload = last_payload["messages"][1:]  # skip system prompt
+        assert len(history_in_payload) == 19
+        assert history_in_payload[0]["role"] == "user"
+        assert history_in_payload[-1]["role"] == "user"
+        assert history_in_payload[-1]["content"] == "Message 10"
+
 
 class TestProviderFailureHandling:
     def test_provider_not_configured_returns_503(

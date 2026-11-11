@@ -212,7 +212,13 @@ def validate_new_message(content: str) -> None:
 def get_interview_reply(job: Job, resume: Resume | None, messages: list[InterviewMessage]) -> str:
     resume_text = extract_resume_text(resume)
     system_prompt = build_system_prompt(job, resume_text)
-    return _chat_completion(system_prompt, messages[-MAX_MESSAGES:])
+    if len(messages) > MAX_MESSAGES:
+        trimmed = messages[-MAX_MESSAGES:]
+        if trimmed and getattr(trimmed[0], "role", None) in (InterviewRole.ASSISTANT, "assistant"):
+            trimmed = trimmed[1:]
+    else:
+        trimmed = messages
+    return _chat_completion(system_prompt, trimmed)
 
 
 def get_opening_message(job: Job, resume: Resume | None) -> str:

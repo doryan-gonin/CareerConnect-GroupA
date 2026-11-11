@@ -22,7 +22,7 @@ Issues that directly break the build, crash the test suite, cause unhandled HTTP
 ### Tier 2: Functional Reliability & UX Polish
 Issues that impact feature usability, cause HTTP 503 errors on unconfigured deployments, or degrade conversation flow:
 - [4.7 Fallback Mocking when `AI_API_KEY` is Unset [FIXED]](#47-interview-provider-configuration-base-url--offline-fallback-mocking-fixed) — Avoid returning 503 during offline usage or when external provider keys are not provisioned.
-- [4.9 Interview Conversation History Truncation by Turn](#49-interview-conversation-history-truncation-by-turn) — Slicing by raw message count can start prompt context with an assistant response rather than an alternating user turn.
+- [4.9 Interview Conversation History Truncation by Turn [FIXED]](#49-interview-conversation-history-truncation-by-turn-fixed) — Slicing by raw message count can start prompt context with an assistant response rather than an alternating user turn.
 - [4.10 Chat Plaintext vs. Markdown Formatting Mismatch](#410-chat-plaintext-vs-markdown-formatting-mismatch) — The backend only strips `#` and `**`, leaving lists and italics, while the frontend displays unparsed raw text in a plain `<div>`.
 - [3.1 Test Suite Lifespan Modifying Development Database [FIXED]](#31-test-suite-lifespan-modifying-development-database-fixed) — `TestClient(app)` triggers `init_db()` against the physical disk database `careerconnect_test.db` during test runs.
 
@@ -76,7 +76,7 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
    - [4.6 Recruiter Inactive Job Visibility & Reactivation](#46-recruiter-inactive-job-visibility--reactivation)
    - [4.7 Interview Provider Configuration, Base URL & Offline Fallback Mocking [FIXED]](#47-interview-provider-configuration-base-url--offline-fallback-mocking-fixed)
    - [4.8 Interview Provider Unexpected Responses Causing HTTP 500 [FIXED]](#48-interview-provider-unexpected-responses-causing-http-500-fixed)
-   - [4.9 Interview Conversation History Truncation by Turn](#49-interview-conversation-history-truncation-by-turn)
+   - [4.9 Interview Conversation History Truncation by Turn [FIXED]](#49-interview-conversation-history-truncation-by-turn-fixed)
    - [4.10 Chat Plaintext vs. Markdown Formatting Mismatch](#410-chat-plaintext-vs-markdown-formatting-mismatch)
    - [4.11 Interview Prompt Untrusted Data Delimitation & Fact Guarantees](#411-interview-prompt-untrusted-data-delimitation--fact-guarantees)
 5. [Job Search Frontend Deficiencies & UX Enhancements](#5-job-search-frontend-deficiencies--ux-enhancements)
@@ -562,7 +562,8 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
 
 ---
 
-### 4.9 Interview Conversation History Truncation by Turn
+### 4.9 Interview Conversation History Truncation by Turn [FIXED]
+- **Status**: ✅ Fixed (Updated `get_interview_reply` in `src/backend/services/interview_service.py` to preserve full context when under `MAX_MESSAGES` and drop any leading orphaned assistant turn when history is sliced, ensuring truncated conversations begin cleanly with a user turn; verified with integration tests in `tests/test_interview.py`)
 - **Issue**:
   In `src/backend/services/interview_service.py`:
   ```python
