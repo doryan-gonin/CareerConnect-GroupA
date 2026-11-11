@@ -21,10 +21,10 @@ Issues that directly break the build, crash the test suite, cause unhandled HTTP
 
 ### Tier 2: Functional Reliability & UX Polish
 Issues that impact feature usability, cause HTTP 503 errors on unconfigured deployments, or degrade conversation flow:
-- [4.7 Fallback Mocking when `AI_API_KEY` is Unset](#47-interview-provider-configuration-base-url--offline-fallback-mocking) — Avoid returning 503 during offline usage or when external provider keys are not provisioned.
-- [4.9 Interview Conversation History Truncation by Turn](#49-interview-conversation-history-truncation-by-turn) — Slicing by raw message count can start prompt context with an assistant response rather than an alternating user turn.
-- [4.10 Chat Plaintext vs. Markdown Formatting Mismatch](#410-chat-plaintext-vs-markdown-formatting-mismatch) — The backend only strips `#` and `**`, leaving lists and italics, while the frontend displays unparsed raw text in a plain `<div>`.
-- [3.1 Test Suite Lifespan Modifying Development Database](#31-test-suite-lifespan-modifying-development-database) — `TestClient(app)` triggers `init_db()` against the physical disk database `careerconnect_test.db` during test runs.
+- [4.7 Fallback Mocking when `AI_API_KEY` is Unset [FIXED]](#47-interview-provider-configuration-base-url--offline-fallback-mocking-fixed) — Avoid returning 503 during offline usage or when external provider keys are not provisioned.
+- [4.9 Interview Conversation History Truncation by Turn [FIXED]](#49-interview-conversation-history-truncation-by-turn-fixed) — Slicing by raw message count can start prompt context with an assistant response rather than an alternating user turn.
+- [4.10 Chat Plaintext vs. Markdown Formatting Mismatch [FIXED]](#410-chat-plaintext-vs-markdown-formatting-mismatch-fixed) — The backend only strips `#` and `**`, leaving lists and italics, while the frontend displays unparsed raw text in a plain `<div>`.
+- [3.1 Test Suite Lifespan Modifying Development Database [FIXED]](#31-test-suite-lifespan-modifying-development-database-fixed) — `TestClient(app)` triggers `init_db()` against the physical disk database `careerconnect_test.db` during test runs.
 
 ### Tier 3: Test Architecture, Quality & Data Integrity Edge Cases
 Deficits that prevent thorough regression verification or affect edge-case integrity:
@@ -63,7 +63,7 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
    - [2.6 Missing Profile Creation on User Registration [FIXED]](#26-missing-profile-creation-on-user-registration-fixed)
    - [2.7 Resume Deletion vs. Active Application Retention](#27-resume-deletion-vs-active-application-retention)
 3. [Testing & Database Infrastructure](#3-testing--database-infrastructure)
-   - [3.1 Test Suite Lifespan Modifying Development Database](#31-test-suite-lifespan-modifying-development-database)
+   - [3.1 Test Suite Lifespan Modifying Development Database [FIXED]](#31-test-suite-lifespan-modifying-development-database-fixed)
    - [3.2 Foreign Keys Disabled in Test In-Memory Database](#32-foreign-keys-disabled-in-test-in-memory-database)
    - [3.3 Missing Test Coverage (Profiles, Resumes, Lockout, Revocation)](#33-missing-test-coverage-profiles-resumes-lockout-revocation)
    - [3.4 Interview Prep Failure-Path and Authorization Coverage](#34-interview-prep-failure-path-and-authorization-coverage)
@@ -74,10 +74,10 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
    - [4.4 Typo in Model Name `ResumeReponse`](#44-typo-in-model-name-resumereponse)
    - [4.5 Unbounded Growth of `RevokedToken` Table](#45-unbounded-growth-of-revokedtoken-table)
    - [4.6 Recruiter Inactive Job Visibility & Reactivation](#46-recruiter-inactive-job-visibility--reactivation)
-   - [4.7 Interview Provider Configuration, Base URL & Offline Fallback Mocking](#47-interview-provider-configuration-base-url--offline-fallback-mocking)
+   - [4.7 Interview Provider Configuration, Base URL & Offline Fallback Mocking [FIXED]](#47-interview-provider-configuration-base-url--offline-fallback-mocking-fixed)
    - [4.8 Interview Provider Unexpected Responses Causing HTTP 500 [FIXED]](#48-interview-provider-unexpected-responses-causing-http-500-fixed)
-   - [4.9 Interview Conversation History Truncation by Turn](#49-interview-conversation-history-truncation-by-turn)
-   - [4.10 Chat Plaintext vs. Markdown Formatting Mismatch](#410-chat-plaintext-vs-markdown-formatting-mismatch)
+   - [4.9 Interview Conversation History Truncation by Turn [FIXED]](#49-interview-conversation-history-truncation-by-turn-fixed)
+   - [4.10 Chat Plaintext vs. Markdown Formatting Mismatch [FIXED]](#410-chat-plaintext-vs-markdown-formatting-mismatch-fixed)
    - [4.11 Interview Prompt Untrusted Data Delimitation & Fact Guarantees](#411-interview-prompt-untrusted-data-delimitation--fact-guarantees)
 5. [Job Search Frontend Deficiencies & UX Enhancements](#5-job-search-frontend-deficiencies--ux-enhancements)
    - [5.1 Empty State UI & Feedback [FIXED]](#51-empty-state-ui--feedback-fixed)
@@ -349,7 +349,8 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
 
 ## 3. Testing & Database Infrastructure
 
-### 3.1 Test Suite Lifespan Modifying Development Database
+### 3.1 Test Suite Lifespan Modifying Development Database [FIXED]
+- **Status**: ✅ Fixed (Configured `init_db(target_engine)` in `src/backend/database.py`, conditioned lifespan startup execution on `TESTING` flag in `src/backend/main.py`, set `TESTING="1"` in `tests/conftest.py`, and added fallback import handling for `pypdf` in `src/backend/services/interview_service.py`; verified via regression tests in `tests/test_config.py`)
 - **Issue**:
   `tests/conftest.py` overrides `get_session` with an in-memory database (`sqlite://`), but `TestClient(app)` triggers the FastAPI app lifespan (`src/backend/main.py:10-14`). That lifespan calls `init_db()`, which runs `SQLModel.metadata.create_all(engine)` using the production/development disk engine in `database.py`. Running `pytest` modifies and writes `careerconnect_test.db` to disk.
 - **Where to fix**:
@@ -496,8 +497,8 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
 
 ---
 
-### 4.7 Interview Provider Configuration, Base URL & Offline Fallback Mocking
-- **Status**: ⚠️ Base URL configuration fixed (resolved in `src/backend/config.py` and `.env.example` without any hardcoded provider default); offline fallback mock mode remains for Tier 2.
+### 4.7 Interview Provider Configuration, Base URL & Offline Fallback Mocking [FIXED]
+- **Status**: ✅ Fixed (Configured environment-driven `AI_API_BASE_URL` and `AI_MOCK_MODE` in `src/backend/config.py` and `.env.example`, implemented deterministic offline mock interview coach fallback in `src/backend/services/interview_service.py` when `AI_API_KEY` is not provided or `AI_MOCK_MODE=True`, and added automated tests in `tests/test_interview.py` and `tests/test_config.py`)
 - **Issue**:
   1. **Hardcoded Base URL**: `AI_API_BASE_URL` was hardcoded to a specific external provider in `src/backend/config.py`. It must be read dynamically from environment variables to target arbitrary OpenAI-compatible endpoints or local models without any baked-in provider defaults.
   2. **Missing Key Service Failure (HTTP 503)**: If `AI_API_BASE_URL` is omitted, all interview endpoints raise `HTTP 503 Service Unavailable`. In local development or test environments without access to live provider credentials, the entire feature is non-functional.
@@ -561,7 +562,8 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
 
 ---
 
-### 4.9 Interview Conversation History Truncation by Turn
+### 4.9 Interview Conversation History Truncation by Turn [FIXED]
+- **Status**: ✅ Fixed (Updated `get_interview_reply` in `src/backend/services/interview_service.py` to preserve full context when under `MAX_MESSAGES` and drop any leading orphaned assistant turn when history is sliced, ensuring truncated conversations begin cleanly with a user turn; verified with integration tests in `tests/test_interview.py`)
 - **Issue**:
   In `src/backend/services/interview_service.py`:
   ```python
@@ -582,7 +584,8 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
 
 ---
 
-### 4.10 Chat Plaintext vs. Markdown Formatting Mismatch
+### 4.10 Chat Plaintext vs. Markdown Formatting Mismatch [FIXED]
+- **Status**: ✅ Fixed (Preserved bold markers and markdown formatting in `_chat_completion` in `src/backend/services/interview_service.py`, and integrated `MarkdownView` in `src/frontend/src/components/InterviewConversation.jsx` to render assistant messages with rich formatting; verified with frontend build, oxlint, and integration tests in `tests/test_interview.py`)
 - **Issue**:
   The backend attempts to sanitize model replies with basic regex:
   ```python
