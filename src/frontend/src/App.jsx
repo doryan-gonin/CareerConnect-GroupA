@@ -11,7 +11,7 @@ import InterviewNewSession from './components/InterviewNewSession'
 import InterviewConversation from './components/InterviewConversation'
 import AnalyticsPage from './components/AnalyticsPage'
 import { logoutUser, getCurrentUser } from './api/auth'
-import { getMyApplications } from './api/applications'
+import { getApplication } from './api/applications'
 
 const TOKEN_STORAGE_KEY = 'accessToken'
 
@@ -54,6 +54,7 @@ function App() {
   })
   const [signupSuccessMessage, setSignupSuccessMessage] = useState('')
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [notificationTarget, setNotificationTarget] = useState(null)
 
   function navigate(newPath, { replace = false } = {}) {
     const normalized = normalizePath(newPath)
@@ -174,6 +175,7 @@ function App() {
       localStorage.removeItem('isRecruiter')
       setToken('')
       setIsRecruiter(false)
+      setNotificationTarget(null)
       setSignupSuccessMessage('')
       setIsLoggingOut(false)
       navigate('/login')
@@ -181,11 +183,23 @@ function App() {
   }
 
   async function handleNotificationClick(notification) {
-    if (notification.reference_type === 'application' && notification.reference_id && !isRecruiter) {
+    if (notification.reference_type === 'job_deadline' && notification.reference_id) {
+      navigate(`/jobs/${notification.reference_id}`)
+      return
+    }
+
+    if (notification.reference_type === 'application' && notification.reference_id) {
       try {
-        const applications = await getMyApplications(token)
-        const application = applications.find((item) => item.id === notification.reference_id)
+        const application = await getApplication(token, notification.reference_id)
         if (application?.job_id) {
+          if (isRecruiter) {
+            setNotificationTarget({
+              applicationId: application.id,
+              jobId: application.job_id,
+            })
+            navigate('/dashboard')
+            return
+          }
           navigate(`/jobs/${application.job_id}`)
           return
         }
@@ -241,7 +255,12 @@ function App() {
     let pageContent = null
 
     if (isRecruiter) {
-      pageContent = <RecruiterDashboard token={token} />
+      pageContent = (
+        <RecruiterDashboard
+          token={token}
+          notificationTarget={notificationTarget}
+        />
+      )
     } else if (currentPath === '/analytics') {
       pageContent = (
         <AnalyticsPage

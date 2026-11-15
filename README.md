@@ -64,6 +64,16 @@ called by an external scheduler through the same authenticated endpoint; this
 request-driven trigger keeps deployments without a task queue free of an
 additional worker process.
 
+### Notification center
+
+The navigation bell shows a user's own notifications and unread count. Status
+changes and interview invitations link candidates to the related job, while a
+new-application alert opens the recruiter dashboard to the referenced job and
+applicant. Notifications can be marked read or dismissed. Trigger handlers use
+stable event keys so retries do not create duplicate status or recruiter-action
+alerts. Deadline reminders use the saved-job implementation above (currently
+provided by PR #197) and link to the relevant posting.
+
 ## Proposed features
 - Chat feature (recruiters can chat with applicants directly from the website)
 - Company Reviews (users can leave reviews on companies they worked for to help other job seekers)

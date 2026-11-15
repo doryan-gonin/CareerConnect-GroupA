@@ -5,7 +5,7 @@ import MarkdownView from './MarkdownView'
 import { getMyApplications } from '../api/applications'
 import { recordJobView } from '../api/jobs'
 
-function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onViewJob, onApplyJob, isRecruiter = false }) {
+function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onViewJob, onApplyJob, isRecruiter = false, onNotificationClick }) {
     const [jobs, setJobs] = useState([])
     const [hasLoaded, setHasLoaded] = useState(false)
     const [selectedJob, setSelectedJob] = useState(null)
@@ -64,6 +64,7 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
                 onLogout={onLogout}
                 isLoggingOut={isLoggingOut}
                 onNavigateDashboard={onNavigateDashboard}
+                onNotificationClick={onNotificationClick}
             />
             <div className="mx-auto flex max-w-5xl gap-6 px-4 py-8">
                 <div className="flex flex-col gap-3">
