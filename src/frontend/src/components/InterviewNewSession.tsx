@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getMyApplications } from "../api/applications";
 import { createInterviewSession } from "../api/interview";
+import { interviewSessionFormSchema } from "../api/schemas";
 import type { ApplicationDetail } from "../api/types";
 import type { ChangeEvent, FormEvent } from "react";
 
@@ -38,10 +39,15 @@ function InterviewNewSession({ token, onBack, onBrowseJobs, onCreated }: Intervi
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const parsed = interviewSessionFormSchema.safeParse({ applicationId: Number(applicationId) });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Select an application.");
+      return;
+    }
     setIsStarting(true);
     setError("");
     try {
-      const session = await createInterviewSession(token, Number(applicationId));
+      const session = await createInterviewSession(token, parsed.data.applicationId);
       onCreated(session.id);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err));

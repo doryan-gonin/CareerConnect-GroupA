@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getInterviewSession, sendInterviewMessage } from "../api/interview";
+import { interviewMessageFormSchema } from "../api/schemas";
 import MarkdownView from "./MarkdownView";
 import type { InterviewMessage, InterviewSession } from "../api/types";
 import type { ChangeEvent, KeyboardEvent } from "react";
@@ -54,15 +55,20 @@ function InterviewConversation({
   async function handleSend() {
     const content = draft.trim();
     if (!content || isSending) return;
+    const parsedMessage = interviewMessageFormSchema.safeParse({ content });
+    if (!parsedMessage.success) {
+      setError(parsedMessage.error.issues[0]?.message ?? "Enter a message before sending.");
+      return;
+    }
 
     const previousMessages = messages;
-    setMessages([...messages, { role: "user", content }]);
+    setMessages([...messages, { role: "user", content: parsedMessage.data.content }]);
     setDraft("");
     setError("");
     setIsSending(true);
 
     try {
-      const reply = await sendInterviewMessage(token, sessionId, content);
+      const reply = await sendInterviewMessage(token, sessionId, parsedMessage.data.content);
       setMessages((current) => [...current, reply]);
     } catch (err: unknown) {
       setMessages(previousMessages);

@@ -30,9 +30,48 @@ function formBody(request: RecordedRequest): FormData {
 }
 
 beforeEach(() => {
-  fetchMock = vi
-    .spyOn(globalThis, "fetch")
-    .mockImplementation(async () => new Response(JSON.stringify({ id: 7 }), { status: 200 }));
+  fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+    const url = String(input);
+    if (url.endsWith("/auth/login")) {
+      return new Response(JSON.stringify({ access_token: "token", token_type: "bearer" }), {
+        status: 200,
+      });
+    }
+    if (url.includes("/applications/me")) return new Response("[]", { status: 200 });
+    if (url.includes("/interview/sessions")) return new Response("[]", { status: 200 });
+    if (url.includes("/jobs?") || url.endsWith("/jobs")) {
+      return new Response(
+        JSON.stringify({ jobs: [], total: 0, page: 1, limit: 20, total_pages: 0 }),
+        {
+          status: 200,
+        },
+      );
+    }
+    if (url.includes("/profiles/me/resumes")) return new Response("[]", { status: 200 });
+    if (url.includes("/analytics/")) {
+      return new Response(
+        JSON.stringify({
+          start_date: "2026-11-01",
+          end_date: "2026-11-30",
+          group_by: "week",
+          points: [],
+        }),
+        { status: 200 },
+      );
+    }
+    if (url.endsWith("/auth/register") || url.endsWith("/auth/me")) {
+      return new Response(
+        JSON.stringify({
+          id: 7,
+          email_address: "ada@example.com",
+          is_recruiter: false,
+          created_at: "2026-11-01",
+        }),
+        { status: 200 },
+      );
+    }
+    return new Response("{}", { status: 200 });
+  });
 });
 afterEach(() => vi.restoreAllMocks());
 const lastRequest = (): RecordedRequest => {
@@ -76,9 +115,24 @@ describe("API request contracts", () => {
 
   it("loads a single application with authentication", async () => {
     fetchMock.mockResolvedValueOnce(
-      new Response(JSON.stringify({ id: 12, status: "Under Review" }), { status: 200 }),
+      new Response(
+        JSON.stringify({
+          id: 12,
+          job_id: 4,
+          applicant_id: 7,
+          status: "Under Review",
+          applied_at: "2026-11-01",
+          job_title: "Engineer",
+          company_name: "Example",
+          location: "Remote",
+          category: "Engineering",
+          job_type: "Permanent",
+          job_schedule: "Full-time",
+        }),
+        { status: 200 },
+      ),
     );
-    await expect(getApplication("token", 12)).resolves.toEqual({
+    await expect(getApplication("token", 12)).resolves.toMatchObject({
       id: 12,
       status: "Under Review",
     });
@@ -87,8 +141,25 @@ describe("API request contracts", () => {
   });
 
   it("sends interview context and messages as JSON", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          id: 4,
+          job_id: 12,
+          job_title: "Engineer",
+          company_name: "Example",
+          created_at: "2026-11-01",
+          updated_at: "2026-11-01",
+          messages: [{ role: "assistant", content: "Welcome" }],
+        }),
+        { status: 200 },
+      ),
+    );
     await createInterviewSession("token", 12);
     expect(jsonBody(lastRequest())).toEqual({ application_id: 12 });
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ role: "assistant", content: "Answer" }), { status: 200 }),
+    );
     await sendInterviewMessage("token", 4, "How should I prepare?");
     expect(lastRequest()[0]).toContain("/api/interview/sessions/4/messages");
     expect(jsonBody(lastRequest())).toEqual({ content: "How should I prepare?" });
@@ -109,6 +180,16 @@ describe("API request contracts", () => {
     await getAnalytics("token", "applications", { start_date: "2026-11-01", group_by: "week" });
     expect(new URL(lastRequest()[0]).searchParams.get("start_date")).toBe("2026-11-01");
     expect(new URL(lastRequest()[0]).searchParams.get("group_by")).toBe("week");
+  });
+
+  it("rejects malformed analytics responses at the API boundary", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ start_date: "2026-11-01", points: null }), { status: 200 }),
+    );
+
+    await expect(getAnalytics("token", "applications")).rejects.toThrow(
+      "Invalid response from /api/analytics/applications?",
+    );
   });
 
   it("encodes job filters, pagination and sorting without undefined values", async () => {
@@ -136,6 +217,18 @@ describe("API request contracts", () => {
   });
 
   it("submits the selected resume and cover letter", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          id: 12,
+          job_id: 8,
+          applicant_id: 7,
+          status: "Applied",
+          applied_at: "2026-11-01",
+        }),
+        { status: 200 },
+      ),
+    );
     await applyToJob("token", 8, { resumeId: 2, coverLetter: "Hello!" });
     expect(lastRequest()[0]).toContain("/api/jobs/8/apply");
     expect(jsonBody(lastRequest())).toEqual({ resume_id: 2, cover_letter: "Hello!" });
@@ -149,8 +242,32 @@ describe("API request contracts", () => {
   });
 
   it("maps profile fields and uploads resumes as FormData", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          id: 3,
+          user_id: 7,
+          first_name: "Ada",
+          last_name: "Lovelace",
+          last_updated: "2026-11-01",
+        }),
+        { status: 200 },
+      ),
+    );
     await updateProfile("token", { firstName: "Ada", lastName: "Lovelace" });
     expect(jsonBody(lastRequest())).toEqual({ first_name: "Ada", last_name: "Lovelace" });
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          id: 2,
+          user_id: 7,
+          file_name: "cv.pdf",
+          is_default: true,
+          uploaded_at: "2026-11-01",
+        }),
+        { status: 200 },
+      ),
+    );
     const file = new File(["pdf"], "cv.pdf", { type: "application/pdf" });
     await uploadResume("token", file, true);
     expect(lastRequest()[0]).toContain("make_default=true");

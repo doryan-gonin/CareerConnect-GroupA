@@ -43,6 +43,14 @@ strict compiler pass. API models, clients, page components, shared components,
 utilities, and tests use explicit TypeScript types with `noImplicitAny` and
 `strictNullChecks` enabled.
 
+## Runtime schemas
+
+Zod schemas live in `src/api/schemas.ts`. Use them at external boundaries:
+`apiRequest` requires a response schema for JSON payloads, and form components
+parse user input before making API calls. Prefer `z.infer` or schema-compatible
+domain types over unchecked casts. Add endpoint-specific schemas when response
+shapes differ, and surface parse failures through the existing error UI.
+
 ## Browser E2E compatibility
 
 Playwright browser tests remain a separate tool because Vite+ does not replace

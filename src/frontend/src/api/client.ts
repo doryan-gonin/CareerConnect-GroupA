@@ -1,18 +1,24 @@
 // Shared API configuration and request/error handling for the frontend clients.
 
+import { z } from "zod";
+
 export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
-interface ErrorDetail {
-  msg?: string;
-}
+const errorPayloadSchema = z
+  .object({
+    detail: z
+      .union([z.string(), z.array(z.object({ msg: z.string().optional() }).passthrough())])
+      .optional(),
+  })
+  .passthrough();
 
 export function extractErrorMessage(body: unknown, fallback: string): string {
-  if (!body || typeof body !== "object") return fallback;
-  const detail = (body as { detail?: unknown }).detail;
+  const parsed = errorPayloadSchema.safeParse(body);
+  if (!parsed.success) return fallback;
+  const detail = parsed.data.detail;
   if (typeof detail === "string") return detail;
   if (Array.isArray(detail)) {
     const messages = detail
-      .filter((item): item is ErrorDetail => Boolean(item) && typeof item === "object")
       .map((item) => item.msg)
       .filter((message): message is string => Boolean(message));
     if (messages.length > 0) return messages.join(" ");
@@ -20,7 +26,7 @@ export function extractErrorMessage(body: unknown, fallback: string): string {
   return fallback;
 }
 
-export interface ApiRequestOptions {
+export interface ApiRequestOptions<T = unknown> {
   token?: string | null;
   method?: string;
   body?: unknown;
@@ -30,12 +36,21 @@ export interface ApiRequestOptions {
   networkError?: string;
   responseType?: "json" | "blob";
   cache?: RequestCache;
+  schema?: z.ZodType<T>;
 }
 
+export async function apiRequest<T>(
+  path: string,
+  options: ApiRequestOptions<T> & { schema: z.ZodType<T> },
+): Promise<T>;
+export async function apiRequest(
+  path: string,
+  options: ApiRequestOptions<Blob> & { responseType: "blob" },
+): Promise<Blob>;
 export async function apiRequest<T = unknown>(
   path: string,
-  options: ApiRequestOptions = {},
-): Promise<T> {
+  options: ApiRequestOptions<T> = {},
+): Promise<T | Blob> {
   const {
     token,
     method = "GET",
@@ -77,8 +92,13 @@ export async function apiRequest<T = unknown>(
     throw new Error(networkError);
   }
 
-  if (response.ok && responseType === "blob") return (await response.blob()) as T;
+  if (response.ok && responseType === "blob") return response.blob();
   const responseBody: unknown = await response.json().catch(() => null);
   if (!response.ok) throw new Error(extractErrorMessage(responseBody, fallbackError));
-  return responseBody as T;
+  if (!options.schema) throw new Error("Response schema is required for JSON API responses.");
+  const parsed = options.schema.safeParse(responseBody);
+  if (!parsed.success) {
+    throw new Error(`Invalid response from ${path}.`);
+  }
+  return parsed.data;
 }

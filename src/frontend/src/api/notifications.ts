@@ -1,4 +1,5 @@
 import { apiRequest } from "./client";
+import { emptyResponseSchema, notificationListSchema } from "./schemas";
 import type { NotificationList } from "./types";
 
 export interface NotificationQuery {
@@ -16,9 +17,10 @@ export function getNotifications(
     limit: String(limit),
     offset: String(offset),
   });
-  return apiRequest<NotificationList>(`/api/notifications?${params.toString()}`, {
+  return apiRequest(`/api/notifications?${params.toString()}`, {
     token,
     fallbackError: "Failed to load notifications.",
+    schema: notificationListSchema,
   });
 }
 
@@ -27,6 +29,7 @@ export function markNotificationAsRead(token: string, notificationId: number): P
     token,
     method: "PATCH",
     fallbackError: "Failed to mark notification as read.",
+    schema: emptyResponseSchema,
   });
 }
 
@@ -35,6 +38,7 @@ export function markAllNotificationsAsRead(token: string): Promise<unknown> {
     token,
     method: "PATCH",
     fallbackError: "Failed to mark notifications as read.",
+    schema: emptyResponseSchema,
   });
 }
 
@@ -43,5 +47,6 @@ export function deleteNotification(token: string, notificationId: number): Promi
     token,
     method: "DELETE",
     fallbackError: "Failed to dismiss notification.",
+    schema: emptyResponseSchema,
   });
 }

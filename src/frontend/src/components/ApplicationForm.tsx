@@ -2,6 +2,7 @@ import { getMyApplications } from "../api/applications";
 import { getCurrentUser } from "../api/auth";
 import { useEffect, useRef, useState } from "react";
 import { getProfile, getResumes, updateProfile, uploadResume } from "../api/profiles";
+import { applicationFormSchema } from "../api/schemas";
 import type { Job, Profile, Resume, User } from "../api/types";
 import type { ChangeEvent, FormEvent } from "react";
 
@@ -239,6 +240,15 @@ function ApplicationForm({ token, job, onBack, onSubmitApplication }: Applicatio
       return;
     }
 
+    const parsedApplication = applicationFormSchema.safeParse({
+      resumeId: Number(selectedResumeId),
+      coverLetter: null,
+    });
+    if (!parsedApplication.success) {
+      setError(parsedApplication.error.issues[0]?.message ?? "Please select a valid resume.");
+      return;
+    }
+
     setIsSubmitting(true);
     setError("");
     setSuccess("");
@@ -252,7 +262,7 @@ function ApplicationForm({ token, job, onBack, onSubmitApplication }: Applicatio
 
       await onSubmitApplication({
         job_id: job.id,
-        resume_id: Number(selectedResumeId),
+        resume_id: parsedApplication.data.resumeId,
       });
 
       setSuccess("Your application was submitted successfully!");

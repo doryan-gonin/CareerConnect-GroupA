@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { loginUser } from "../api/auth";
+import { loginFormSchema } from "../api/schemas";
 
 interface LoginFormProps {
   successMessage?: string;
@@ -20,6 +21,11 @@ function LoginForm({ successMessage = "", onLoggedIn, onSwitchToSignup }: LoginF
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    const parsed = loginFormSchema.safeParse({ email, password });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Enter your email and password.");
+      return;
+    }
     setIsSubmitting(true);
     try {
       const data = await loginUser(email, password);

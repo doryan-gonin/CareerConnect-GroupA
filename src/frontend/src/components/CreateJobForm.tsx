@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { createJob } from "../api/jobs";
+import { jobFormSchema } from "../api/schemas";
 import SliderNumberInput from "./SliderNumberInput";
 import MarkdownEditor from "./MarkdownEditor";
 import LocationAutocomplete from "./LocationAutocomplete";
@@ -112,10 +113,16 @@ export default function CreateJobForm({ token, onCreated, onCancel }: Props) {
       return;
     }
 
+    const parsed = jobFormSchema.safeParse(payload);
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Please check the job details.");
+      return;
+    }
+
     setSaving(true);
 
     try {
-      const createdJob = await createJob(token, payload);
+      const createdJob = await createJob(token, { ...payload, ...parsed.data });
       onCreated(createdJob);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create job posting.");
