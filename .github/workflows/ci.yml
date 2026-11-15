@@ -61,6 +61,22 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # The Playwright web server starts the real FastAPI app with uv.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+
+      - name: Install backend dependencies for E2E
+        run: uv sync --all-extras --dev
+        working-directory: .
+
       # Set up Node and cache npm dependencies
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -76,3 +92,11 @@ jobs:
       # Build the frontend
       - name: Build frontend
         run: npm run build
+
+      # Install the browser used by the deterministic Playwright suite
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      # Run browser-level frontend tests against the disposable E2E backend
+      - name: Run Playwright E2E tests
+        run: npm run e2e
