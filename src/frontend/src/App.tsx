@@ -14,26 +14,9 @@ import SavedJobsPage from "./components/SavedJobsPage";
 import { logoutUser, getCurrentUser } from "./api/auth";
 import { getApplication } from "./api/applications";
 import type { Notification, NotificationTarget } from "./api/types";
+import { isAllowedAppPath, normalizePath, parseRoute } from "./routes";
 
 const TOKEN_STORAGE_KEY = "accessToken";
-
-function normalizePath(pathname: string): string {
-  const cleaned = pathname.replace(/\/+$/, "");
-  return cleaned === "" ? "/" : cleaned;
-}
-
-function isAllowedAppPath(path: string): boolean {
-  return (
-    path === "/dashboard" ||
-    path === "/analytics" ||
-    path === "/jobs" ||
-    path === "/saved" ||
-    path === "/recruiter/dashboard" ||
-    /^\/jobs\/\d+$/.test(path) ||
-    /^\/jobs\/\d+\/apply$/.test(path) ||
-    /^\/interview(\/new|\/\d+)?$/.test(path)
-  );
-}
 
 function App(): ReactNode {
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_STORAGE_KEY) || "");
@@ -218,14 +201,14 @@ function App(): ReactNode {
     window.scrollTo(0, 0);
   }
 
-  const jobDetailMatch = currentPath.match(/^\/jobs\/(\d+)(\/apply)?$/);
-  if (token && jobDetailMatch) {
-    const jobId = Number(jobDetailMatch[1]);
+  const route = parseRoute(currentPath);
+  if (token && route?.kind === "job-detail") {
+    const jobId = route.jobId;
     return (
       <JobDetailPage
         token={token}
         jobId={jobId}
-        isApplying={!isRecruiter && Boolean(jobDetailMatch[2])}
+        isApplying={!isRecruiter && route.applying}
         onApply={isRecruiter ? undefined : () => openApplication(jobId)}
         onBackToPosting={() => navigate(`/jobs/${jobId}`)}
         onNavigateJobs={() => navigate("/jobs")}
@@ -267,23 +250,23 @@ function App(): ReactNode {
   }
 
   if (token) {
-    const interviewMatch = currentPath.match(/^\/interview\/(\d+)$/);
+    const parsedRoute = parseRoute(currentPath);
     let pageContent: ReactNode = null;
 
     if (isRecruiter) {
       pageContent = <RecruiterDashboard token={token} notificationTarget={notificationTarget} />;
-    } else if (currentPath === "/analytics") {
+    } else if (parsedRoute?.kind === "analytics") {
       pageContent = <AnalyticsPage token={token} onBack={() => navigate("/dashboard")} />;
-    } else if (interviewMatch) {
+    } else if (parsedRoute?.kind === "interview-session") {
       pageContent = (
         <InterviewConversation
-          key={interviewMatch[1]}
+          key={parsedRoute.sessionId}
           token={token}
-          sessionId={Number(interviewMatch[1])}
+          sessionId={parsedRoute.sessionId}
           onBack={() => navigate("/interview")}
         />
       );
-    } else if (currentPath === "/interview/new") {
+    } else if (parsedRoute?.kind === "interview-new") {
       pageContent = (
         <InterviewNewSession
           token={token}
@@ -292,7 +275,7 @@ function App(): ReactNode {
           onCreated={(id: number) => navigate(`/interview/${id}`, { replace: true })}
         />
       );
-    } else if (currentPath === "/interview") {
+    } else if (parsedRoute?.kind === "interview") {
       pageContent = (
         <InterviewPrepPage
           token={token}

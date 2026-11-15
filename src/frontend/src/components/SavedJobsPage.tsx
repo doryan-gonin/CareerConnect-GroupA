@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { getSavedJobs, unsaveJob } from "../api/jobs";
+import { useAsyncResource } from "../hooks/useAsyncResource";
 import Navbar from "./Navbar";
-import SavedJobButton from "./SavedJobButton";
-import type { SavedJob } from "../api/types";
+import SavedJobCard from "./SavedJobCard";
 
 type SavedJobsPageProps = {
   token: string;
@@ -20,37 +20,26 @@ function SavedJobsPage({
   onNavigateJobs,
   onViewJob,
 }: SavedJobsPageProps) {
-  const [savedJobs, setSavedJobs] = useState<SavedJob[]>([]);
-  const [state, setState] = useState("loading");
   const [error, setError] = useState("");
   const [removingJobId, setRemovingJobId] = useState<number | null>(null);
 
-  useEffect(() => {
-    let active = true;
-    getSavedJobs(token)
-      .then((items) => {
-        if (active) {
-          setSavedJobs(items);
-          setState("ready");
-        }
-      })
-      .catch((loadError: unknown) => {
-        if (active) {
-          setError(loadError instanceof Error ? loadError.message : String(loadError));
-          setState("error");
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [token]);
+  const loadSavedJobs = useCallback((signal: AbortSignal) => getSavedJobs(token, signal), [token]);
+  const {
+    data: loadedJobs,
+    error: loadError,
+    isLoading,
+    reload,
+  } = useAsyncResource(loadSavedJobs, [loadSavedJobs], Boolean(token));
+  const state = isLoading ? "loading" : loadError ? "error" : "ready";
+
+  const savedJobs = loadedJobs ?? [];
 
   async function removeSavedJob(jobId: number) {
     setError("");
     setRemovingJobId(jobId);
     try {
       await unsaveJob(token, jobId);
-      setSavedJobs((items) => items.filter((item) => item.job_id !== jobId));
+      reload();
     } catch (removeError: unknown) {
       setError(removeError instanceof Error ? removeError.message : String(removeError));
     } finally {
@@ -76,9 +65,9 @@ function SavedJobsPage({
           </p>
         </div>
 
-        {error && (
+        {(error || loadError) && (
           <p role="alert" className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
-            {error}
+            {error || loadError?.message}
           </p>
         )}
         {state === "loading" && <p className="text-sm text-gray-500">Loading saved jobs…</p>}
@@ -101,41 +90,15 @@ function SavedJobsPage({
           </div>
         )}
         <div className="grid gap-4 sm:grid-cols-2">
-          {savedJobs.map(({ job_id: jobId, job }) => {
-            const inactive = !job.is_active;
-            return (
-              <article
-                key={jobId}
-                className={`rounded-xl border bg-white p-5 shadow-xs ${inactive ? "border-amber-200" : "border-gray-200"}`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h2 className="font-semibold text-gray-900">{job.title}</h2>
-                    <p className="text-sm text-gray-700">{job.company_name}</p>
-                  </div>
-                  <SavedJobButton
-                    isSaved
-                    isPending={removingJobId === jobId}
-                    onToggle={() => removeSavedJob(jobId)}
-                  />
-                </div>
-                <p className="mt-2 text-sm text-gray-600">{job.location}</p>
-                {inactive ? (
-                  <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
-                    This posting is no longer available.
-                  </p>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => onViewJob(jobId)}
-                    className="mt-4 text-sm font-medium text-purple-600 hover:underline"
-                  >
-                    View posting
-                  </button>
-                )}
-              </article>
-            );
-          })}
+          {savedJobs.map((savedJob) => (
+            <SavedJobCard
+              key={savedJob.job_id}
+              savedJob={savedJob}
+              isPending={removingJobId === savedJob.job_id}
+              onRemove={(jobId) => void removeSavedJob(jobId)}
+              onView={onViewJob}
+            />
+          ))}
         </div>
       </main>
     </div>

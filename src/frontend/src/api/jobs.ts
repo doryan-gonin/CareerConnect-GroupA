@@ -93,9 +93,10 @@ export async function recordJobView(token: string, jobId: number): Promise<void>
   });
 }
 
-export function getSavedJobs(token: string): Promise<SavedJob[]> {
+export function getSavedJobs(token: string, signal?: AbortSignal): Promise<SavedJob[]> {
   return apiRequest("/api/jobs/saved", {
     token,
+    signal,
     fallbackError: "Failed to load saved jobs.",
     schema: savedJobSchema.array(),
   });
