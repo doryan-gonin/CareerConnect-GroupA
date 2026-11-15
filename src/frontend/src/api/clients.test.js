@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { registerUser, loginUser, logoutUser, getCurrentUser } from './auth'
 import { getMyApplications, withdrawApplication } from './applications'
 import { createInterviewSession, sendInterviewMessage } from './interview'
@@ -25,7 +25,7 @@ describe('API request contracts', () => {
 
   it('uses the configured API origin for account loading and tolerates offline logout', async () => {
     await getCurrentUser('token')
-    expect(lastRequest()[0]).toBe('/api/auth/me')
+    expect(lastRequest()[0]).toBe('http://localhost:8000/api/auth/me')
     expect(lastRequest()[1].headers.Authorization).toBe('Bearer token')
     fetchMock.mockRejectedValue(new Error('offline'))
     await expect(logoutUser('token')).resolves.toBeUndefined()
