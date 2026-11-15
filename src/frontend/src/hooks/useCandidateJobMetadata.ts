@@ -13,10 +13,12 @@ export type CandidateJobMetadata = {
 export function useCandidateJobMetadata(token: string, enabled: boolean) {
   const load = useCallback(
     async (signal: AbortSignal): Promise<CandidateJobMetadata> => {
-      const [applications, savedJobs] = await Promise.all([
+      const [applicationsResult, savedJobsResult] = await Promise.allSettled([
         getMyApplications(token, undefined, signal),
         getSavedJobs(token, signal),
       ]);
+      const applications = applicationsResult.status === "fulfilled" ? applicationsResult.value : [];
+      const savedJobs = savedJobsResult.status === "fulfilled" ? savedJobsResult.value : [];
       return {
         statusByJobId: Object.fromEntries(
           applications.map((application) => [application.job_id, application.status]),
