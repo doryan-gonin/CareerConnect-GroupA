@@ -1,18 +1,18 @@
-import NotificationBell from './NotificationBell'
+import NotificationBell from "./NotificationBell";
 
 function NavLink({ href, onClick, children }) {
   return (
     <a
       href={href}
       onClick={(e) => {
-        e.preventDefault()
-        onClick()
+        e.preventDefault();
+        onClick();
       }}
       className="text-sm font-medium text-purple-600 hover:underline cursor-pointer"
     >
       {children}
     </a>
-  )
+  );
 }
 
 function Navbar({
@@ -35,8 +35,8 @@ function Navbar({
             href="/dashboard"
             onClick={(e) => {
               if (onDashboard) {
-                e.preventDefault()
-                onDashboard()
+                e.preventDefault();
+                onDashboard();
               }
             }}
             className="text-xl font-bold text-gray-900 cursor-pointer"
@@ -52,10 +52,26 @@ function Navbar({
 
         {/* User & Logout */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          {onDashboard && <NavLink href="/dashboard" onClick={onDashboard}>Dashboard</NavLink>}
-          {onBrowseJobs && <NavLink href="/jobs" onClick={onBrowseJobs}>Browse Jobs</NavLink>}
-          {!isRecruiter && onSavedJobs && <NavLink href="/saved" onClick={onSavedJobs}>Saved Jobs</NavLink>}
-          {!isRecruiter && onInterviewPrep && <NavLink href="/interview" onClick={onInterviewPrep}>Interview Prep</NavLink>}
+          {onDashboard && (
+            <NavLink href="/dashboard" onClick={onDashboard}>
+              Dashboard
+            </NavLink>
+          )}
+          {onBrowseJobs && (
+            <NavLink href="/jobs" onClick={onBrowseJobs}>
+              Browse Jobs
+            </NavLink>
+          )}
+          {!isRecruiter && onSavedJobs && (
+            <NavLink href="/saved" onClick={onSavedJobs}>
+              Saved Jobs
+            </NavLink>
+          )}
+          {!isRecruiter && onInterviewPrep && (
+            <NavLink href="/interview" onClick={onInterviewPrep}>
+              Interview Prep
+            </NavLink>
+          )}
 
           <NotificationBell token={token} onNotificationClick={onNotificationClick} />
 
@@ -65,12 +81,12 @@ function Navbar({
             disabled={isLoggingOut}
             className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isLoggingOut ? 'Logging out…' : 'Log out'}
+            {isLoggingOut ? "Logging out…" : "Log out"}
           </button>
         </div>
       </div>
     </header>
-  )
+  );
 }
 
-export default Navbar
+export default Navbar;
