@@ -1,47 +1,40 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import { getSavedJobs, saveJob, unsaveJob } from "./jobs.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { API_BASE_URL } from "./client";
+import { getSavedJobs, saveJob, unsaveJob } from "./jobs";
 
-function response(body, ok = true) {
-  return { ok, json: async () => body };
-}
+describe("saved jobs API", () => {
+  let fetchMock;
 
-test("getSavedJobs requests the authenticated saved-job collection", async () => {
-  const originalFetch = globalThis.fetch;
-  let request;
-  globalThis.fetch = async (url, options) => {
-    request = { url, options };
-    return response([{ job_id: 42 }]);
-  };
+  beforeEach(() => {
+    fetchMock = vi.spyOn(globalThis, "fetch");
+  });
 
-  try {
-    assert.deepEqual(await getSavedJobs("token"), [{ job_id: 42 }]);
-    assert.equal(request.url, "http://localhost:8000/api/jobs/saved");
-    assert.equal(request.options.headers.Authorization, "Bearer token");
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
-});
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-test("saveJob and unsaveJob use the idempotent bookmark endpoints", async () => {
-  const originalFetch = globalThis.fetch;
-  const requests = [];
-  globalThis.fetch = async (url, options) => {
-    requests.push({ url, options });
-    return options.method === "POST" ? response({ job_id: 42 }) : response(null);
-  };
-
-  try {
-    assert.deepEqual(await saveJob("token", 42), { job_id: 42 });
-    assert.equal(await unsaveJob("token", 42), undefined);
-    assert.deepEqual(
-      requests.map(({ url, options }) => [url, options.method]),
-      [
-        ["http://localhost:8000/api/jobs/42/save", "POST"],
-        ["http://localhost:8000/api/jobs/42/save", "DELETE"],
-      ],
+  it("requests the authenticated saved-job collection", async () => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify([{ job_id: 42 }]), { status: 200 }),
     );
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
+
+    await expect(getSavedJobs("token")).resolves.toEqual([{ job_id: 42 }]);
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE_URL}/api/jobs/saved`, {
+      method: "GET",
+      headers: { Authorization: "Bearer token" },
+    });
+  });
+
+  it("uses the idempotent bookmark endpoints", async () => {
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify({ job_id: 42 }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await expect(saveJob("token", 42)).resolves.toEqual({ job_id: 42 });
+    await expect(unsaveJob("token", 42)).resolves.toBeUndefined();
+    expect(fetchMock.mock.calls.map(([url, options]) => [url, options.method])).toEqual([
+      [`${API_BASE_URL}/api/jobs/42/save`, "POST"],
+      [`${API_BASE_URL}/api/jobs/42/save`, "DELETE"],
+    ]);
+  });
 });

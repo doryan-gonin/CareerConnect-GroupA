@@ -1,41 +1,42 @@
-from pathlib import Path
-from datetime import datetime, timezone
-from fastapi.responses import FileResponse
 import math
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Annotated, List
+
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from fastapi.responses import FileResponse
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session, select, col, or_, func
+from sqlmodel import Session, col, func, or_, select
 
 from backend.database import get_session
+from backend.dependencies import (
+    get_current_applicant,
+    get_current_recruiter,
+    get_current_user,
+    get_optional_current_user,
+)
 from backend.models import (
-    User,
-    Profile,
+    Application,
+    ApplicationCreate,
+    ApplicationResponse,
+    ApplicationStatus,
     Job,
-    JobType,
+    JobCreate,
+    JobListResponse,
+    JobResponse,
     JobSchedule,
     JobSortBy,
     JobSortOrder,
-    JobCreate,
-    JobUpdate,
-    JobResponse,
-    JobListResponse,
-    Resume,
-    Application,
-    ApplicationStatus,
-    ApplicationCreate,
-    ApplicationResponse,
-    SearchLog,
-    JobViewLog,
     JobSuggestion,
+    JobType,
+    JobUpdate,
+    JobViewLog,
+    Profile,
+    Resume,
     SavedJob,
     SavedJobResponse,
-)
-from backend.dependencies import (
-    get_current_user,
-    get_optional_current_user,
-    get_current_recruiter,
-    get_current_applicant,
+    SearchLog,
+    User,
 )
 from backend.services.notification_service import notify_new_application_received
 from backend.services.suggestion_service import get_cached_suggestions, refresh_suggestions
@@ -188,7 +189,7 @@ def list_jobs(
     Search and filter active job opportunities with pagination.
     Returns full job objects so clients can render listing cards without subsequent API calls.
     """
-    conditions = [Job.is_active == True]
+    conditions = [Job.is_active]
     suggestion_by_job: dict[int, JobSuggestion] = {}
     if sort_by == JobSortBy.SUGGESTION:
         ai_suggested = True
@@ -678,7 +679,7 @@ def apply_to_job(
         default_resume = session.exec(
             select(Resume).where(
                 Resume.user_id == current_user.id,
-                Resume.is_default == True,
+                Resume.is_default,
             )
         ).first()
         if not default_resume:

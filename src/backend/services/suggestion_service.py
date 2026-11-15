@@ -17,8 +17,8 @@ from sqlmodel import Session, select
 from backend.config import (
     AI_API_BASE_URL,
     AI_API_KEY,
-    AI_MODEL,
     AI_MOCK_MODE,
+    AI_MODEL,
     AI_SUGGESTIONS_CACHE_TTL_MINUTES,
 )
 from backend.models import Job, JobSuggestion, JobViewLog, Resume, SearchLog, User
@@ -146,7 +146,7 @@ def _provider_suggestions(candidate: dict, jobs: list[Job]) -> list[dict] | None
 
 
 def refresh_suggestions(session: Session, user: User, jobs: list[Job] | None = None) -> list[JobSuggestion]:
-    jobs = jobs or session.exec(select(Job).where(Job.is_active == True).order_by(Job.posted_at.desc()).limit(MAX_JOBS_IN_PROMPT)).all()
+    jobs = jobs or session.exec(select(Job).where(Job.is_active).order_by(Job.posted_at.desc()).limit(MAX_JOBS_IN_PROMPT)).all()
     resume = session.exec(select(Resume).where(Resume.user_id == user.id).order_by(Resume.is_default.desc(), Resume.uploaded_at.desc())).first()
     candidate = candidate_context(session, user, resume)
     rows = _provider_suggestions(candidate, jobs) or _deterministic(candidate, jobs)

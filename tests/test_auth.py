@@ -131,6 +131,23 @@ class TestRegistration:
         response = client.post("/api/auth/register", json=payload)
         assert response.status_code == 422
 
+    def test_password_strength_lists_all_missing_requirements(self, client):
+        response = client.post(
+            "/api/auth/register",
+            json={"email_address": "weak@example.com", "password": "A" * 73},
+        )
+        assert response.status_code == 400
+        detail = response.json()["detail"]
+        for requirement in ["no more than 72 bytes", "a lowercase letter", "a number", "a special character"]:
+            assert requirement in detail
+
+        short = client.post(
+            "/api/auth/register",
+            json={"email_address": "short@example.com", "password": "abc"},
+        )
+        assert short.status_code == 400
+        assert "at least 8 characters" in short.json()["detail"]
+
     def test_registration_as_recruiter(self, client, db_session):
         from sqlmodel import select
 
@@ -322,3 +339,47 @@ class TestRolePermissions:
         )
         assert app_apps.status_code == 200
         assert len(app_apps.json()) == 1
+
+
+class TestTokenLifecycle:
+    def test_refresh_rotates_token_and_revokes_old_token(self, client, test_user):
+        login = client.post(
+            "/api/auth/login",
+            json={"email_address": test_user["email_address"], "password": test_user["password"]},
+        )
+        assert login.status_code == 200
+        old_token = login.json()["access_token"]
+        old_headers = {"Authorization": f"Bearer {old_token}"}
+
+        refresh = client.post("/api/auth/refresh", headers=old_headers)
+        assert refresh.status_code == 200
+        new_token = refresh.json()["access_token"]
+        assert new_token != old_token
+
+        assert client.get("/api/auth/me", headers=old_headers).status_code == 401
+        new_headers = {"Authorization": f"Bearer {new_token}"}
+        assert client.get("/api/auth/me", headers=new_headers).status_code == 200
+
+    def test_logout_revokes_token(self, client, test_user):
+        login = client.post(
+            "/api/auth/login",
+            json={"email_address": test_user["email_address"], "password": test_user["password"]},
+        )
+        assert login.status_code == 200
+        headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+        logout = client.post("/api/auth/logout", headers=headers)
+        assert logout.status_code == 204
+        assert client.get("/api/auth/me", headers=headers).status_code == 401
+
+    def test_login_survives_suggestion_refresh_failure(self, client, test_user, monkeypatch):
+        def fail_refresh(*args, **kwargs):
+            raise RuntimeError("provider unavailable")
+
+        monkeypatch.setattr("backend.routers.auth.refresh_suggestions", fail_refresh)
+        response = client.post(
+            "/api/auth/login",
+            json={"email_address": test_user["email_address"], "password": test_user["password"]},
+        )
+        assert response.status_code == 200
+        assert "access_token" in response.json()

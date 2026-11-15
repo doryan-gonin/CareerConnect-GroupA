@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 
-export const API = "http://127.0.0.1:8765/api";
+export const API = process.env.E2E_API_BASE_URL || "http://127.0.0.1:8765/api";
 export const PASSWORD = "TestPass123!";
 
 export async function json(response) {

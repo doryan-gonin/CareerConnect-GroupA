@@ -1,6 +1,11 @@
 import os
 
 os.environ["TESTING"] = "1"
+# Keep the test suite independent of a developer's local .env file.  The
+# application requires a JWT key at import time and the AI provider tests
+# exercise both the real-provider and mock branches explicitly.
+os.environ.setdefault("JWT_SECRET_KEY", "careerconnect-test-secret-key-32-bytes")
+os.environ["AI_MOCK_MODE"] = "false"
 
 from datetime import datetime, timedelta
 

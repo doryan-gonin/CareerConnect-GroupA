@@ -1,8 +1,9 @@
-import os
-from sqlmodel import SQLModel, create_engine, Session
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
+from sqlmodel import Session, SQLModel, create_engine
 
+# Import models for their SQLModel table registrations before create_all runs.
+from backend import models as _models  # noqa: F401
 from backend.config import DATABASE_URL
 
 url = DATABASE_URL
@@ -35,7 +36,6 @@ if is_sqlite:
 
 def init_db(target_engine: Engine | None = None):
     target = target_engine or engine
-    from backend import models
     SQLModel.metadata.create_all(target)
     # Lightweight schema migration for existing SQLite databases
     with Session(target) as session:

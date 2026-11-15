@@ -1,15 +1,16 @@
-from typing import Annotated, List
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlmodel import Session, select, func, col
+from sqlmodel import Session, col, func, select
 
 from backend.database import get_session
-from backend.models import (
-    User,
-    Notification,
-    NotificationResponse,
-    NotificationListResponse,
-)
 from backend.dependencies import get_current_user
+from backend.models import (
+    Notification,
+    NotificationListResponse,
+    NotificationResponse,
+    User,
+)
 from backend.services.notification_service import generate_deadline_reminders
 
 router = APIRouter(tags=["Notifications"])

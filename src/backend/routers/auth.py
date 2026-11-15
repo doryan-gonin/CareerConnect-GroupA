@@ -18,8 +18,8 @@ from backend.config import (
 )
 from backend.database import get_session
 from backend.dependencies import get_current_user, get_token_payload
-from backend.services.suggestion_service import refresh_suggestions
 from backend.models import Profile, RevokedToken, Token, User, UserCreate, UserLogin, UserResponse
+from backend.services.suggestion_service import refresh_suggestions
 
 router = APIRouter(tags=["Authentication"])
 

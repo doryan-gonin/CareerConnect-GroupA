@@ -78,11 +78,16 @@ def test_init_db_with_target_engine():
     from backend.database import init_db
 
     memory_engine = create_engine("sqlite://")
-    init_db(memory_engine)
-    inspector = inspect(memory_engine)
-    table_names = inspector.get_table_names()
-    assert "user" in table_names
-    assert "job" in table_names
+    try:
+        init_db(memory_engine)
+        inspector = inspect(memory_engine)
+        table_names = inspector.get_table_names()
+        assert "user" in table_names
+        assert "job" in table_names
+    finally:
+        # Explicitly close the standalone SQLite connection.  Without this,
+        # SQLAlchemy reports an unclosed connection during a later test.
+        memory_engine.dispose()
 
 
 @pytest.mark.anyio
