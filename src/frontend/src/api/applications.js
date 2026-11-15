@@ -1,68 +1,13 @@
-import { API_BASE_URL } from './client'
+import { apiRequest } from './client'
 
 // Handles API communication for a job seeker's own applications.
 
-function extractErrorMessage(body, fallback) {
-  const detail = body?.detail
-  if (typeof detail === 'string') return detail
-  if (Array.isArray(detail)) {
-    return detail.map((item) => item.msg).join(' ')
-  }
-  return fallback
-}
-
 export async function getMyApplications(token, statusFilter) {
-  const url = statusFilter
-    ? `${API_BASE_URL}/api/applications/me?status=${encodeURIComponent(statusFilter)}`
-    : `${API_BASE_URL}/api/applications/me`
-
-  let response
-  try {
-    response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-  } catch {
-    throw new Error('Could not reach the server. Is the backend running?')
-  }
-
-  let body = null
-  try {
-    body = await response.json()
-  } catch {
-    // ignore
-  }
-
-  if (!response.ok) {
-    throw new Error(extractErrorMessage(body, 'Failed to load applications.'))
-  }
-
-  return body || []
+  const query = statusFilter ? `?status=${encodeURIComponent(statusFilter)}` : ''
+  return (await apiRequest(`/api/applications/me${query}`, { token, fallbackError: 'Failed to load applications.' })) || []
 }
 
 export async function withdrawApplication(token, applicationId) {
-  let response
-  try {
-    response = await fetch(`${API_BASE_URL}/api/applications/${applicationId}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-  } catch {
-    throw new Error('Could not reach the server. Is the backend running?')
-  }
-
-  if (!response.ok) {
-    let body = null
-    try {
-      body = await response.json()
-    } catch {
-      // ignore
-    }
-    throw new Error(extractErrorMessage(body, 'Failed to withdraw application.'))
-  }
-
+  await apiRequest(`/api/applications/${applicationId}`, { token, method: 'DELETE', fallbackError: 'Failed to withdraw application.' })
   return true
 }
