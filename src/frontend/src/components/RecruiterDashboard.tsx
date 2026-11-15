@@ -12,6 +12,7 @@ import EditJobForm from "./EditJobForm";
 import ApplicationStatusBadge from "./ApplicationStatusBadge";
 import ResumeViewerModal from "./ResumeViewerModal";
 import MarkdownView from "./MarkdownView";
+import RecruiterStats from "./RecruiterStats";
 import { isApplicationStatus } from "../api/types";
 import type {
   ApplicationStatus,
@@ -397,23 +398,7 @@ export default function RecruiterDashboard({ token, notificationTarget = null }:
         />
       )}
 
-      {/* Statistics */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Total Jobs</p>
-          <p className="mt-1 text-2xl font-semibold text-gray-900">{jobs.length}</p>
-        </div>
-
-        <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Active Jobs</p>
-          <p className="mt-1 text-2xl font-semibold text-emerald-600">{activeJobs.length}</p>
-        </div>
-
-        <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Closed Jobs</p>
-          <p className="mt-1 text-2xl font-semibold text-gray-600">{closedJobs.length}</p>
-        </div>
-      </div>
+      <RecruiterStats total={jobs.length} active={activeJobs.length} closed={closedJobs.length} />
 
       {/* Global action errors */}
       {actionError && (

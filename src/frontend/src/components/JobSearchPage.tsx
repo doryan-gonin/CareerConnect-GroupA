@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import JobSearchPageNavbar from "./JobSearchPageNavbar";
 import ApplicationStatusBadge from "./ApplicationStatusBadge";
 import MarkdownView from "./MarkdownView";
-import { getMyApplications } from "../api/applications";
-import { getSavedJobs, recordJobView, saveJob, unsaveJob } from "../api/jobs";
+import JobListCard from "./JobListCard";
+import { recordJobView, saveJob, unsaveJob } from "../api/jobs";
 import SavedJobButton from "./SavedJobButton";
-import type { Job, ApplicationStatus } from "../api/types";
+import type { Job } from "../api/types";
+import { useCandidateJobMetadata } from "../hooks/useCandidateJobMetadata";
 
 type Props = {
   token: string;
@@ -40,35 +41,13 @@ function JobSearchPage({
   const [hasLoaded, setHasLoaded] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [pagination, setPagination] = useState<Pagination | null>(null);
-  const [statusByJobId, setStatusByJobId] = useState<Record<number, ApplicationStatus>>({});
-  const [savedByJobId, setSavedByJobId] = useState<Record<number, boolean>>({});
   const [savingJobId, setSavingJobId] = useState<number | null>(null);
+  const [savedOverrides, setSavedOverrides] = useState<Record<number, boolean>>({});
   const [saveError, setSaveError] = useState("");
+  const { data: metadata } = useCandidateJobMetadata(token, Boolean(token) && !isRecruiter);
+  const statusByJobId = metadata?.statusByJobId ?? {};
+  const savedByJobId = { ...metadata?.savedByJobId, ...savedOverrides };
   const selectedStatus = selectedJob ? statusByJobId[selectedJob.id] : null;
-
-  useEffect(() => {
-    if (isRecruiter) return;
-    let active = true;
-
-    getMyApplications(token)
-      .then((applications) => {
-        if (active) {
-          setStatusByJobId(Object.fromEntries(applications.map((a) => [a.job_id, a.status])));
-        }
-      })
-      .catch(() => {});
-
-    getSavedJobs(token)
-      .then((savedJobs) => {
-        if (active)
-          setSavedByJobId(Object.fromEntries(savedJobs.map((saved) => [saved.job_id, true])));
-      })
-      .catch(() => {});
-
-    return () => {
-      active = false;
-    };
-  }, [token, isRecruiter]);
 
   async function handleToggleSaved(jobId: number) {
     if (isRecruiter || savingJobId === jobId) return;
@@ -77,10 +56,10 @@ function JobSearchPage({
     try {
       if (savedByJobId[jobId]) {
         await unsaveJob(token, jobId);
-        setSavedByJobId((current) => ({ ...current, [jobId]: false }));
+        setSavedOverrides((current) => ({ ...current, [jobId]: false }));
       } else {
         await saveJob(token, jobId);
-        setSavedByJobId((current) => ({ ...current, [jobId]: true }));
+        setSavedOverrides((current) => ({ ...current, [jobId]: true }));
       }
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "Failed to update saved job.");
@@ -137,49 +116,17 @@ function JobSearchPage({
             <p className="text-sm text-gray-500">No jobs found matching your search.</p>
           )}
           {jobs.map((job) => (
-            <div
+            <JobListCard
               key={job.id}
-              onClick={() => handleSelectJob(job)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") handleSelectJob(job);
-              }}
-              className={`group block w-100 rounded-xl border p-4 text-left transition hover:border-purple-300 hover:shadow-xs ${
-                selectedJob?.id === job.id
-                  ? "border-purple-500 bg-purple-50/30"
-                  : "border-gray-200 bg-white"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <h2 className="group-hover:text-purple-600 group-hover:underline font-semibold">
-                  {job.title}
-                </h2>
-                {!isRecruiter && (
-                  <SavedJobButton
-                    isSaved={Boolean(savedByJobId[job.id])}
-                    isPending={savingJobId === job.id}
-                    onToggle={() => handleToggleSaved(job.id)}
-                  />
-                )}
-              </div>
-              <p>{job.company_name}</p>
-              <p>{job.job_schedule}</p>
-              <p>{job.location}</p>
-              {job.ai_suggested && (
-                <div className="mt-2 rounded-md bg-purple-50 px-2.5 py-2 text-xs text-purple-800">
-                  <span className="font-semibold">✨ AI suggested</span>
-                  {job.suggestion_justification && (
-                    <span className="ml-1">— {job.suggestion_justification}</span>
-                  )}
-                </div>
-              )}
-              {statusByJobId[job.id] && (
-                <div className="mt-2">
-                  <ApplicationStatusBadge status={statusByJobId[job.id]} />
-                </div>
-              )}
-            </div>
+              job={job}
+              isSelected={selectedJob?.id === job.id}
+              isRecruiter={isRecruiter}
+              isSaved={Boolean(savedByJobId[job.id])}
+              isPending={savingJobId === job.id}
+              applicationStatus={statusByJobId[job.id]}
+              onSelect={handleSelectJob}
+              onToggleSaved={() => void handleToggleSaved(job.id)}
+            />
           ))}
 
           {/* Pagination Controls */}

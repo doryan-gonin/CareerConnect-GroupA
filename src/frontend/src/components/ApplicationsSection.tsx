@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useState, type ChangeEvent } from "react";
 import { getMyApplications, withdrawApplication } from "../api/applications";
-import ApplicationStatusBadge from "./ApplicationStatusBadge";
+import { useAsyncResource } from "../hooks/useAsyncResource";
+import ApplicationListItem from "./ApplicationListItem";
 import type { ApplicationDetail, ApplicationStatus } from "../api/types";
-import type { ChangeEvent } from "react";
 
 const STATUS_OPTIONS: ApplicationStatus[] = [
   "Applied",
@@ -13,51 +13,22 @@ const STATUS_OPTIONS: ApplicationStatus[] = [
 ];
 
 function ApplicationsSection({ token }: { token: string }) {
-  const [applications, setApplications] = useState<ApplicationDetail[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
   const [actionId, setActionId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const refreshApplications = useCallback(async () => {
-    try {
-      const data = await getMyApplications(token, statusFilter || undefined);
-      setApplications(data);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
-  }, [token, statusFilter]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function load() {
-      setIsLoading(true);
-      try {
-        const data = await getMyApplications(token, statusFilter || undefined);
-        if (isMounted) {
-          setApplications(data);
-        }
-      } catch (err: unknown) {
-        if (isMounted) {
-          setError(err instanceof Error ? err.message : String(err));
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    if (token) {
-      load();
-    }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [token, statusFilter]);
+  const loadApplications = useCallback(
+    (signal: AbortSignal) => getMyApplications(token, statusFilter || undefined, signal),
+    [statusFilter, token],
+  );
+  const {
+    data: loadedApplications,
+    error: loadError,
+    isLoading,
+    reload,
+  } = useAsyncResource<ApplicationDetail[]>(loadApplications, [loadApplications], Boolean(token));
+  const applications = loadedApplications ?? [];
 
   async function handleWithdraw(applicationId: number, jobTitle: string) {
     if (!window.confirm(`Withdraw your application for "${jobTitle}"?`)) {
@@ -71,7 +42,7 @@ function ApplicationsSection({ token }: { token: string }) {
     try {
       await withdrawApplication(token, applicationId);
       setSuccess(`Application for "${jobTitle}" withdrawn.`);
-      await refreshApplications();
+      reload();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -101,7 +72,11 @@ function ApplicationsSection({ token }: { token: string }) {
         <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{success}</p>
       )}
 
-      {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {(loadError || error) && (
+        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error || loadError?.message}
+        </p>
+      )}
 
       {isLoading ? (
         <div className="py-6 text-center text-sm text-gray-500">Loading applications…</div>
@@ -113,39 +88,14 @@ function ApplicationsSection({ token }: { token: string }) {
         </div>
       ) : (
         <ul className="divide-y divide-gray-100 border-t border-gray-100">
-          {applications.map((application) => {
-            const isWorking = actionId === application.id;
-            return (
-              <li
-                key={application.id}
-                className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-900 text-sm">
-                      {application.job_title}
-                    </span>
-                    <ApplicationStatusBadge status={application.status} />
-                  </div>
-                  <span className="text-xs text-gray-500">
-                    {application.company_name} · {application.location}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    Applied on {new Date(application.applied_at).toLocaleDateString()}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleWithdraw(application.id, application.job_title)}
-                  disabled={isWorking}
-                  className="self-start text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50 sm:self-center"
-                >
-                  Withdraw
-                </button>
-              </li>
-            );
-          })}
+          {applications.map((application) => (
+            <ApplicationListItem
+              key={application.id}
+              application={application}
+              isWorking={actionId === application.id}
+              onWithdraw={(item) => void handleWithdraw(item.id, item.job_title)}
+            />
+          ))}
         </ul>
       )}
     </div>

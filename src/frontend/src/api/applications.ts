@@ -5,10 +5,12 @@ import type { ApplicationDetail, ApplicationStatus, Application } from "./types"
 export function getMyApplications(
   token: string,
   statusFilter?: ApplicationStatus | string,
+  signal?: AbortSignal,
 ): Promise<ApplicationDetail[]> {
   const query = statusFilter ? `?status=${encodeURIComponent(statusFilter)}` : "";
   return apiRequest(`/api/applications/me${query}`, {
     token,
+    signal,
     fallbackError: "Failed to load applications.",
     schema: applicationDetailSchema.array(),
   }).then((applications) => applications || []);
