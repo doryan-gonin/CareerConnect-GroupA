@@ -1,16 +1,44 @@
-# React + Vite
+# CareerConnect frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+This React application uses [Vite+](https://viteplus.dev/) 1.6.0 as its
+unified JavaScript toolchain. Vite+ provides the Vite development server and
+build, Oxlint linting, Oxfmt formatting, and Vitest-compatible unit testing
+through one pinned CLI. Node 24 is pinned in `.node-version` and npm 11.20.0
+is recorded in `package.json`.
 
-Currently, two official plugins are available:
+## Install and develop
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+From this directory, install the lockfile exactly with:
 
-## React Compiler
+```sh
+vp install --frozen-lockfile
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Use these Vite+ commands during development:
 
-## Expanding the Oxlint configuration
+```sh
+vp dev                 # start the Vite development server
+vp build               # create a production build
+vp preview             # preview the production build
+vp lint                # run Oxlint through Vite+
+vp fmt                 # format with Oxfmt through Vite+
+vp fmt --check         # verify formatting without writing files
+vp test --run          # run unit tests (Vitest-compatible)
+vp test watch          # run tests in watch mode
+vp test --run --coverage
+vp check               # format, lint, and type checks
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+The equivalent npm scripts are available for editors and existing automation
+(`npm run build`, `npm run lint`, `npm test`, and so on); they delegate to the
+same `vp` commands. `vp test --run` allows an empty test set while the base
+application has no unit-test files, and runs all `*.test.*` and `*.spec.*`
+files when they are present.
+
+## Browser E2E compatibility
+
+Playwright browser tests remain a separate tool because Vite+ does not replace
+the Playwright runner. If the Playwright suite is enabled for a checkout,
+install its browser with `vp exec playwright install --with-deps chromium` and
+run it with `vp exec playwright test`. The Vite+ build, lint, format, and unit
+test commands do not install or invoke Playwright.

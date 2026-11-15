@@ -1,327 +1,304 @@
-import { API_BASE_URL } from './client'
+import { API_BASE_URL } from "./client";
 
 // Handles API communication for browsing and applying to job postings.
 
 function extractErrorMessage(body, fallback) {
-  const detail = body?.detail
-  if (typeof detail === 'string') return detail
+  const detail = body?.detail;
+  if (typeof detail === "string") return detail;
   if (Array.isArray(detail)) {
-    return detail.map((item) => item.msg).join(' ')
+    return detail.map((item) => item.msg).join(" ");
   }
-  return fallback
+  return fallback;
 }
 
-export async function searchJobs(token, { keyword, location, category, jobType, jobSchedule, sortBy, sortOrder, page, limit } = {}) {
-  const params = new URLSearchParams()
-  if (keyword) params.set('keyword', keyword)
-  if (location) params.set('location', location)
-  if (category) params.set('category', category)
-  if (jobType) params.set('job_type', jobType)
-  if (jobSchedule) params.set('job_schedule', jobSchedule)
-  if (sortBy) params.set('sort_by', sortBy)
-  if (sortOrder) params.set('sort_order', sortOrder)
-  if (page) params.set('page', String(page))
-  if (limit) params.set('limit', String(limit))
+export async function searchJobs(
+  token,
+  { keyword, location, category, jobType, jobSchedule, sortBy, sortOrder, page, limit } = {},
+) {
+  const params = new URLSearchParams();
+  if (keyword) params.set("keyword", keyword);
+  if (location) params.set("location", location);
+  if (category) params.set("category", category);
+  if (jobType) params.set("job_type", jobType);
+  if (jobSchedule) params.set("job_schedule", jobSchedule);
+  if (sortBy) params.set("sort_by", sortBy);
+  if (sortOrder) params.set("sort_order", sortOrder);
+  if (page) params.set("page", String(page));
+  if (limit) params.set("limit", String(limit));
 
-  let response
+  let response;
   try {
     response = await fetch(`${API_BASE_URL}/api/jobs?${params.toString()}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    })
+    });
   } catch {
-    throw new Error('Could not reach the server. Is the backend running?')
+    throw new Error("Could not reach the server. Is the backend running?");
   }
 
-  let body = null
+  let body = null;
   try {
-    body = await response.json()
+    body = await response.json();
   } catch {
     // ignore
   }
 
   if (!response.ok) {
-    throw new Error(extractErrorMessage(body, 'Failed to load jobs.'))
+    throw new Error(extractErrorMessage(body, "Failed to load jobs."));
   }
 
-  return body
+  return body;
 }
 
 export async function getJobById(token, jobId, signal) {
-  let response
+  let response;
   try {
     response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
       signal,
-    })
+    });
   } catch (err) {
-    if (err.name === 'AbortError') throw err
-    throw new Error('Could not reach the server. Is the backend running?')
+    if (err.name === "AbortError") throw err;
+    throw new Error("Could not reach the server. Is the backend running?");
   }
 
-  let body = null
+  let body = null;
   try {
-    body = await response.json()
+    body = await response.json();
   } catch {
     // ignore
   }
 
   if (!response.ok) {
-    throw new Error(extractErrorMessage(body, 'Failed to load job posting.'))
+    throw new Error(extractErrorMessage(body, "Failed to load job posting."));
   }
 
-  return body
+  return body;
 }
 
 export async function recordJobView(token, jobId) {
-  let response
+  let response;
   try {
     response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}/view`, {
-      method: 'POST',
+      method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    })
+    });
   } catch {
-    throw new Error('Could not reach the server. Is the backend running?')
+    throw new Error("Could not reach the server. Is the backend running?");
   }
 
   if (!response.ok) {
-    throw new Error('Failed to record job view.')
+    throw new Error("Failed to record job view.");
   }
 }
 
 export async function applyToJob(token, jobId, { resumeId, coverLetter } = {}) {
-  let response
+  let response;
   try {
     response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}/apply`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         resume_id: resumeId ?? null,
         cover_letter: coverLetter ?? null,
       }),
-    })
+    });
   } catch {
-    throw new Error('Could not reach the server. Is the backend running?')
+    throw new Error("Could not reach the server. Is the backend running?");
   }
 
-  let body = null
+  let body = null;
   try {
-    body = await response.json()
+    body = await response.json();
   } catch {
     // ignore
   }
 
   if (!response.ok) {
-    throw new Error(extractErrorMessage(body, 'Failed to submit application.'))
+    throw new Error(extractErrorMessage(body, "Failed to submit application."));
   }
 
-  return body
+  return body;
 }
 export async function getMyJobs(token) {
-  let response
+  let response;
 
   try {
     response = await fetch(`${API_BASE_URL}/api/jobs/mine`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    })
+    });
   } catch {
-    throw new Error('Could not reach the server. Is the backend running?')
+    throw new Error("Could not reach the server. Is the backend running?");
   }
 
-  let body = null
+  let body = null;
 
   try {
-    body = await response.json()
+    body = await response.json();
   } catch {
     // Ignore invalid JSON responses
   }
 
   if (!response.ok) {
-    throw new Error(extractErrorMessage(body, 'Failed to load recruiter jobs.'))
+    throw new Error(extractErrorMessage(body, "Failed to load recruiter jobs."));
   }
 
-  return body
+  return body;
 }
 export async function createJob(token, jobData) {
   const response = await fetch(`${API_BASE_URL}/api/jobs`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(jobData),
-  })
+  });
 
-  const body = await response.json().catch(() => null)
+  const body = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(
-      extractErrorMessage(body, 'Failed to create job posting.')
-    )
+    throw new Error(extractErrorMessage(body, "Failed to create job posting."));
   }
 
-  return body
+  return body;
 }
 export async function updateJob(token, jobId, jobData) {
-  let response
+  let response;
 
   try {
     response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
-      method: 'PUT',
+      method: "PUT",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(jobData),
-    })
+    });
   } catch {
-    throw new Error('Could not reach the server. Is the backend running?')
+    throw new Error("Could not reach the server. Is the backend running?");
   }
 
-  const body = await response.json().catch(() => null)
+  const body = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(
-      extractErrorMessage(body, 'Failed to update job posting.')
-    )
+    throw new Error(extractErrorMessage(body, "Failed to update job posting."));
   }
 
-  return body
+  return body;
 }
 
 export async function closeJob(token, jobId) {
-  let response
+  let response;
 
   try {
     response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    })
+    });
   } catch {
-    throw new Error(
-      'Could not reach the server. Is the backend running?'
-    )
+    throw new Error("Could not reach the server. Is the backend running?");
   }
 
-  const body = await response.json().catch(() => null)
+  const body = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(
-      extractErrorMessage(body, 'Failed to close job.')
-    )
+    throw new Error(extractErrorMessage(body, "Failed to close job."));
   }
 
-  return body
+  return body;
 }
 
 export async function getJobApplicants(token, jobId) {
-  let response
+  let response;
 
   try {
-    response = await fetch(
-      `${API_BASE_URL}/api/jobs/${jobId}/applications`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    )
+    response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}/applications`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
   } catch {
-    throw new Error(
-      'Could not reach the server. Is the backend running?'
-    )
+    throw new Error("Could not reach the server. Is the backend running?");
   }
 
-  const body = await response.json().catch(() => null)
+  const body = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(
-      extractErrorMessage(body, 'Failed to load applicants.')
-    )
+    throw new Error(extractErrorMessage(body, "Failed to load applicants."));
   }
 
-  return body
+  return body;
 }
 
 export async function reopenJob(token, jobId) {
   return updateJob(token, jobId, {
     is_active: true,
-  })
+  });
 }
 
 export async function getApplicantResume(token, jobId, applicationId) {
-  let response
+  let response;
 
   try {
     response = await fetch(
       `${API_BASE_URL}/api/jobs/${jobId}/applications/${applicationId}/resume`,
       {
-        method: 'GET',
+        method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        cache: 'no-store',
-      }
-    )
+        cache: "no-store",
+      },
+    );
   } catch {
-    throw new Error(
-      'Could not reach the server. Is the backend running?'
-    )
+    throw new Error("Could not reach the server. Is the backend running?");
   }
 
   if (!response.ok) {
-    const body = await response.json().catch(() => null)
+    const body = await response.json().catch(() => null);
 
-    throw new Error(
-      extractErrorMessage(body, 'Failed to load applicant resume.')
-    )
+    throw new Error(extractErrorMessage(body, "Failed to load applicant resume."));
   }
 
-  return response.blob()
+  return response.blob();
 }
 
 export async function updateApplicantStatus(token, applicationId, newStatus) {
-  let response
+  let response;
 
   try {
-    response = await fetch(
-      `${API_BASE_URL}/api/applications/${applicationId}/status`,
-      {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          status: newStatus,
-        }),
-      }
-    )
+    response = await fetch(`${API_BASE_URL}/api/applications/${applicationId}/status`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        status: newStatus,
+      }),
+    });
   } catch {
-    throw new Error('Could not connect to the backend.')
+    throw new Error("Could not connect to the backend.");
   }
 
   if (!response.ok) {
-    const body = await response.json().catch(() => null)
+    const body = await response.json().catch(() => null);
 
-    throw new Error(
-      extractErrorMessage(body, 'Failed to update application status.')
-    )
+    throw new Error(extractErrorMessage(body, "Failed to update application status."));
   }
 
-  return response.json()
+  return response.json();
 }
-
-

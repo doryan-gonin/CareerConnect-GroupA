@@ -1,35 +1,37 @@
-import { useRef, useState } from 'react'
-import MarkdownView from './MarkdownView'
+import { useRef, useState } from "react";
+import MarkdownView from "./MarkdownView";
 
 export default function MarkdownEditor({
   value,
   onChange,
-  placeholder = 'Describe the role, responsibilities, and requirements...',
+  placeholder = "Describe the role, responsibilities, and requirements...",
   rows = 7,
   required = false,
 }) {
-  const [activeTab, setActiveTab] = useState('write') // 'write' | 'preview'
-  const textareaRef = useRef(null)
+  const [activeTab, setActiveTab] = useState("write"); // 'write' | 'preview'
+  const textareaRef = useRef(null);
 
-  function insertFormatting(prefix, suffix = '', defaultText = 'text') {
-    const textarea = textareaRef.current
-    if (!textarea) return
+  function insertFormatting(prefix, suffix = "", defaultText = "text") {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
 
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const text = value || ''
-    const selected = text.substring(start, end)
-    const insertion = selected ? `${prefix}${selected}${suffix}` : `${prefix}${defaultText}${suffix}`
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = value || "";
+    const selected = text.substring(start, end);
+    const insertion = selected
+      ? `${prefix}${selected}${suffix}`
+      : `${prefix}${defaultText}${suffix}`;
 
-    const updated = text.substring(0, start) + insertion + text.substring(end)
-    onChange(updated)
+    const updated = text.substring(0, start) + insertion + text.substring(end);
+    onChange(updated);
 
     // Re-focus and set selection
     setTimeout(() => {
-      textarea.focus()
-      const cursorPos = start + prefix.length + (selected ? selected.length : defaultText.length)
-      textarea.setSelectionRange(cursorPos, cursorPos)
-    }, 0)
+      textarea.focus();
+      const cursorPos = start + prefix.length + (selected ? selected.length : defaultText.length);
+      textarea.setSelectionRange(cursorPos, cursorPos);
+    }, 0);
   }
 
   return (
@@ -40,22 +42,22 @@ export default function MarkdownEditor({
         <div className="flex items-center gap-1 rounded-md bg-gray-200/70 p-0.5">
           <button
             type="button"
-            onClick={() => setActiveTab('write')}
+            onClick={() => setActiveTab("write")}
             className={`rounded px-3 py-1 text-xs font-medium transition ${
-              activeTab === 'write'
-                ? 'bg-white text-gray-900 shadow-2xs'
-                : 'text-gray-600 hover:text-gray-900'
+              activeTab === "write"
+                ? "bg-white text-gray-900 shadow-2xs"
+                : "text-gray-600 hover:text-gray-900"
             }`}
           >
             Write
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('preview')}
+            onClick={() => setActiveTab("preview")}
             className={`rounded px-3 py-1 text-xs font-medium transition ${
-              activeTab === 'preview'
-                ? 'bg-white text-gray-900 shadow-2xs'
-                : 'text-gray-600 hover:text-gray-900'
+              activeTab === "preview"
+                ? "bg-white text-gray-900 shadow-2xs"
+                : "text-gray-600 hover:text-gray-900"
             }`}
           >
             Preview
@@ -63,11 +65,11 @@ export default function MarkdownEditor({
         </div>
 
         {/* Formatting Toolbar (shown on Write tab) */}
-        {activeTab === 'write' && (
+        {activeTab === "write" && (
           <div className="flex flex-wrap items-center gap-1">
             <button
               type="button"
-              onClick={() => insertFormatting('**', '**', 'bold')}
+              onClick={() => insertFormatting("**", "**", "bold")}
               title="Bold"
               className="rounded px-2 py-1 text-xs font-bold text-gray-700 hover:bg-gray-200 transition"
             >
@@ -75,7 +77,7 @@ export default function MarkdownEditor({
             </button>
             <button
               type="button"
-              onClick={() => insertFormatting('*', '*', 'italic')}
+              onClick={() => insertFormatting("*", "*", "italic")}
               title="Italic"
               className="rounded px-2 py-1 text-xs italic font-serif text-gray-700 hover:bg-gray-200 transition"
             >
@@ -83,7 +85,7 @@ export default function MarkdownEditor({
             </button>
             <button
               type="button"
-              onClick={() => insertFormatting('### ', '', 'Heading')}
+              onClick={() => insertFormatting("### ", "", "Heading")}
               title="Heading"
               className="rounded px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-200 transition"
             >
@@ -92,7 +94,7 @@ export default function MarkdownEditor({
             <span className="text-gray-300">|</span>
             <button
               type="button"
-              onClick={() => insertFormatting('- ', '', 'List item')}
+              onClick={() => insertFormatting("- ", "", "List item")}
               title="Bullet List"
               className="rounded px-2 py-1 text-xs text-gray-700 hover:bg-gray-200 transition"
             >
@@ -100,7 +102,7 @@ export default function MarkdownEditor({
             </button>
             <button
               type="button"
-              onClick={() => insertFormatting('1. ', '', 'Numbered item')}
+              onClick={() => insertFormatting("1. ", "", "Numbered item")}
               title="Numbered List"
               className="rounded px-2 py-1 text-xs text-gray-700 hover:bg-gray-200 transition"
             >
@@ -108,7 +110,7 @@ export default function MarkdownEditor({
             </button>
             <button
               type="button"
-              onClick={() => insertFormatting('> ', '', 'Quote')}
+              onClick={() => insertFormatting("> ", "", "Quote")}
               title="Quote"
               className="rounded px-2 py-1 text-xs text-gray-700 hover:bg-gray-200 transition"
             >
@@ -116,7 +118,7 @@ export default function MarkdownEditor({
             </button>
             <button
               type="button"
-              onClick={() => insertFormatting('`', '`', 'code')}
+              onClick={() => insertFormatting("`", "`", "code")}
               title="Inline Code"
               className="rounded px-2 py-1 font-mono text-xs text-gray-700 hover:bg-gray-200 transition"
             >
@@ -124,7 +126,7 @@ export default function MarkdownEditor({
             </button>
             <button
               type="button"
-              onClick={() => insertFormatting('[', '](https://example.com)', 'link text')}
+              onClick={() => insertFormatting("[", "](https://example.com)", "link text")}
               title="Insert Link"
               className="rounded px-2 py-1 text-xs text-purple-700 hover:bg-purple-50 transition"
             >
@@ -135,7 +137,7 @@ export default function MarkdownEditor({
       </div>
 
       {/* Editor Body */}
-      {activeTab === 'write' ? (
+      {activeTab === "write" ? (
         <textarea
           ref={textareaRef}
           value={value}
@@ -163,6 +165,5 @@ export default function MarkdownEditor({
         <span>{value?.length || 0} characters</span>
       </div>
     </div>
-  )
+  );
 }
-

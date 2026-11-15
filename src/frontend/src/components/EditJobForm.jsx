@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { updateJob } from '../api/jobs'
-import SliderNumberInput from './SliderNumberInput'
-import MarkdownEditor from './MarkdownEditor'
-import LocationAutocomplete from './LocationAutocomplete'
+import { useState } from "react";
+import { updateJob } from "../api/jobs";
+import SliderNumberInput from "./SliderNumberInput";
+import MarkdownEditor from "./MarkdownEditor";
+import LocationAutocomplete from "./LocationAutocomplete";
 import {
   JOB_TYPES,
   JOB_SCHEDULES,
@@ -10,97 +10,85 @@ import {
   SCHEDULE_HOURS_MAP,
   HOURS_EXTREMUMS,
   SALARY_EXTREMUMS,
-} from '../constants/jobs'
+} from "../constants/jobs";
 
-export default function EditJobForm({
-  token,
-  job,
-  onUpdated,
-  onCancel,
-}) {
-  const isPresetCategory = PRESET_CATEGORIES.includes(job.category)
+export default function EditJobForm({ token, job, onUpdated, onCancel }) {
+  const isPresetCategory = PRESET_CATEGORIES.includes(job.category);
 
   const [form, setForm] = useState({
-    title: job.title || '',
-    company_name: job.company_name || '',
-    description: job.description || '',
-    location: job.location || '',
-    job_type: job.job_type || 'Permanent',
-    job_schedule: job.job_schedule || 'Full-time',
-    min_hours_per_week: job.min_hours_per_week ?? '',
-    max_hours_per_week: job.max_hours_per_week ?? '',
-    salary_min: job.salary_min ?? '',
-    salary_max: job.salary_max ?? '',
-  })
+    title: job.title || "",
+    company_name: job.company_name || "",
+    description: job.description || "",
+    location: job.location || "",
+    job_type: job.job_type || "Permanent",
+    job_schedule: job.job_schedule || "Full-time",
+    min_hours_per_week: job.min_hours_per_week ?? "",
+    max_hours_per_week: job.max_hours_per_week ?? "",
+    salary_min: job.salary_min ?? "",
+    salary_max: job.salary_max ?? "",
+  });
 
   const [categorySelect, setCategorySelect] = useState(
-    isPresetCategory ? job.category : (job.category ? 'Other' : PRESET_CATEGORIES[0])
-  )
-  const [customCategory, setCustomCategory] = useState(
-    isPresetCategory ? '' : (job.category || '')
-  )
+    isPresetCategory ? job.category : job.category ? "Other" : PRESET_CATEGORIES[0],
+  );
+  const [customCategory, setCustomCategory] = useState(isPresetCategory ? "" : job.category || "");
 
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   function handleChange(event) {
-    const { name, value } = event.target
-    setForm(previous => ({
+    const { name, value } = event.target;
+    setForm((previous) => ({
       ...previous,
       [name]: value,
-    }))
+    }));
   }
 
   function handleScheduleChange(event) {
-    const newSchedule = event.target.value
-    const defaults = SCHEDULE_HOURS_MAP[newSchedule]
-    setForm(previous => ({
+    const newSchedule = event.target.value;
+    const defaults = SCHEDULE_HOURS_MAP[newSchedule];
+    setForm((previous) => ({
       ...previous,
       job_schedule: newSchedule,
       min_hours_per_week: defaults ? defaults.min : previous.min_hours_per_week,
       max_hours_per_week: defaults ? defaults.max : previous.max_hours_per_week,
-    }))
+    }));
   }
 
   async function handleSubmit(event) {
-    event.preventDefault()
-    setError('')
+    event.preventDefault();
+    setError("");
 
-    const finalCategory =
-      categorySelect === 'Other' ? customCategory.trim() : categorySelect
+    const finalCategory = categorySelect === "Other" ? customCategory.trim() : categorySelect;
     if (!finalCategory) {
-      setError('Please provide a category for this job posting.')
-      return
+      setError("Please provide a category for this job posting.");
+      return;
     }
 
     const payload = {
       ...form,
       category: finalCategory,
       min_hours_per_week:
-        form.min_hours_per_week === '' || form.min_hours_per_week == null
+        form.min_hours_per_week === "" || form.min_hours_per_week == null
           ? null
           : Number(form.min_hours_per_week),
       max_hours_per_week:
-        form.max_hours_per_week === '' || form.max_hours_per_week == null
+        form.max_hours_per_week === "" || form.max_hours_per_week == null
           ? null
           : Number(form.max_hours_per_week),
       salary_min:
-        form.salary_min === '' || form.salary_min == null
-          ? null
-          : Number(form.salary_min),
+        form.salary_min === "" || form.salary_min == null ? null : Number(form.salary_min),
       salary_max:
-        form.salary_max === '' || form.salary_max == null
-          ? null
-          : Number(form.salary_max),
-    }
+        form.salary_max === "" || form.salary_max == null ? null : Number(form.salary_max),
+    };
 
     if (
       payload.min_hours_per_week !== null &&
       payload.max_hours_per_week !== null &&
       payload.min_hours_per_week > payload.max_hours_per_week
     ) {
-      setError('Minimum working hours cannot exceed maximum hours.')
-      return
+      setError("Minimum working hours cannot exceed maximum hours.");
+      return;
     }
 
     if (
@@ -108,19 +96,19 @@ export default function EditJobForm({
       payload.salary_max !== null &&
       payload.salary_min > payload.salary_max
     ) {
-      setError('Minimum salary cannot exceed maximum salary.')
-      return
+      setError("Minimum salary cannot exceed maximum salary.");
+      return;
     }
 
-    setSaving(true)
+    setSaving(true);
 
     try {
-      const updatedJob = await updateJob(token, job.id, payload)
-      onUpdated(updatedJob)
+      const updatedJob = await updateJob(token, job.id, payload);
+      onUpdated(updatedJob);
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
@@ -136,9 +124,7 @@ export default function EditJobForm({
       {/* Row 1: Title & Company */}
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
-          <span className="mb-1 block text-xs font-medium text-gray-700">
-            Job Title
-          </span>
+          <span className="mb-1 block text-xs font-medium text-gray-700">Job Title</span>
           <input
             name="title"
             value={form.title}
@@ -149,9 +135,7 @@ export default function EditJobForm({
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-xs font-medium text-gray-700">
-            Company Name
-          </span>
+          <span className="mb-1 block text-xs font-medium text-gray-700">Company Name</span>
           <input
             name="company_name"
             value={form.company_name}
@@ -165,21 +149,27 @@ export default function EditJobForm({
       {/* Row 2: Location & Category */}
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor={`edit-job-location-${job.id}`} className="mb-1 block text-xs font-medium text-gray-700">
+          <label
+            htmlFor={`edit-job-location-${job.id}`}
+            className="mb-1 block text-xs font-medium text-gray-700"
+          >
             Location
           </label>
           <LocationAutocomplete
             id={`edit-job-location-${job.id}`}
             name="location"
             value={form.location}
-            onChange={(val) => setForm(prev => ({ ...prev, location: val }))}
+            onChange={(val) => setForm((prev) => ({ ...prev, location: val }))}
             placeholder="e.g. Montreal, QC or Remote"
             required
           />
         </div>
 
         <div>
-          <label htmlFor={`edit-job-category-${job.id}`} className="mb-1 block text-xs font-medium text-gray-700">
+          <label
+            htmlFor={`edit-job-category-${job.id}`}
+            className="mb-1 block text-xs font-medium text-gray-700"
+          >
             Category
           </label>
           <select
@@ -196,7 +186,7 @@ export default function EditJobForm({
             <option value="Other">Other (specify below)</option>
           </select>
 
-          {categorySelect === 'Other' && (
+          {categorySelect === "Other" && (
             <input
               type="text"
               placeholder="Enter category name"
@@ -212,11 +202,12 @@ export default function EditJobForm({
       {/* Row 3: Description */}
       <div className="mt-4">
         <label className="mb-1 block text-xs font-medium text-gray-700">
-          Job Description <span className="text-[11px] text-gray-400 font-normal">(Markdown supported)</span>
+          Job Description{" "}
+          <span className="text-[11px] text-gray-400 font-normal">(Markdown supported)</span>
         </label>
         <MarkdownEditor
           value={form.description}
-          onChange={(val) => setForm(prev => ({ ...prev, description: val }))}
+          onChange={(val) => setForm((prev) => ({ ...prev, description: val }))}
           rows={7}
           required
           placeholder="Describe the responsibilities, requirements, qualifications..."
@@ -226,9 +217,7 @@ export default function EditJobForm({
       {/* Row 4: Job Type & Schedule */}
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <label className="block">
-          <span className="mb-1 block text-xs font-medium text-gray-700">
-            Job Type
-          </span>
+          <span className="mb-1 block text-xs font-medium text-gray-700">Job Type</span>
           <select
             name="job_type"
             value={form.job_type}
@@ -245,7 +234,10 @@ export default function EditJobForm({
 
         <label className="block">
           <span className="mb-1 block text-xs font-medium text-gray-700">
-            Schedule <span className="text-[11px] text-gray-400 font-normal">(autofills standard hours)</span>
+            Schedule{" "}
+            <span className="text-[11px] text-gray-400 font-normal">
+              (autofills standard hours)
+            </span>
           </span>
           <select
             name="job_schedule"
@@ -276,7 +268,7 @@ export default function EditJobForm({
           <SliderNumberInput
             label="Minimum Hours per Week"
             value={form.min_hours_per_week}
-            onChange={(val) => setForm(prev => ({ ...prev, min_hours_per_week: val }))}
+            onChange={(val) => setForm((prev) => ({ ...prev, min_hours_per_week: val }))}
             min={HOURS_EXTREMUMS.min}
             max={HOURS_EXTREMUMS.max}
             step={HOURS_EXTREMUMS.step}
@@ -286,7 +278,7 @@ export default function EditJobForm({
           <SliderNumberInput
             label="Maximum Hours per Week"
             value={form.max_hours_per_week}
-            onChange={(val) => setForm(prev => ({ ...prev, max_hours_per_week: val }))}
+            onChange={(val) => setForm((prev) => ({ ...prev, max_hours_per_week: val }))}
             min={HOURS_EXTREMUMS.min}
             max={HOURS_EXTREMUMS.max}
             step={HOURS_EXTREMUMS.step}
@@ -310,7 +302,7 @@ export default function EditJobForm({
           <SliderNumberInput
             label="Minimum Annual Salary"
             value={form.salary_min}
-            onChange={(val) => setForm(prev => ({ ...prev, salary_min: val }))}
+            onChange={(val) => setForm((prev) => ({ ...prev, salary_min: val }))}
             min={SALARY_EXTREMUMS.min}
             max={SALARY_EXTREMUMS.max}
             step={SALARY_EXTREMUMS.step}
@@ -321,7 +313,7 @@ export default function EditJobForm({
           <SliderNumberInput
             label="Maximum Annual Salary"
             value={form.salary_max}
-            onChange={(val) => setForm(prev => ({ ...prev, salary_max: val }))}
+            onChange={(val) => setForm((prev) => ({ ...prev, salary_max: val }))}
             min={SALARY_EXTREMUMS.min}
             max={SALARY_EXTREMUMS.max}
             step={SALARY_EXTREMUMS.step}
@@ -344,7 +336,7 @@ export default function EditJobForm({
           disabled={saving}
           className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700 disabled:opacity-50"
         >
-          {saving ? 'Saving…' : 'Save Changes'}
+          {saving ? "Saving…" : "Save Changes"}
         </button>
 
         <button
@@ -356,5 +348,5 @@ export default function EditJobForm({
         </button>
       </div>
     </form>
-  )
+  );
 }

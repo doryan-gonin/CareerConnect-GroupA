@@ -1,78 +1,82 @@
-import { useEffect, useRef, useState } from 'react'
-import { getInterviewSession, sendInterviewMessage } from '../api/interview'
-import MarkdownView from './MarkdownView'
+import { useEffect, useRef, useState } from "react";
+import { getInterviewSession, sendInterviewMessage } from "../api/interview";
+import MarkdownView from "./MarkdownView";
 
-const MAX_MESSAGE_CHARS = 2000
+const MAX_MESSAGE_CHARS = 2000;
 
 function InterviewConversation({ token, sessionId, onBack }) {
-  const [session, setSession] = useState(null)
-  const [messages, setMessages] = useState([])
-  const [draft, setDraft] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSending, setIsSending] = useState(false)
-  const [error, setError] = useState('')
-  const windowRef = useRef(null)
+  const [session, setSession] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [draft, setDraft] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState("");
+  const windowRef = useRef(null);
 
   useEffect(() => {
-    let isMounted = true
+    let isMounted = true;
 
     getInterviewSession(token, sessionId)
       .then((data) => {
         if (isMounted) {
-          setSession(data)
-          setMessages(data.messages)
+          setSession(data);
+          setMessages(data.messages);
         }
       })
       .catch((err) => {
-        if (isMounted) setError(err.message)
+        if (isMounted) setError(err.message);
       })
       .finally(() => {
-        if (isMounted) setIsLoading(false)
-      })
+        if (isMounted) setIsLoading(false);
+      });
 
     return () => {
-      isMounted = false
-    }
-  }, [token, sessionId])
+      isMounted = false;
+    };
+  }, [token, sessionId]);
 
   useEffect(() => {
     if (windowRef.current) {
-      windowRef.current.scrollTop = windowRef.current.scrollHeight
+      windowRef.current.scrollTop = windowRef.current.scrollHeight;
     }
-  }, [messages, isSending])
+  }, [messages, isSending]);
 
   async function handleSend() {
-    const content = draft.trim()
-    if (!content || isSending) return
+    const content = draft.trim();
+    if (!content || isSending) return;
 
-    const previousMessages = messages
-    setMessages([...messages, { role: 'user', content }])
-    setDraft('')
-    setError('')
-    setIsSending(true)
+    const previousMessages = messages;
+    setMessages([...messages, { role: "user", content }]);
+    setDraft("");
+    setError("");
+    setIsSending(true);
 
     try {
-      const reply = await sendInterviewMessage(token, sessionId, content)
-      setMessages((current) => [...current, reply])
+      const reply = await sendInterviewMessage(token, sessionId, content);
+      setMessages((current) => [...current, reply]);
     } catch (err) {
-      setMessages(previousMessages)
-      setDraft(content)
-      setError(err.message)
+      setMessages(previousMessages);
+      setDraft(content);
+      setError(err.message);
     } finally {
-      setIsSending(false)
+      setIsSending(false);
     }
   }
 
   function handleKeyDown(event) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault()
-      handleSend()
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      handleSend();
     }
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <button type="button" onClick={onBack} className="self-start text-sm font-medium text-purple-600 hover:underline">
+      <button
+        type="button"
+        onClick={onBack}
+        className="self-start text-sm font-medium text-purple-600 hover:underline"
+      >
         ← Back to sessions
       </button>
 
@@ -92,19 +96,23 @@ function InterviewConversation({ token, sessionId, onBack }) {
               <div
                 key={index}
                 className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-                  message.role === 'user'
-                    ? 'self-end bg-purple-600 text-white whitespace-pre-wrap'
-                    : 'self-start bg-gray-100 text-gray-900'
+                  message.role === "user"
+                    ? "self-end bg-purple-600 text-white whitespace-pre-wrap"
+                    : "self-start bg-gray-100 text-gray-900"
                 }`}
               >
-                {message.role === 'user' ? (
+                {message.role === "user" ? (
                   message.content
                 ) : (
                   <MarkdownView content={message.content} />
                 )}
               </div>
             ))}
-            {isSending && <div className="self-start rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-500">Thinking…</div>}
+            {isSending && (
+              <div className="self-start rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-500">
+                Thinking…
+              </div>
+            )}
           </div>
 
           {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
@@ -131,7 +139,7 @@ function InterviewConversation({ token, sessionId, onBack }) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default InterviewConversation
+export default InterviewConversation;

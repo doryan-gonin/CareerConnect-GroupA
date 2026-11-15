@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from "react";
 
 export default function ResumeViewerModal({
   isOpen,
@@ -10,47 +10,51 @@ export default function ResumeViewerModal({
   error,
 }) {
   const pdfUrl = useMemo(() => {
-    if (!pdfBlob) return null
-    return URL.createObjectURL(pdfBlob)
-  }, [pdfBlob])
+    if (!pdfBlob) return null;
+    return URL.createObjectURL(pdfBlob);
+  }, [pdfBlob]);
 
   useEffect(() => {
     return () => {
       if (pdfUrl) {
-        URL.revokeObjectURL(pdfUrl)
+        URL.revokeObjectURL(pdfUrl);
       }
-    }
-  }, [pdfUrl])
+    };
+  }, [pdfUrl]);
 
   // Handle Escape key to close modal
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) return;
 
     function handleKeyDown(event) {
-      if (event.key === 'Escape') {
-        onClose()
+      if (event.key === "Escape") {
+        onClose();
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   function handleDownload() {
-    if (!pdfUrl) return
-    const link = document.createElement('a')
-    link.href = pdfUrl
-    link.download = resumeName ? (resumeName.endsWith('.pdf') ? resumeName : `${resumeName}.pdf`) : 'resume.pdf'
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
+    if (!pdfUrl) return;
+    const link = document.createElement("a");
+    link.href = pdfUrl;
+    link.download = resumeName
+      ? resumeName.endsWith(".pdf")
+        ? resumeName
+        : `${resumeName}.pdf`
+      : "resume.pdf";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   }
 
   function handleOpenInNewTab() {
-    if (!pdfUrl) return
-    window.open(pdfUrl, '_blank')
+    if (!pdfUrl) return;
+    window.open(pdfUrl, "_blank");
   }
 
   return (
@@ -60,21 +64,21 @@ export default function ResumeViewerModal({
       aria-labelledby="resume-viewer-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose()
+        if (e.target === e.currentTarget) onClose();
       }}
     >
       <div className="flex h-[88vh] w-full max-w-4xl flex-col rounded-xl bg-white shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-5 py-3.5">
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="text-lg" aria-hidden="true">📄</span>
+            <span className="text-lg" aria-hidden="true">
+              📄
+            </span>
             <div className="min-w-0">
               <h3 id="resume-viewer-title" className="truncate text-sm font-semibold text-gray-900">
-                {applicantName ? `Resume — ${applicantName}` : 'Resume Viewer'}
+                {applicantName ? `Resume — ${applicantName}` : "Resume Viewer"}
               </h3>
-              {resumeName && (
-                <p className="truncate text-xs text-gray-500">{resumeName}</p>
-              )}
+              {resumeName && <p className="truncate text-xs text-gray-500">{resumeName}</p>}
             </div>
           </div>
 
@@ -149,5 +153,5 @@ export default function ResumeViewerModal({
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,13 +1,19 @@
 {
   "name": "frontend",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
+    "dev": "vp dev",
+    "build": "vp build",
+    "lint": "vp lint",
+    "format": "vp fmt",
+    "format:check": "vp fmt --check",
+    "check": "vp check",
+    "preview": "vp preview",
+    "test": "vp test --run --passWithNoTests",
+    "test:watch": "vp test watch",
+    "test:coverage": "vp test --run --coverage"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -19,7 +25,11 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
-    "oxlint": "^1.81.0",
-    "vite": "^8.3.0"
-  }
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.6.0",
+    "vite-plus": "1.6.0"
+  },
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.6.0"
+  },
+  "packageManager": "npm@11.20.0"
 }

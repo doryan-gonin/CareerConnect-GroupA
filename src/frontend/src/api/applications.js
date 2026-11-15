@@ -1,68 +1,68 @@
-import { API_BASE_URL } from './client'
+import { API_BASE_URL } from "./client";
 
 // Handles API communication for a job seeker's own applications.
 
 function extractErrorMessage(body, fallback) {
-  const detail = body?.detail
-  if (typeof detail === 'string') return detail
+  const detail = body?.detail;
+  if (typeof detail === "string") return detail;
   if (Array.isArray(detail)) {
-    return detail.map((item) => item.msg).join(' ')
+    return detail.map((item) => item.msg).join(" ");
   }
-  return fallback
+  return fallback;
 }
 
 export async function getMyApplications(token, statusFilter) {
   const url = statusFilter
     ? `${API_BASE_URL}/api/applications/me?status=${encodeURIComponent(statusFilter)}`
-    : `${API_BASE_URL}/api/applications/me`
+    : `${API_BASE_URL}/api/applications/me`;
 
-  let response
+  let response;
   try {
     response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    })
+    });
   } catch {
-    throw new Error('Could not reach the server. Is the backend running?')
+    throw new Error("Could not reach the server. Is the backend running?");
   }
 
-  let body = null
+  let body = null;
   try {
-    body = await response.json()
+    body = await response.json();
   } catch {
     // ignore
   }
 
   if (!response.ok) {
-    throw new Error(extractErrorMessage(body, 'Failed to load applications.'))
+    throw new Error(extractErrorMessage(body, "Failed to load applications."));
   }
 
-  return body || []
+  return body || [];
 }
 
 export async function withdrawApplication(token, applicationId) {
-  let response
+  let response;
   try {
     response = await fetch(`${API_BASE_URL}/api/applications/${applicationId}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    })
+    });
   } catch {
-    throw new Error('Could not reach the server. Is the backend running?')
+    throw new Error("Could not reach the server. Is the backend running?");
   }
 
   if (!response.ok) {
-    let body = null
+    let body = null;
     try {
-      body = await response.json()
+      body = await response.json();
     } catch {
       // ignore
     }
-    throw new Error(extractErrorMessage(body, 'Failed to withdraw application.'))
+    throw new Error(extractErrorMessage(body, "Failed to withdraw application."));
   }
 
-  return true
+  return true;
 }
