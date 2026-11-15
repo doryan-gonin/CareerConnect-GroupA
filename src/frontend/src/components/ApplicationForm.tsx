@@ -7,8 +7,10 @@ import type { Job, Profile, Resume, User } from "../api/types";
 import type { ChangeEvent, FormEvent } from "react";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "./ui/field";
 import { Input } from "./ui/input";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Skeleton } from "./ui/skeleton";
 
@@ -281,183 +283,191 @@ function ApplicationForm({ token, job, onBack, onSubmitApplication }: Applicatio
   }
 
   return (
-    <div className="mx-auto max-w-3xl rounded-xl bg-white p-6 shadow-sm">
+    <Card className="mx-auto max-w-3xl">
       <Button type="button" variant="link" onClick={onBack}>
         ← Back to Posting
       </Button>
 
-      <h1 className="text-2xl font-semibold text-gray-900">
-        {checkingApplication
-          ? "Application Details"
-          : success
-            ? "Application Submitted"
-            : alreadyApplied
-              ? "Already Applied"
-              : "Submit Your Application"}
-      </h1>
+      <CardHeader>
+        <CardTitle className="text-2xl">
+          {checkingApplication
+            ? "Application Details"
+            : success
+              ? "Application Submitted"
+              : alreadyApplied
+                ? "Already Applied"
+                : "Submit Your Application"}
+        </CardTitle>
+      </CardHeader>
 
-      <div className="mt-5 rounded-lg bg-gray-50 p-4">
-        <h2 className="font-semibold">{job?.title}</h2>
-        <p className="text-sm text-gray-600">{job?.company_name}</p>
-        <p className="text-sm text-gray-500">{job?.location}</p>
-      </div>
-
-      {error && (
-        <Alert className="mt-4" variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {success && (
-        <Alert className="mt-4">
-          <AlertDescription>{success}</AlertDescription>
-        </Alert>
-      )}
-
-      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
-        <div className="rounded-lg border border-gray-200 p-4">
-          <h2 className="mb-3 text-lg font-medium text-gray-900">Applicant Information</h2>
-
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="applicant-name">Full Name</FieldLabel>
-              <Input
-                id="applicant-name"
-                type="text"
-                value={nameEdit ?? profileName}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setNameEdit(e.target.value)}
-                placeholder={profileLoading ? "Loading..." : "Your full name"}
-                disabled={profileLoading || alreadyApplied}
-              />
-              <FieldDescription>Changes are saved to your profile when you apply.</FieldDescription>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="applicant-email">Email Address</FieldLabel>
-              <Input
-                id="applicant-email"
-                type="email"
-                value={account?.email_address ?? ""}
-                placeholder={accountLoading ? "Loading email..." : "Email unavailable"}
-                readOnly
-              />
-              <FieldDescription>This is the email on your account.</FieldDescription>
-            </Field>
-          </FieldGroup>
+      <CardContent>
+        <div className="rounded-lg bg-muted/40 p-4">
+          <h2 className="font-semibold">{job?.title}</h2>
+          <p className="text-sm text-muted-foreground">{job?.company_name}</p>
+          <p className="text-sm text-muted-foreground">{job?.location}</p>
         </div>
-        {!alreadyApplied && !checkingApplication && (
-          <div>
-            <h2 className="mb-3 text-lg font-medium">Choose Your Resume</h2>
 
-            <label className="mb-3 flex items-center gap-2">
-              <input
-                type="radio"
-                checked={resumeMode === "existing"}
-                onChange={() => setResumeMode("existing")}
-              />
-              Use an existing resume
-            </label>
+        {error && (
+          <Alert className="mt-4" variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-            <label className="mb-3 flex items-center gap-2">
-              <input
-                type="radio"
-                checked={resumeMode === "new"}
-                onChange={() => setResumeMode("new")}
-              />
-              Upload a new resume
-            </label>
+        {success && (
+          <Alert className="mt-4">
+            <AlertDescription>{success}</AlertDescription>
+          </Alert>
+        )}
 
-            {resumeMode === "existing" ? (
-              <div>
-                {isLoading ? (
-                  <p>Loading resumes...</p>
-                ) : resumes.length === 0 ? (
-                  <p className="text-sm text-gray-500">
-                    No resumes available. Upload one to continue.
-                  </p>
-                ) : (
-                  <Select
-                    value={selectedResumeId}
-                    onValueChange={(value) => setSelectedResumeId(String(value ?? ""))}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a resume" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {resumes.map((resume) => (
-                        <SelectItem key={resume.id} value={String(resume.id)}>
-                          {resume.file_name}
-                          {resume.is_default ? " (Default)" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-                {uploadNotice && (
-                  <p role="status" className="mt-2 text-sm text-green-700">
-                    {uploadNotice}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,application/pdf"
-                  onChange={handleFileChange}
-                  aria-label="Resume PDF file"
-                  className="hidden"
+        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
+          <div className="rounded-lg border p-4">
+            <h2 className="mb-3 text-lg font-medium">Applicant Information</h2>
+
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="applicant-name">Full Name</FieldLabel>
+                <Input
+                  id="applicant-name"
+                  type="text"
+                  value={nameEdit ?? profileName}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setNameEdit(e.target.value)}
+                  placeholder={profileLoading ? "Loading..." : "Your full name"}
+                  disabled={profileLoading || alreadyApplied}
                 />
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading || resumes.length >= MAX_RESUMES}
-                >
-                  {isUploading ? "Uploading..." : "Upload Resume"}
-                </Button>
-
-                <p className="text-sm text-gray-500">
-                  PDF only, up to 5 MB. It is saved to your profile and selected for this
-                  application.
-                </p>
-
-                {resumes.length >= MAX_RESUMES && (
-                  <p className="text-sm text-red-600">Maximum of 5 resumes reached.</p>
-                )}
-              </div>
-            )}
+                <FieldDescription>
+                  Changes are saved to your profile when you apply.
+                </FieldDescription>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="applicant-email">Email Address</FieldLabel>
+                <Input
+                  id="applicant-email"
+                  type="email"
+                  value={account?.email_address ?? ""}
+                  placeholder={accountLoading ? "Loading email..." : "Email unavailable"}
+                  readOnly
+                />
+                <FieldDescription>This is the email on your account.</FieldDescription>
+              </Field>
+            </FieldGroup>
           </div>
-        )}
-        {checkingApplication ? (
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Skeleton className="h-4 w-4 rounded-full" />
-            Checking application status...
-          </div>
-        ) : success ? null : alreadyApplied ? (
-          <div
-            role="status"
-            className="rounded-lg border border-green-200 bg-green-50 p-4 text-center"
-          >
-            <p className="font-semibold text-green-700">Already Applied</p>
-            <p className="mt-2 text-sm text-green-600">
-              You have already submitted an application for this job.
-            </p>
-          </div>
-        ) : (
-          <Button
-            type="submit"
-            disabled={
-              isSubmitting || isUploading || isLoading || !selectedResumeId || resumeMode === "new"
-            }
-            className="w-full"
-          >
-            {isSubmitting ? "Submitting..." : "Submit Application"}
-          </Button>
-        )}
-      </form>
-    </div>
+          {!alreadyApplied && !checkingApplication && (
+            <div>
+              <h2 className="mb-3 text-lg font-medium">Choose Your Resume</h2>
+
+              <RadioGroup
+                value={resumeMode}
+                onValueChange={(value) => setResumeMode(value === "new" ? "new" : "existing")}
+                aria-label="Resume source"
+                className="mb-3"
+              >
+                <label className="flex items-center gap-2 text-sm">
+                  <RadioGroupItem value="existing" />
+                  Use an existing resume
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <RadioGroupItem value="new" />
+                  Upload a new resume
+                </label>
+              </RadioGroup>
+
+              {resumeMode === "existing" ? (
+                <div>
+                  {isLoading ? (
+                    <p>Loading resumes...</p>
+                  ) : resumes.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No resumes available. Upload one to continue.
+                    </p>
+                  ) : (
+                    <Select
+                      value={selectedResumeId}
+                      onValueChange={(value) => setSelectedResumeId(String(value ?? ""))}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a resume" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {resumes.map((resume) => (
+                          <SelectItem key={resume.id} value={String(resume.id)}>
+                            {resume.file_name}
+                            {resume.is_default ? " (Default)" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {uploadNotice && (
+                    <p role="status" className="mt-2 text-sm text-muted-foreground">
+                      {uploadNotice}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={handleFileChange}
+                    aria-label="Resume PDF file"
+                    className="hidden"
+                  />
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading || resumes.length >= MAX_RESUMES}
+                  >
+                    {isUploading ? "Uploading..." : "Upload Resume"}
+                  </Button>
+
+                  <p className="text-sm text-muted-foreground">
+                    PDF only, up to 5 MB. It is saved to your profile and selected for this
+                    application.
+                  </p>
+
+                  {resumes.length >= MAX_RESUMES && (
+                    <p className="text-sm text-destructive">Maximum of 5 resumes reached.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          {checkingApplication ? (
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Skeleton className="h-4 w-4 rounded-full" />
+              Checking application status...
+            </div>
+          ) : success ? null : alreadyApplied ? (
+            <div
+              role="status"
+              className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-center"
+            >
+              <p className="font-semibold text-primary">Already Applied</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                You have already submitted an application for this job.
+              </p>
+            </div>
+          ) : (
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                isUploading ||
+                isLoading ||
+                !selectedResumeId ||
+                resumeMode === "new"
+              }
+              className="w-full"
+            >
+              {isSubmitting ? "Submitting..." : "Submit Application"}
+            </Button>
+          )}
+        </form>
+      </CardContent>
+    </Card>
   );
 }
 

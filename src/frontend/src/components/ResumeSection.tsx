@@ -21,6 +21,9 @@ import {
 } from "./ui/alert-dialog";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Checkbox } from "./ui/checkbox";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "./ui/empty";
 import { Input } from "./ui/input";
 import { Skeleton } from "./ui/skeleton";
 
@@ -184,143 +187,142 @@ function ResumeSection({ token }: { token: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-        <h2 className="text-lg font-medium text-gray-900">Resumes</h2>
-        <span className="text-xs font-medium text-gray-500">
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between border-b">
+        <CardTitle>Resumes</CardTitle>
+        <span className="text-xs font-medium text-muted-foreground">
           {resumes.length} / {MAX_RESUMES} uploaded
         </span>
-      </div>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        {success && (
+          <Alert>
+            <AlertDescription>{success}</AlertDescription>
+          </Alert>
+        )}
 
-      {success && (
-        <Alert>
-          <AlertDescription>{success}</AlertDescription>
-        </Alert>
-      )}
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+        {/* Upload Form */}
+        {resumes.length < MAX_RESUMES ? (
+          <form onSubmit={handleUpload} className="rounded-lg border border-dashed bg-muted/40 p-4">
+            <label className="block text-sm font-medium">
+              Upload a resume (PDF, up to 5MB)
+              <Input
+                type="file"
+                ref={fileInputRef}
+                accept=".pdf,application/pdf"
+                onChange={handleFileChange}
+                disabled={isUploading}
+                className="mt-2"
+              />
+            </label>
 
-      {/* Upload Form */}
-      {resumes.length < MAX_RESUMES ? (
-        <form
-          onSubmit={handleUpload}
-          className="rounded-md border border-dashed border-gray-300 bg-gray-50 p-4"
-        >
-          <label className="block text-sm font-medium text-gray-700">
-            Upload a resume (PDF, up to 5MB)
-            <Input
-              type="file"
-              ref={fileInputRef}
-              accept=".pdf,application/pdf"
-              onChange={handleFileChange}
-              disabled={isUploading}
-              className="mt-2"
-            />
-          </label>
+            {selectedFile && (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t pt-3">
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={makeDefault}
+                    onCheckedChange={(checked) => setMakeDefault(checked === true)}
+                    disabled={isUploading}
+                  />
+                  Set as default resume
+                </label>
 
-          {selectedFile && (
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 pt-3">
-              <label className="flex items-center gap-2 text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  checked={makeDefault}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setMakeDefault(e.target.checked)}
-                  disabled={isUploading}
-                  className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                />
-                Set as default resume
-              </label>
-
-              <Button type="submit" disabled={isUploading}>
-                {isUploading ? "Uploading…" : "Upload resume"}
-              </Button>
-            </div>
-          )}
-        </form>
-      ) : (
-        <p className="rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-600">
-          You have reached the maximum limit of 5 resumes. Delete an existing resume to upload a new
-          one.
-        </p>
-      )}
-
-      {/* Resume List */}
-      <div>
-        <h3 className="text-sm font-medium text-gray-700 mb-2">Your Uploaded Resumes</h3>
-        {isLoading ? (
-          <div className="flex flex-col gap-3 py-6">
-            <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="h-4 w-1/2" />
-          </div>
-        ) : resumes.length === 0 ? (
-          <div className="rounded-md bg-gray-50 py-6 text-center text-sm text-gray-500">
-            No resumes uploaded yet.
-          </div>
+                <Button type="submit" disabled={isUploading}>
+                  {isUploading ? "Uploading…" : "Upload resume"}
+                </Button>
+              </div>
+            )}
+          </form>
         ) : (
-          <ul className="divide-y divide-gray-100 border-t border-gray-100">
-            {resumes.map((resume) => {
-              const isWorking = actionId === resume.id;
-              return (
-                <li
-                  key={resume.id}
-                  className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900 text-sm">{resume.file_name}</span>
-                      {resume.is_default && <Badge variant="secondary">Default</Badge>}
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      Uploaded on {new Date(resume.uploaded_at).toLocaleDateString()}
-                    </span>
-                  </div>
+          <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+            You have reached the maximum limit of 5 resumes. Delete an existing resume to upload a
+            new one.
+          </p>
+        )}
 
-                  <div className="flex items-center gap-2 text-xs">
-                    {!resume.is_default && (
+        {/* Resume List */}
+        <div>
+          <h3 className="mb-2 text-sm font-medium">Your Uploaded Resumes</h3>
+          {isLoading ? (
+            <div className="flex flex-col gap-3 py-6">
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          ) : resumes.length === 0 ? (
+            <Empty className="border">
+              <EmptyHeader>
+                <EmptyTitle>No resumes uploaded yet.</EmptyTitle>
+                <EmptyDescription>Upload a PDF resume to use it when applying.</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          ) : (
+            <ul className="flex flex-col divide-y">
+              {resumes.map((resume) => {
+                const isWorking = actionId === resume.id;
+                return (
+                  <li
+                    key={resume.id}
+                    className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{resume.file_name}</span>
+                        {resume.is_default && <Badge variant="secondary">Default</Badge>}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        Uploaded on {new Date(resume.uploaded_at).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs">
+                      {!resume.is_default && (
+                        <Button
+                          type="button"
+                          variant="link"
+                          size="sm"
+                          onClick={() => handleSetDefault(resume.id)}
+                          disabled={isWorking}
+                        >
+                          Set default
+                        </Button>
+                      )}
+
                       <Button
                         type="button"
                         variant="link"
                         size="sm"
-                        onClick={() => handleSetDefault(resume.id)}
+                        onClick={() => handleDownload(resume.id, resume.file_name)}
                         disabled={isWorking}
                       >
-                        Set default
+                        Download
                       </Button>
-                    )}
 
-                    <Button
-                      type="button"
-                      variant="link"
-                      size="sm"
-                      onClick={() => handleDownload(resume.id, resume.file_name)}
-                      disabled={isWorking}
-                    >
-                      Download
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant="link"
-                      size="sm"
-                      className="text-destructive"
-                      onClick={() =>
-                        setResumeToDelete({ id: resume.id, fileName: resume.file_name })
-                      }
-                      disabled={isWorking}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="text-destructive"
+                        onClick={() =>
+                          setResumeToDelete({ id: resume.id, fileName: resume.file_name })
+                        }
+                        disabled={isWorking}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </CardContent>
       <AlertDialog
         open={Boolean(resumeToDelete)}
         onOpenChange={(open) => !open && setResumeToDelete(null)}
@@ -340,7 +342,7 @@ function ResumeSection({ token }: { token: string }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </Card>
   );
 }
 

@@ -14,6 +14,8 @@ function NavLink({ href, onClick, children }: NavLinkProps) {
     <Button
       variant="link"
       size="sm"
+      nativeButton={false}
+      role="link"
       render={
         <a
           href={href}
@@ -60,6 +62,8 @@ function Navbar({
           <Button
             variant="link"
             size="lg"
+            nativeButton={false}
+            role="link"
             render={
               <a
                 href="/dashboard"

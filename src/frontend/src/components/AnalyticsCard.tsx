@@ -2,6 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode, ChangeEvent } from "react";
 import { getAnalytics, type AnalyticsEndpoint, type AnalyticsParams } from "../api/analytics";
 import type { AnalyticsGranularity, AnalyticsResponseByEndpoint } from "../api/types";
+import { Alert, AlertDescription } from "./ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Input } from "./ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Skeleton } from "./ui/skeleton";
 
 const DEFAULT_RANGE_DAYS = 30;
 
@@ -16,9 +21,6 @@ function defaultStartDate() {
   date.setDate(date.getDate() - DEFAULT_RANGE_DAYS);
   return toDateInputValue(date);
 }
-
-const inputClass =
-  "rounded-md border border-gray-300 px-2 py-1 text-sm text-gray-700 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500";
 
 // Each card owns its period and granularity so every graph can be adjusted on its own.
 type AnalyticsCardProps<E extends AnalyticsEndpoint> = {
@@ -88,46 +90,58 @@ function AnalyticsCard<E extends AnalyticsEndpoint>({
   }, [endpoint, inputError, params, requestKey, token]);
 
   return (
-    <section className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-medium text-gray-900">{title}</h2>
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            type="date"
+            aria-label={`${title} start date`}
+            value={startDate}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setStartDate(e.target.value)}
+          />
+          <span className="text-sm text-muted-foreground">to</span>
+          <Input
+            type="date"
+            aria-label={`${title} end date`}
+            value={endDate}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setEndDate(e.target.value)}
+          />
+          {hasGranularity && (
+            <Select
+              aria-label={`${title} granularity`}
+              value={groupBy}
+              onValueChange={(value) => {
+                if (value === "day" || value === "week" || value === "month") setGroupBy(value);
+              }}
+            >
+              <SelectTrigger className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="day">By day</SelectItem>
+                <SelectItem value="week">By week</SelectItem>
+                <SelectItem value="month">By month</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          type="date"
-          aria-label={`${title} start date`}
-          value={startDate}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => setStartDate(e.target.value)}
-          className={inputClass}
-        />
-        <span className="text-sm text-gray-500">to</span>
-        <input
-          type="date"
-          aria-label={`${title} end date`}
-          value={endDate}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => setEndDate(e.target.value)}
-          className={inputClass}
-        />
-        {hasGranularity && (
-          <select
-            aria-label={`${title} granularity`}
-            value={groupBy}
-            onChange={(e: ChangeEvent<HTMLSelectElement>) => {
-              const value = e.target.value;
-              if (value === "day" || value === "week" || value === "month") setGroupBy(value);
-            }}
-            className={inputClass}
-          >
-            <option value="day">By day</option>
-            <option value="week">By week</option>
-            <option value="month">By month</option>
-          </select>
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
-      </div>
-
-      {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-      {isLoading && <div className="py-12 text-center text-sm text-gray-500">Loading…</div>}
-      {data ? children(data) : null}
-    </section>
+        {isLoading && (
+          <div className="flex flex-col gap-3 py-12" aria-label="Loading analytics">
+            <Skeleton className="h-40 w-full" />
+          </div>
+        )}
+        {data ? children(data) : null}
+      </CardContent>
+    </Card>
   );
 }
 

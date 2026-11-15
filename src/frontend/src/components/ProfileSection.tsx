@@ -5,6 +5,7 @@ import type { Profile } from "../api/types";
 import type { ChangeEvent, FormEvent } from "react";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "./ui/field";
 import { Input } from "./ui/input";
 import { Skeleton } from "./ui/skeleton";
@@ -82,9 +83,9 @@ function ProfileSection({ token }: { token: string }) {
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-        <h2 className="text-lg font-medium text-gray-900">Profile Information</h2>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between border-b">
+        <CardTitle>Profile Information</CardTitle>
         {!isEditing && !isLoading && (
           <Button
             type="button"
@@ -98,88 +99,96 @@ function ProfileSection({ token }: { token: string }) {
             Edit
           </Button>
         )}
-      </div>
+      </CardHeader>
 
-      {success && (
-        <Alert className="mt-4">
-          <AlertDescription>{success}</AlertDescription>
-        </Alert>
-      )}
+      <CardContent className="flex flex-col gap-4">
+        {success && (
+          <Alert className="mt-4">
+            <AlertDescription>{success}</AlertDescription>
+          </Alert>
+        )}
 
-      {error && (
-        <Alert className="mt-4" variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+        {error && (
+          <Alert className="mt-4" variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-      {isLoading ? (
-        <div className="flex flex-col gap-3 py-8">
-          <Skeleton className="h-4 w-2/3" />
-          <Skeleton className="h-4 w-1/2" />
-        </div>
-      ) : isEditing ? (
-        <form onSubmit={handleSave} className="mt-4">
-          <FieldGroup>
-            <Field data-invalid={Boolean(error)}>
-              <FieldLabel htmlFor="profile-first-name">First Name</FieldLabel>
-              <Input
-                id="profile-first-name"
-                type="text"
-                value={firstName}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setFirstName(e.target.value)}
-                placeholder="e.g. Jane"
-                aria-invalid={Boolean(error)}
-              />
-            </Field>
-
-            <Field data-invalid={Boolean(error)}>
-              <FieldLabel htmlFor="profile-last-name">Last Name</FieldLabel>
-              <Input
-                id="profile-last-name"
-                type="text"
-                value={lastName}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setLastName(e.target.value)}
-                placeholder="e.g. Doe"
-                aria-invalid={Boolean(error)}
-              />
-              {error && <FieldError>{error}</FieldError>}
-            </Field>
-
-            <div className="flex items-center gap-3 pt-2">
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? "Saving…" : "Save changes"}
-              </Button>
-              <Button type="button" variant="outline" onClick={handleCancel} disabled={isSaving}>
-                Cancel
-              </Button>
-            </div>
-          </FieldGroup>
-        </form>
-      ) : (
-        <dl className="mt-4 flex flex-col gap-3 text-sm">
-          <div className="flex flex-col sm:flex-row sm:justify-between">
-            <dt className="text-gray-500">First Name</dt>
-            <dd className="font-medium text-gray-900">
-              {profile?.first_name || <span className="italic text-gray-400">Not provided</span>}
-            </dd>
+        {isLoading ? (
+          <div className="flex flex-col gap-3 py-8">
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-4 w-1/2" />
           </div>
+        ) : isEditing ? (
+          <form onSubmit={handleSave} className="mt-4">
+            <FieldGroup>
+              <Field data-invalid={Boolean(error)}>
+                <FieldLabel htmlFor="profile-first-name">First Name</FieldLabel>
+                <Input
+                  id="profile-first-name"
+                  type="text"
+                  value={firstName}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setFirstName(e.target.value)}
+                  placeholder="e.g. Jane"
+                  aria-invalid={Boolean(error)}
+                />
+              </Field>
 
-          <div className="flex flex-col sm:flex-row sm:justify-between">
-            <dt className="text-gray-500">Last Name</dt>
-            <dd className="font-medium text-gray-900">
-              {profile?.last_name || <span className="italic text-gray-400">Not provided</span>}
-            </dd>
-          </div>
+              <Field data-invalid={Boolean(error)}>
+                <FieldLabel htmlFor="profile-last-name">Last Name</FieldLabel>
+                <Input
+                  id="profile-last-name"
+                  type="text"
+                  value={lastName}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setLastName(e.target.value)}
+                  placeholder="e.g. Doe"
+                  aria-invalid={Boolean(error)}
+                />
+                {error && <FieldError>{error}</FieldError>}
+              </Field>
 
-          {profile?.last_updated && (
-            <div className="flex flex-col sm:flex-row sm:justify-between border-t border-gray-100 pt-3">
-              <dt className="text-gray-500">Last Updated</dt>
-              <dd className="text-gray-600">{new Date(profile.last_updated).toLocaleString()}</dd>
+              <div className="flex items-center gap-3 pt-2">
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? "Saving…" : "Save changes"}
+                </Button>
+                <Button type="button" variant="outline" onClick={handleCancel} disabled={isSaving}>
+                  Cancel
+                </Button>
+              </div>
+            </FieldGroup>
+          </form>
+        ) : (
+          <dl className="flex flex-col gap-3 text-sm">
+            <div className="flex flex-col sm:flex-row sm:justify-between">
+              <dt className="text-muted-foreground">First Name</dt>
+              <dd className="font-medium">
+                {profile?.first_name || (
+                  <span className="italic text-muted-foreground">Not provided</span>
+                )}
+              </dd>
             </div>
-          )}
-        </dl>
-      )}
-    </div>
+
+            <div className="flex flex-col sm:flex-row sm:justify-between">
+              <dt className="text-muted-foreground">Last Name</dt>
+              <dd className="font-medium">
+                {profile?.last_name || (
+                  <span className="italic text-muted-foreground">Not provided</span>
+                )}
+              </dd>
+            </div>
+
+            {profile?.last_updated && (
+              <div className="flex flex-col border-t pt-3 sm:flex-row sm:justify-between">
+                <dt className="text-muted-foreground">Last Updated</dt>
+                <dd className="text-muted-foreground">
+                  {new Date(profile.last_updated).toLocaleString()}
+                </dd>
+              </div>
+            )}
+          </dl>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

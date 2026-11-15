@@ -4,18 +4,18 @@ import { interviewMessageFormSchema } from "../api/schemas";
 import MarkdownView from "./MarkdownView";
 import type { InterviewMessage, InterviewSession } from "../api/types";
 import type { ChangeEvent, KeyboardEvent } from "react";
+import { Alert, AlertDescription } from "./ui/alert";
+import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Skeleton } from "./ui/skeleton";
+import { Textarea } from "./ui/textarea";
+import { cn } from "cn";
 
 const MAX_MESSAGE_CHARS = 2000;
 
-function InterviewConversation({
-  token,
-  sessionId,
-  onBack,
-}: {
-  token: string;
-  sessionId: number;
-  onBack: () => void;
-}) {
+type InterviewConversationProps = { token: string; sessionId: number; onBack: () => void };
+
+function InterviewConversation({ token, sessionId, onBack }: InterviewConversationProps) {
   const [session, setSession] = useState<InterviewSession | null>(null);
   const [messages, setMessages] = useState<InterviewMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -26,7 +26,6 @@ function InterviewConversation({
 
   useEffect(() => {
     let isMounted = true;
-
     getInterviewSession(token, sessionId)
       .then((data) => {
         if (isMounted) {
@@ -40,16 +39,13 @@ function InterviewConversation({
       .finally(() => {
         if (isMounted) setIsLoading(false);
       });
-
     return () => {
       isMounted = false;
     };
   }, [token, sessionId]);
 
   useEffect(() => {
-    if (windowRef.current) {
-      windowRef.current.scrollTop = windowRef.current.scrollHeight;
-    }
+    if (windowRef.current) windowRef.current.scrollTop = windowRef.current.scrollHeight;
   }, [messages, isSending]);
 
   async function handleSend() {
@@ -60,13 +56,11 @@ function InterviewConversation({
       setError(parsedMessage.error.issues[0]?.message ?? "Enter a message before sending.");
       return;
     }
-
     const previousMessages = messages;
     setMessages([...messages, { role: "user", content: parsedMessage.data.content }]);
     setDraft("");
     setError("");
     setIsSending(true);
-
     try {
       const reply = await sendInterviewMessage(token, sessionId, parsedMessage.data.content);
       setMessages((current) => [...current, reply]);
@@ -82,77 +76,84 @@ function InterviewConversation({
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      handleSend();
+      void handleSend();
     }
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <button
-        type="button"
-        onClick={onBack}
-        className="self-start text-sm font-medium text-purple-600 hover:underline"
-      >
+      <Button type="button" variant="link" onClick={onBack} className="self-start px-0">
         ← Back to sessions
-      </button>
-
+      </Button>
       {isLoading ? (
-        <div className="py-6 text-center text-sm text-gray-500">Loading session…</div>
-      ) : !session ? (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
-      ) : (
-        <div className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="border-b border-gray-100 pb-3">
-            <h1 className="text-lg font-medium text-gray-900">{session.job_title}</h1>
-            <p className="text-sm text-gray-500">{session.company_name}</p>
-          </div>
-
-          <div ref={windowRef} className="flex h-[28rem] flex-col gap-3 overflow-y-auto">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-                  message.role === "user"
-                    ? "self-end bg-purple-600 text-white whitespace-pre-wrap"
-                    : "self-start bg-gray-100 text-gray-900"
-                }`}
-              >
-                {message.role === "user" ? (
-                  message.content
-                ) : (
-                  <MarkdownView content={message.content} />
-                )}
-              </div>
-            ))}
-            {isSending && (
-              <div className="self-start rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-500">
-                Thinking…
-              </div>
-            )}
-          </div>
-
-          {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-
-          <div className="flex items-end gap-2">
-            <textarea
-              rows={2}
-              value={draft}
-              maxLength={MAX_MESSAGE_CHARS}
-              onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setDraft(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Type your answer or question"
-              className="flex-1 resize-none rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-            />
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={isSending || !draft.trim()}
-              className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Send
-            </button>
-          </div>
+        <div className="flex flex-col gap-3 py-6" aria-label="Loading session">
+          <Skeleton className="h-8 w-1/2" />
+          <Skeleton className="h-[28rem] w-full" />
         </div>
+      ) : !session ? (
+        <Alert variant="destructive">
+          <AlertDescription>{error || "Unable to load this session."}</AlertDescription>
+        </Alert>
+      ) : (
+        <Card>
+          <CardHeader className="border-b">
+            <CardTitle>{session.job_title}</CardTitle>
+            <p className="text-sm text-muted-foreground">{session.company_name}</p>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <div
+              ref={windowRef}
+              className="flex h-[28rem] flex-col gap-3 overflow-y-auto rounded-lg border bg-muted/30 p-3"
+            >
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={cn(
+                    "max-w-[85%] rounded-lg px-3 py-2 text-sm",
+                    message.role === "user"
+                      ? "self-end whitespace-pre-wrap bg-primary text-primary-foreground"
+                      : "self-start bg-muted text-foreground",
+                  )}
+                >
+                  {message.role === "user" ? (
+                    message.content
+                  ) : (
+                    <MarkdownView content={message.content} />
+                  )}
+                </div>
+              ))}
+              {isSending && (
+                <div className="self-start rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+                  Thinking…
+                </div>
+              )}
+            </div>
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            <div className="flex items-end gap-2">
+              <Textarea
+                rows={2}
+                value={draft}
+                maxLength={MAX_MESSAGE_CHARS}
+                onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setDraft(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Type your answer or question"
+                aria-label="Message"
+                className="resize-none"
+              />
+              <Button
+                type="button"
+                onClick={() => void handleSend()}
+                disabled={isSending || !draft.trim()}
+              >
+                Send
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

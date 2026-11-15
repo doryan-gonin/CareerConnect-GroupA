@@ -50,9 +50,9 @@ export default function SliderNumberInput({
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-3.5 shadow-2xs">
-      <div className="flex items-center justify-between gap-2 mb-1.5">
-        <label className="text-xs font-medium text-gray-700 truncate">{label}</label>
+    <div className="rounded-lg border bg-background p-3.5 shadow-2xs">
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <span className="truncate text-xs font-medium text-foreground">{label}</span>
         {isOverridden && (
           <Badge variant="outline" className="text-[10px]">
             Override (&gt; {prefix}
@@ -70,7 +70,7 @@ export default function SliderNumberInput({
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           {prefix && (
-            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-xs text-gray-400">
+            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-xs text-muted-foreground">
               {prefix}
             </span>
           )}
@@ -84,7 +84,7 @@ export default function SliderNumberInput({
           />
         </div>
 
-        {unit && <span className="text-xs text-gray-500 shrink-0 font-medium">{unit}</span>}
+        {unit && <span className="shrink-0 text-xs font-medium text-muted-foreground">{unit}</span>}
 
         {numericValue !== "" && (
           <Button
@@ -100,7 +100,7 @@ export default function SliderNumberInput({
       </div>
 
       <div className="mt-2.5 flex items-center gap-2">
-        <span className="text-[10px] text-gray-400 font-mono shrink-0">
+        <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
           {prefix}
           {min.toLocaleString()}
         </span>
@@ -114,7 +114,7 @@ export default function SliderNumberInput({
           }
           className="w-full"
         />
-        <span className="text-[10px] text-gray-400 font-mono shrink-0">
+        <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
           {prefix}
           {max.toLocaleString()}
         </span>

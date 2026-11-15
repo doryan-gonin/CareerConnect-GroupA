@@ -217,10 +217,12 @@ export default function CreateJobForm({ token, onCreated, onCancel }: Props) {
 
       {/* Row 3: Description */}
       <div className="mt-4">
-        <label className="mb-1 block text-xs font-medium text-gray-700">
+        <p className="mb-1 text-xs font-medium text-foreground">
           Job Description{" "}
-          <span className="text-[11px] text-gray-400 font-normal">(Markdown supported)</span>
-        </label>
+          <span className="text-[11px] font-normal text-muted-foreground">
+            (Markdown supported)
+          </span>
+        </p>
         <MarkdownEditor
           value={form.description}
           onChange={(val) => setForm((prev) => ({ ...prev, description: val }))}

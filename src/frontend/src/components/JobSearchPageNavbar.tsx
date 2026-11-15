@@ -263,6 +263,8 @@ function JobSearchPageNavbar({
           {onNavigateDashboard && (
             <Button
               variant="link"
+              nativeButton={false}
+              role="link"
               render={
                 <a
                   href="/dashboard"
@@ -280,6 +282,8 @@ function JobSearchPageNavbar({
           {onNavigateSavedJobs && (
             <Button
               variant="link"
+              nativeButton={false}
+              role="link"
               render={
                 <a
                   href="/saved"

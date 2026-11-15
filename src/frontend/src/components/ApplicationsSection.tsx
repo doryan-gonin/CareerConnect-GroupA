@@ -1,8 +1,12 @@
-import { useCallback, useState, type ChangeEvent } from "react";
+import { useCallback, useState } from "react";
 import { getMyApplications, withdrawApplication } from "../api/applications";
 import { useAsyncResource } from "../hooks/useAsyncResource";
 import ApplicationListItem from "./ApplicationListItem";
 import type { ApplicationDetail, ApplicationStatus } from "../api/types";
+import { Alert, AlertDescription } from "./ui/alert";
+import { Card, CardContent, CardHeader } from "./ui/card";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "./ui/empty";
+import { Skeleton } from "./ui/skeleton";
 
 const STATUS_OPTIONS: ApplicationStatus[] = [
   "Applied",
@@ -31,10 +35,7 @@ function ApplicationsSection({ token }: { token: string }) {
   const applications = loadedApplications ?? [];
 
   async function handleWithdraw(applicationId: number, jobTitle: string) {
-    if (!window.confirm(`Withdraw your application for "${jobTitle}"?`)) {
-      return;
-    }
-
+    if (!window.confirm(`Withdraw your application for "${jobTitle}"?`)) return;
     setActionId(applicationId);
     setError("");
     setSuccess("");
@@ -51,13 +52,14 @@ function ApplicationsSection({ token }: { token: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
-        <h2 className="text-lg font-medium text-gray-900">My Applications</h2>
+    <Card>
+      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b">
+        <h2 className="font-heading text-base leading-snug font-medium">My Applications</h2>
         <select
+          aria-label="Filter applications by status"
           value={statusFilter}
-          onChange={(e: ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value)}
-          className="rounded-md border border-gray-300 px-2 py-1 text-sm text-gray-700 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+          onChange={(event) => setStatusFilter(event.target.value)}
+          className="h-8 w-44 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <option value="">All statuses</option>
           {STATUS_OPTIONS.map((status) => (
@@ -66,39 +68,55 @@ function ApplicationsSection({ token }: { token: string }) {
             </option>
           ))}
         </select>
-      </div>
+      </CardHeader>
 
-      {success && (
-        <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{success}</p>
-      )}
+      <CardContent className="flex flex-col gap-4">
+        {success && (
+          <Alert>
+            <AlertDescription>{success}</AlertDescription>
+          </Alert>
+        )}
 
-      {(loadError || error) && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error || loadError?.message}
-        </p>
-      )}
+        {(loadError || error) && (
+          <Alert variant="destructive">
+            <AlertDescription>{error || loadError?.message}</AlertDescription>
+          </Alert>
+        )}
 
-      {isLoading ? (
-        <div className="py-6 text-center text-sm text-gray-500">Loading applications…</div>
-      ) : applications.length === 0 ? (
-        <div className="rounded-md bg-gray-50 py-6 text-center text-sm text-gray-500">
-          {statusFilter
-            ? `No applications with status "${statusFilter}".`
-            : "No applications submitted yet."}
-        </div>
-      ) : (
-        <ul className="divide-y divide-gray-100 border-t border-gray-100">
-          {applications.map((application) => (
-            <ApplicationListItem
-              key={application.id}
-              application={application}
-              isWorking={actionId === application.id}
-              onWithdraw={(item) => void handleWithdraw(item.id, item.job_title)}
-            />
-          ))}
-        </ul>
-      )}
-    </div>
+        {isLoading ? (
+          <div className="flex flex-col gap-3 py-2" aria-label="Loading applications">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        ) : applications.length === 0 ? (
+          <Empty className="border">
+            <EmptyHeader>
+              <EmptyTitle>
+                {statusFilter
+                  ? `No applications with status "${statusFilter}".`
+                  : "No applications submitted yet."}
+              </EmptyTitle>
+              <EmptyDescription>
+                {statusFilter
+                  ? "Try another status filter to see more applications."
+                  : "Applications you submit will appear here."}
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <ul className="divide-y rounded-lg border">
+            {applications.map((application) => (
+              <ApplicationListItem
+                key={application.id}
+                application={application}
+                isWorking={actionId === application.id}
+                onWithdraw={(item) => void handleWithdraw(item.id, item.job_title)}
+              />
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

@@ -3,6 +3,10 @@ import { getSavedJobs, unsaveJob } from "../api/jobs";
 import { useAsyncResource } from "../hooks/useAsyncResource";
 import Navbar from "./Navbar";
 import SavedJobCard from "./SavedJobCard";
+import { Alert, AlertDescription } from "./ui/alert";
+import { Button } from "./ui/button";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "./ui/empty";
+import { Skeleton } from "./ui/skeleton";
 
 type SavedJobsPageProps = {
   token: string;
@@ -48,7 +52,7 @@ function SavedJobsPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
+    <div className="min-h-screen bg-background text-foreground">
       <Navbar
         token={token}
         onLogout={onLogout}
@@ -59,35 +63,42 @@ function SavedJobsPage({
       />
       <main className="mx-auto max-w-5xl px-4 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">Saved jobs</h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <h1 className="text-2xl font-semibold">Saved jobs</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Keep track of roles you may want to apply to.
           </p>
         </div>
 
         {(error || loadError) && (
-          <p role="alert" className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
-            {error || loadError?.message}
-          </p>
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error || loadError?.message}</AlertDescription>
+          </Alert>
         )}
-        {state === "loading" && <p className="text-sm text-gray-500">Loading saved jobs…</p>}
+        {state === "loading" && (
+          <div className="grid gap-4 sm:grid-cols-2" aria-label="Loading saved jobs">
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-40 w-full" />
+          </div>
+        )}
         {state === "error" && !error && (
-          <p className="text-sm text-gray-500">Saved jobs could not be loaded.</p>
+          <Alert variant="destructive">
+            <AlertDescription>Saved jobs could not be loaded.</AlertDescription>
+          </Alert>
         )}
         {state === "ready" && savedJobs.length === 0 && (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center">
-            <p className="font-medium text-gray-800">You have no saved jobs yet.</p>
-            <p className="mt-1 text-sm text-gray-500">
-              Use the bookmark on a job listing to save it here.
-            </p>
-            <button
-              type="button"
-              onClick={onNavigateJobs}
-              className="mt-4 rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
-            >
-              Browse jobs
-            </button>
-          </div>
+          <Empty className="border">
+            <EmptyHeader>
+              <EmptyTitle>You have no saved jobs yet.</EmptyTitle>
+              <EmptyDescription>
+                Use the bookmark on a job listing to save it here.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button type="button" onClick={onNavigateJobs}>
+                Browse jobs
+              </Button>
+            </EmptyContent>
+          </Empty>
         )}
         <div className="grid gap-4 sm:grid-cols-2">
           {savedJobs.map((savedJob) => (
