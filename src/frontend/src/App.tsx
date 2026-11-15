@@ -1,0 +1,361 @@
+import { useState, useEffect, useRef, type ReactNode } from "react";
+import LoggedInScreen from "./components/LoggedInScreen";
+import LoginForm from "./components/LoginForm";
+import SignupForm from "./components/SignupForm";
+import Navbar from "./components/Navbar";
+import JobSearchPage from "./components/JobSearchPage";
+import JobDetailPage from "./components/JobDetailPage";
+import RecruiterDashboard from "./components/RecruiterDashboard";
+import InterviewPrepPage from "./components/InterviewPrepPage";
+import InterviewNewSession from "./components/InterviewNewSession";
+import InterviewConversation from "./components/InterviewConversation";
+import AnalyticsPage from "./components/AnalyticsPage";
+import SavedJobsPage from "./components/SavedJobsPage";
+import { logoutUser, getCurrentUser } from "./api/auth";
+import { getApplication } from "./api/applications";
+import type { Notification } from "./api/types";
+
+const TOKEN_STORAGE_KEY = "accessToken";
+
+function normalizePath(pathname: string): string {
+  const cleaned = pathname.replace(/\/+$/, "");
+  return cleaned === "" ? "/" : cleaned;
+}
+
+function isAllowedAppPath(path: string): boolean {
+  return (
+    path === "/dashboard" ||
+    path === "/analytics" ||
+    path === "/jobs" ||
+    path === "/saved" ||
+    path === "/recruiter/dashboard" ||
+    /^\/jobs\/\d+$/.test(path) ||
+    /^\/jobs\/\d+\/apply$/.test(path) ||
+    /^\/interview(\/new|\/\d+)?$/.test(path)
+  );
+}
+
+function App(): ReactNode {
+  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_STORAGE_KEY) || "");
+  const [isRecruiter, setIsRecruiter] = useState(
+    () => localStorage.getItem("isRecruiter") === "true",
+  );
+  const initialRawPath = normalizePath(window.location.pathname);
+  const intendedPathRef = useRef(isAllowedAppPath(initialRawPath) ? initialRawPath : "/dashboard");
+  const [currentPath, setCurrentPath] = useState(() => {
+    const initialPath = normalizePath(window.location.pathname);
+    const hasToken = Boolean(localStorage.getItem(TOKEN_STORAGE_KEY));
+    if (hasToken) {
+      if (initialPath === "/recruiter/dashboard") return "/dashboard";
+      return isAllowedAppPath(initialPath) ? initialPath : "/dashboard";
+    }
+    return initialPath === "/signup" ? "/signup" : "/login";
+  });
+  const [signupSuccessMessage, setSignupSuccessMessage] = useState("");
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [notificationTarget, setNotificationTarget] = useState<{
+    applicationId: number;
+    jobId: number;
+  } | null>(null);
+
+  function navigate(newPath: string, { replace = false }: { replace?: boolean } = {}): void {
+    const normalized = normalizePath(newPath);
+    if (window.location.pathname !== normalized) {
+      if (replace) {
+        window.history.replaceState(null, "", normalized);
+      } else {
+        window.history.pushState(null, "", normalized);
+      }
+    }
+    setCurrentPath(normalized);
+  }
+
+  useEffect(() => {
+    if (window.location.pathname !== currentPath) {
+      window.history.replaceState(null, "", currentPath);
+    }
+  }, [currentPath]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    let isMounted = true;
+    getCurrentUser(token)
+      .then((user) => {
+        if (isMounted && typeof user.is_recruiter === "boolean") {
+          setIsRecruiter(user.is_recruiter);
+          localStorage.setItem("isRecruiter", String(user.is_recruiter));
+        }
+      })
+      .catch((err) => {
+        if (isMounted && err.message && err.message.toLowerCase().includes("token")) {
+          localStorage.removeItem(TOKEN_STORAGE_KEY);
+          localStorage.removeItem("isRecruiter");
+          setToken("");
+          setIsRecruiter(false);
+          navigate("/login");
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    let active = true;
+    const redirect = (path: string): void => {
+      queueMicrotask(() => {
+        if (active) navigate(path, { replace: true });
+      });
+    };
+
+    // Redirect obsolete recruiter route to unified dashboard
+    if (currentPath === "/recruiter/dashboard") {
+      redirect("/dashboard");
+    } else if (isRecruiter) {
+      // Role-based route protection
+      if (currentPath === "/saved") {
+        redirect("/dashboard");
+      } else if (currentPath.startsWith("/interview") || currentPath === "/analytics") {
+        redirect("/dashboard");
+      } else if (currentPath.endsWith("/apply")) {
+        const match = currentPath.match(/^(\/jobs\/\d+)\/apply$/);
+        redirect(match ? match[1] : "/dashboard");
+      }
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [token, isRecruiter, currentPath]);
+
+  useEffect(() => {
+    function handlePopState() {
+      const nextPath = normalizePath(window.location.pathname);
+      const hasToken = Boolean(localStorage.getItem(TOKEN_STORAGE_KEY));
+      if (hasToken) {
+        if (nextPath === "/login" || nextPath === "/signup") {
+          window.history.replaceState(null, "", "/dashboard");
+          setCurrentPath("/dashboard");
+          return;
+        }
+        setCurrentPath(isAllowedAppPath(nextPath) ? nextPath : "/dashboard");
+      } else {
+        if (nextPath !== "/signup" && nextPath !== "/login") {
+          window.history.replaceState(null, "", "/login");
+          setCurrentPath("/login");
+          return;
+        }
+        setCurrentPath(nextPath);
+      }
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  function handleSignedUp(_email?: string, _isRecruiter?: boolean): void {
+    setSignupSuccessMessage("Account created! You can now log in.");
+    navigate("/login");
+  }
+
+  function handleLoggedIn(accessToken: string, recruiterFlag?: boolean): void {
+    setToken(accessToken);
+    localStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
+    if (typeof recruiterFlag === "boolean") {
+      setIsRecruiter(recruiterFlag);
+      localStorage.setItem("isRecruiter", String(recruiterFlag));
+    }
+    const target = intendedPathRef.current || "/dashboard";
+    intendedPathRef.current = "/dashboard";
+    navigate(target);
+  }
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    try {
+      if (token) {
+        await logoutUser(token);
+      }
+    } finally {
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      localStorage.removeItem("isRecruiter");
+      setToken("");
+      setIsRecruiter(false);
+      setNotificationTarget(null);
+      setSignupSuccessMessage("");
+      setIsLoggingOut(false);
+      navigate("/login");
+    }
+  }
+
+  async function handleNotificationClick(notification: Notification): Promise<void> {
+    if (notification.reference_type === "job_deadline" && notification.reference_id) {
+      navigate(`/jobs/${notification.reference_id}`);
+      return;
+    }
+    if (notification.reference_type === "application" && notification.reference_id) {
+      try {
+        const application = await getApplication(token, notification.reference_id);
+        if (application?.job_id) {
+          if (isRecruiter) {
+            setNotificationTarget({ applicationId: application.id, jobId: application.job_id });
+            navigate("/dashboard");
+            return;
+          }
+          navigate(`/jobs/${application.job_id}`);
+          return;
+        }
+      } catch {
+        // Fall back to the dashboard if the application cannot be resolved.
+      }
+    }
+    navigate("/dashboard");
+  }
+
+  function openApplication(jobId: number): void {
+    navigate(`/jobs/${jobId}/apply`);
+    window.scrollTo(0, 0);
+  }
+
+  const jobDetailMatch = currentPath.match(/^\/jobs\/(\d+)(\/apply)?$/);
+  if (token && jobDetailMatch) {
+    const jobId = Number(jobDetailMatch[1]);
+    return (
+      <JobDetailPage
+        token={token}
+        jobId={jobId}
+        isApplying={!isRecruiter && Boolean(jobDetailMatch[2])}
+        onApply={isRecruiter ? undefined : () => openApplication(jobId)}
+        onBackToPosting={() => navigate(`/jobs/${jobId}`)}
+        onNavigateJobs={() => navigate("/jobs")}
+        onNavigateDashboard={() => navigate("/dashboard")}
+        onLogout={handleLogout}
+        isLoggingOut={isLoggingOut}
+        isRecruiter={isRecruiter}
+        onNotificationClick={handleNotificationClick}
+      />
+    );
+  }
+
+  if (token && currentPath === "/jobs") {
+    return (
+      <JobSearchPage
+        token={token}
+        onLogout={handleLogout}
+        isLoggingOut={isLoggingOut}
+        onNavigateDashboard={() => navigate("/dashboard")}
+        onNavigateSavedJobs={isRecruiter ? undefined : () => navigate("/saved")}
+        onViewJob={(jobId: number) => navigate(`/jobs/${jobId}`)}
+        onApplyJob={isRecruiter ? undefined : (jobId: number) => openApplication(jobId)}
+        isRecruiter={isRecruiter}
+      />
+    );
+  }
+
+  if (token && currentPath === "/saved" && !isRecruiter) {
+    return (
+      <SavedJobsPage
+        token={token}
+        onLogout={handleLogout}
+        isLoggingOut={isLoggingOut}
+        onNavigateDashboard={() => navigate("/dashboard")}
+        onNavigateJobs={() => navigate("/jobs")}
+        onViewJob={(jobId: number) => navigate(`/jobs/${jobId}`)}
+      />
+    );
+  }
+
+  if (token) {
+    const interviewMatch = currentPath.match(/^\/interview\/(\d+)$/);
+    let pageContent: ReactNode = null;
+
+    if (isRecruiter) {
+      pageContent = (
+        <RecruiterDashboard token={token} notificationTarget={notificationTarget as any} />
+      );
+    } else if (currentPath === "/analytics") {
+      pageContent = <AnalyticsPage token={token} onBack={() => navigate("/dashboard")} />;
+    } else if (interviewMatch) {
+      pageContent = (
+        <InterviewConversation
+          key={interviewMatch[1]}
+          token={token}
+          sessionId={Number(interviewMatch[1])}
+          onBack={() => navigate("/interview")}
+        />
+      );
+    } else if (currentPath === "/interview/new") {
+      pageContent = (
+        <InterviewNewSession
+          token={token}
+          onBack={() => navigate("/interview")}
+          onBrowseJobs={() => navigate("/jobs")}
+          onCreated={(id: number) => navigate(`/interview/${id}`, { replace: true })}
+        />
+      );
+    } else if (currentPath === "/interview") {
+      pageContent = (
+        <InterviewPrepPage
+          token={token}
+          onNewSession={() => navigate("/interview/new")}
+          onOpenSession={(id: number) => navigate(`/interview/${id}`)}
+        />
+      );
+    } else {
+      pageContent = (
+        <LoggedInScreen
+          token={token}
+          onLogout={handleLogout}
+          onViewAnalytics={() => navigate("/analytics")}
+        />
+      );
+    }
+
+    return (
+      <div className="min-h-screen bg-gray-50 text-gray-900">
+        <Navbar
+          token={token}
+          onLogout={handleLogout}
+          isLoggingOut={isLoggingOut}
+          onBrowseJobs={() => navigate("/jobs")}
+          onSavedJobs={isRecruiter ? undefined : () => navigate("/saved")}
+          onInterviewPrep={isRecruiter ? undefined : () => navigate("/interview")}
+          onDashboard={currentPath !== "/dashboard" ? () => navigate("/dashboard") : undefined}
+          isRecruiter={isRecruiter}
+        />
+        <main className="mx-auto max-w-5xl px-4 py-8">{pageContent}</main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-md">
+        {currentPath === "/signup" ? (
+          <SignupForm
+            onSignedUp={handleSignedUp}
+            onSwitchToLogin={() => {
+              setSignupSuccessMessage("");
+              navigate("/login");
+            }}
+          />
+        ) : (
+          <LoginForm
+            successMessage={signupSuccessMessage}
+            onLoggedIn={handleLoggedIn}
+            onSwitchToSignup={() => {
+              setSignupSuccessMessage("");
+              navigate("/signup");
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default App;
