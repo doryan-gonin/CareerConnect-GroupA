@@ -1,6 +1,7 @@
+import os
+from sqlmodel import SQLModel, create_engine, Session
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
-from sqlmodel import Session, SQLModel, create_engine
 
 from backend.config import DATABASE_URL
 
@@ -22,37 +23,38 @@ engine: Engine = create_engine(
     echo=False,
     connect_args=connect_args,
     pool_pre_ping=True,
-    pool_recycle=300,  # Recycles connections every 5 minutes
+    pool_recycle=300  # Recycles connections every 5 minutes
 )
 
 if is_sqlite:
-
     @event.listens_for(engine, "connect")
     def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
 
-
 def init_db(target_engine: Engine | None = None):
     target = target_engine or engine
-
-    # Import models before creating tables so SQLModel metadata is populated.
-    from backend import models  # noqa: F401
-
+    from backend import models
     SQLModel.metadata.create_all(target)
     # Lightweight schema migration for existing SQLite databases
     with Session(target) as session:
-        try:
-            from sqlalchemy import text
+        from sqlalchemy import text
 
-            session.exec(
-                text("ALTER TABLE user ADD COLUMN is_recruiter BOOLEAN DEFAULT 0 NOT NULL")
-            )
-            session.commit()
-        except Exception:
-            pass
-
+        # Keep existing SQLite installations usable as the SQLModel schema
+        # grows.  PostgreSQL deployments are normally migrated by their
+        # release process; failed ALTERs are harmless when a column exists.
+        for statement in (
+            "ALTER TABLE user ADD COLUMN is_recruiter BOOLEAN DEFAULT 0 NOT NULL",
+            "ALTER TABLE job ADD COLUMN deadline TIMESTAMP WITH TIME ZONE",
+            "ALTER TABLE notification ADD COLUMN dedupe_key VARCHAR",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_notification_dedupe_key ON notification (dedupe_key)",
+        ):
+            try:
+                session.exec(text(statement))
+                session.commit()
+            except Exception:
+                session.rollback()
 
 def get_session():
     with Session(engine) as session:

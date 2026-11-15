@@ -1,43 +1,142 @@
-import math
 from pathlib import Path
-from typing import Annotated, List
-
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from datetime import datetime, timezone
 from fastapi.responses import FileResponse
-from sqlmodel import Session, col, func, or_, select
+import math
+from typing import Annotated, List
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from sqlalchemy.exc import IntegrityError
+from sqlmodel import Session, select, col, or_, func
 
 from backend.database import get_session
-from backend.dependencies import (
-    get_current_applicant,
-    get_current_recruiter,
-    get_current_user,
-    get_optional_current_user,
-)
 from backend.models import (
-    Application,
-    ApplicationCreate,
-    ApplicationResponse,
-    ApplicationStatus,
+    User,
+    Profile,
     Job,
-    JobCreate,
-    JobListResponse,
-    JobResponse,
+    JobType,
     JobSchedule,
     JobSortBy,
     JobSortOrder,
-    JobType,
+    JobCreate,
     JobUpdate,
-    JobViewLog,
-    Profile,
+    JobResponse,
+    JobListResponse,
     Resume,
+    Application,
+    ApplicationStatus,
+    ApplicationCreate,
+    ApplicationResponse,
     SearchLog,
-    User,
+    JobViewLog,
+    SavedJob,
+    SavedJobResponse,
+)
+from backend.dependencies import (
+    get_current_user,
+    get_optional_current_user,
+    get_current_recruiter,
+    get_current_applicant,
 )
 from backend.services.notification_service import notify_new_application_received
 
 router = APIRouter(tags=["Jobs"])
 
 
+def _normalize_deadline(value: datetime | None) -> datetime | None:
+    """Persist deadline instants in UTC even on SQLite (which drops tzinfo)."""
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _saved_job_response(saved: SavedJob, job: Job) -> SavedJobResponse:
+    return SavedJobResponse(
+        id=saved.id,
+        user_id=saved.user_id,
+        job_id=saved.job_id,
+        saved_at=saved.saved_at,
+        job=job,
+    )
+
+
+@router.get("/saved", response_model=List[SavedJobResponse])
+def list_saved_jobs(
+    current_user: Annotated[User, Depends(get_current_applicant)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    """Return the candidate's bookmarks, newest first.
+
+    Closed postings remain visible so a candidate can understand why a saved
+    item is unavailable and remove the stale bookmark. They are never returned
+    by the public job search and cannot be saved again.
+    """
+    rows = session.exec(
+        select(SavedJob, Job)
+        .join(Job, SavedJob.job_id == Job.id)
+        .where(SavedJob.user_id == current_user.id)
+        .order_by(col(SavedJob.saved_at).desc())
+    ).all()
+    return [_saved_job_response(saved, job) for saved, job in rows]
+
+
+@router.post("/{job_id}/save", response_model=SavedJobResponse, status_code=status.HTTP_201_CREATED)
+def save_job(
+    job_id: int,
+    current_user: Annotated[User, Depends(get_current_applicant)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    """Bookmark an active posting; repeated saves are safely idempotent."""
+    job = session.get(Job, job_id)
+    if not job or not job.is_active:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job posting not found.")
+
+    saved = session.exec(
+        select(SavedJob).where(
+            SavedJob.user_id == current_user.id,
+            SavedJob.job_id == job_id,
+        )
+    ).first()
+    if saved is None:
+        saved = SavedJob(user_id=current_user.id, job_id=job_id)
+        try:
+            # The unique constraint makes retries safe even when two browser
+            # requests race before either has committed.
+            with session.begin_nested():
+                session.add(saved)
+                session.flush()
+            session.commit()
+            session.refresh(saved)
+        except IntegrityError:
+            session.rollback()
+            saved = session.exec(
+                select(SavedJob).where(
+                    SavedJob.user_id == current_user.id,
+                    SavedJob.job_id == job_id,
+                )
+            ).first()
+            if saved is None:
+                raise
+
+    return _saved_job_response(saved, job)
+
+
+@router.delete("/{job_id}/save", status_code=status.HTTP_204_NO_CONTENT)
+def unsave_job(
+    job_id: int,
+    current_user: Annotated[User, Depends(get_current_applicant)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    """Remove a bookmark; deleting an already-removed bookmark is harmless."""
+    saved = session.exec(
+        select(SavedJob).where(
+            SavedJob.user_id == current_user.id,
+            SavedJob.job_id == job_id,
+        )
+    ).first()
+    if saved is not None:
+        session.delete(saved)
+        session.commit()
 @router.get("/mine", response_model=List[JobResponse])
 def list_my_jobs(
     current_user: Annotated[User, Depends(get_current_recruiter)],
@@ -48,48 +147,35 @@ def list_my_jobs(
     including active and closed postings.
     """
     statement = (
-        select(Job).where(Job.recruiter_id == current_user.id).order_by(col(Job.posted_at).desc())
+        select(Job)
+        .where(Job.recruiter_id == current_user.id)
+        .order_by(col(Job.posted_at).desc())
     )
 
     return session.exec(statement).all()
 
-
 @router.get("", response_model=JobListResponse)
 def list_jobs(
     session: Annotated[Session, Depends(get_session)],
-    keyword: str | None = Query(
-        default=None, description="Search term across title, company, or description"
-    ),
-    location: str | None = Query(
-        default=None, description="Location filter (e.g. city, province, or remote)"
-    ),
-    category: str | None = Query(
-        default=None, description="Category filter (e.g. Software, Design, Finance)"
-    ),
-    job_type: JobType | None = Query(
-        default=None, description="Job type (Permanent, Temporary, Contract, etc.)"
-    ),
-    job_schedule: JobSchedule | None = Query(
-        default=None, description="Work schedule (Full-time, Part-time)"
-    ),
+    keyword: str | None = Query(default=None, description="Search term across title, company, or description"),
+    location: str | None = Query(default=None, description="Location filter (e.g. city, province, or remote)"),
+    category: str | None = Query(default=None, description="Category filter (e.g. Software, Design, Finance)"),
+    job_type: JobType | None = Query(default=None, description="Job type (Permanent, Temporary, Contract, etc.)"),
+    job_schedule: JobSchedule | None = Query(default=None, description="Work schedule (Full-time, Part-time)"),
     min_salary: int | None = Query(default=None, ge=0, description="Minimum salary filter"),
     min_hours: int | None = Query(default=None, ge=0, description="Minimum hours per week"),
     max_hours: int | None = Query(default=None, ge=0, description="Maximum hours per week"),
     page: int = Query(default=1, ge=1, description="Page number"),
     limit: int = Query(default=20, ge=1, le=100, description="Items per page"),
-    sort_by: JobSortBy = Query(
-        default=JobSortBy.POSTED_AT, description="Field to sort by (e.g. posted_at, salary)"
-    ),
-    sort_order: JobSortOrder = Query(
-        default=JobSortOrder.DESC, description="Sort order: asc or desc"
-    ),
+    sort_by: JobSortBy = Query(default=JobSortBy.POSTED_AT, description="Field to sort by (e.g. posted_at, salary)"),
+    sort_order: JobSortOrder = Query(default=JobSortOrder.DESC, description="Sort order: asc or desc"),
     current_user: Annotated[User | None, Depends(get_optional_current_user)] = None,
 ):
     """
     Search and filter active job opportunities with pagination.
     Returns full job objects so clients can render listing cards without subsequent API calls.
     """
-    conditions = [Job.is_active.is_(True)]
+    conditions = [Job.is_active == True]
 
     if keyword and keyword.strip():
         term = f"%{keyword.strip()}%"
@@ -188,7 +274,7 @@ def list_jobs(
             salary_min=min_salary,
             result_count=total_count,
         )
-        if any([keyword, location, category, job_type, job_schedule, min_salary]):
+        if(any([keyword, location, category, job_type, job_schedule, min_salary])):
             session.add(search_log)
             session.commit()
 
@@ -201,6 +287,7 @@ def list_jobs(
     )
 
 
+
 @router.get("/{job_id}/applications")
 def get_job_applications(
     job_id: int,
@@ -211,12 +298,16 @@ def get_job_applications(
     job = session.get(Job, job_id)
 
     if job is None:
-        raise HTTPException(status_code=404, detail="Job not found.")
+        raise HTTPException(
+            status_code=404,
+            detail="Job not found."
+        )
 
     # Only the recruiter who owns the job can view applicants.
     if job.recruiter_id != current_user.id:
         raise HTTPException(
-            status_code=403, detail="You can only view applicants for your own jobs."
+            status_code=403,
+            detail="You can only view applicants for your own jobs."
         )
 
     applications = session.exec(
@@ -231,7 +322,9 @@ def get_job_applications(
         applicant = session.get(User, application.applicant_id)
 
         profile = session.exec(
-            select(Profile).where(Profile.user_id == application.applicant_id)
+            select(Profile).where(
+                Profile.user_id == application.applicant_id
+            )
         ).first()
 
         resume = (
@@ -247,23 +340,24 @@ def get_job_applications(
         first_name = profile.first_name if profile else ""
         last_name = profile.last_name if profile else ""
 
-        results.append(
-            {
-                "id": application.id,
-                "job_id": application.job_id,
-                "applicant_id": application.applicant_id,
-                "applicant_name": (
-                    f"{first_name} {last_name}".strip() or f"Applicant #{application.applicant_id}"
-                ),
-                "applicant_email": (str(applicant.email_address) if applicant else None),
-                "resume_id": resume.id if resume else None,
-                "resume_name": resume.file_name if resume else None,
-                "cover_letter": application.cover_letter,
-                "status": application.status,
-                "applied_at": application.applied_at,
-                "updated_at": application.updated_at,
-            }
-        )
+        results.append({
+            "id": application.id,
+            "job_id": application.job_id,
+            "applicant_id": application.applicant_id,
+            "applicant_name": (
+                f"{first_name} {last_name}".strip()
+                or f"Applicant #{application.applicant_id}"
+            ),
+            "applicant_email": (
+                str(applicant.email_address) if applicant else None
+            ),
+            "resume_id": resume.id if resume else None,
+            "resume_name": resume.file_name if resume else None,
+            "cover_letter": application.cover_letter,
+            "status": application.status,
+            "applied_at": application.applied_at,
+            "updated_at": application.updated_at,
+        })
 
     return results
 
@@ -279,12 +373,16 @@ def view_applicant_resume(
     job = session.get(Job, job_id)
 
     if job is None:
-        raise HTTPException(status_code=404, detail="Job not found.")
+        raise HTTPException(
+            status_code=404,
+            detail="Job not found."
+        )
 
     # Step 2: Verify that the current recruiter owns the job.
     if job.recruiter_id != current_user.id:
         raise HTTPException(
-            status_code=403, detail="You are not authorized to view this job's resumes."
+            status_code=403,
+            detail="You are not authorized to view this job's resumes."
         )
 
     # Step 3: Find the application for this specific job.
@@ -296,12 +394,16 @@ def view_applicant_resume(
     ).first()
 
     if application is None:
-        raise HTTPException(status_code=404, detail="Application not found for this job.")
+        raise HTTPException(
+            status_code=404,
+            detail="Application not found for this job."
+        )
 
     # Step 4: Check that a resume was submitted.
     if application.resume_id is None:
         raise HTTPException(
-            status_code=404, detail="No resume was submitted with this application."
+            status_code=404,
+            detail="No resume was submitted with this application."
         )
 
     # Step 5: Retrieve the resume and verify its owner.
@@ -313,13 +415,19 @@ def view_applicant_resume(
     ).first()
 
     if resume is None:
-        raise HTTPException(status_code=404, detail="Submitted resume not found.")
+        raise HTTPException(
+            status_code=404,
+            detail="Submitted resume not found."
+        )
 
     # Step 6: Verify that the PDF still exists.
     resume_path = Path(resume.file_path)
 
     if not resume_path.is_file():
-        raise HTTPException(status_code=404, detail="Resume file not found on server.")
+        raise HTTPException(
+            status_code=404,
+            detail="Resume file not found on server."
+        )
 
     # Step 7: Return the PDF for viewing.
     return FileResponse(
@@ -349,15 +457,12 @@ def get_job_by_id(
         )
 
     # Record only the first view for each authenticated user/job pair.
-    if (
-        current_user
-        and not session.exec(
-            select(JobViewLog).where(
-                JobViewLog.user_id == current_user.id,
-                JobViewLog.job_id == job.id,
-            )
-        ).first()
-    ):
+    if current_user and not session.exec(
+        select(JobViewLog).where(
+            JobViewLog.user_id == current_user.id,
+            JobViewLog.job_id == job.id,
+        )
+    ).first():
         view_log = JobViewLog(
             user_id=current_user.id,
             job_id=job.id,
@@ -416,6 +521,7 @@ def create_job(
         max_hours_per_week=payload.max_hours_per_week,
         salary_min=payload.salary_min,
         salary_max=payload.salary_max,
+        deadline=_normalize_deadline(payload.deadline),
     )
     session.add(job)
     session.commit()
@@ -447,6 +553,8 @@ def update_job(
         )
 
     update_data = payload.model_dump(exclude_unset=True)
+    if "deadline" in update_data:
+        update_data["deadline"] = _normalize_deadline(update_data["deadline"])
     for field, value in update_data.items():
         setattr(job, field, value)
 
@@ -483,9 +591,7 @@ def delete_job(
     return {"message": "Job posting deactivated successfully."}
 
 
-@router.post(
-    "/{job_id}/apply", response_model=ApplicationResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("/{job_id}/apply", response_model=ApplicationResponse, status_code=status.HTTP_201_CREATED)
 def apply_to_job(
     job_id: int,
     session: Annotated[Session, Depends(get_session)],
@@ -544,7 +650,7 @@ def apply_to_job(
         default_resume = session.exec(
             select(Resume).where(
                 Resume.user_id == current_user.id,
-                Resume.is_default.is_(True),
+                Resume.is_default == True,
             )
         ).first()
         if not default_resume:
@@ -571,9 +677,6 @@ def apply_to_job(
         status=ApplicationStatus.APPLIED,
     )
     session.add(application)
-    # Allocate the application id before creating the recruiter notification so
-    # its reference points to the persisted application.
-    session.flush()
 
     # Notify recruiter about the new application
     notify_new_application_received(

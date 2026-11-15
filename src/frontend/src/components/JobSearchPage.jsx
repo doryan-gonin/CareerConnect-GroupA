@@ -3,14 +3,18 @@ import JobSearchPageNavbar from './JobSearchPageNavbar'
 import ApplicationStatusBadge from './ApplicationStatusBadge'
 import MarkdownView from './MarkdownView'
 import { getMyApplications } from '../api/applications'
-import { recordJobView } from '../api/jobs'
+import { getSavedJobs, recordJobView, saveJob, unsaveJob } from '../api/jobs'
+import SavedJobButton from './SavedJobButton'
 
-function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onViewJob, onApplyJob, isRecruiter = false }) {
+function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onNavigateSavedJobs, onViewJob, onApplyJob, isRecruiter = false }) {
     const [jobs, setJobs] = useState([])
     const [hasLoaded, setHasLoaded] = useState(false)
     const [selectedJob, setSelectedJob] = useState(null)
     const [pagination, setPagination] = useState(null)
     const [statusByJobId, setStatusByJobId] = useState({})
+    const [savedByJobId, setSavedByJobId] = useState({})
+    const [savingJobId, setSavingJobId] = useState(null)
+    const [saveError, setSaveError] = useState('')
     const selectedStatus = selectedJob ? statusByJobId[selectedJob.id] : null
 
     useEffect(() => {
@@ -25,10 +29,35 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
             })
             .catch(() => {})
 
+        getSavedJobs(token)
+            .then((savedJobs) => {
+                if (active) setSavedByJobId(Object.fromEntries(savedJobs.map((saved) => [saved.job_id, true])))
+            })
+            .catch(() => {})
+
         return () => {
             active = false
         }
     }, [token, isRecruiter])
+
+    async function handleToggleSaved(jobId) {
+        if (isRecruiter || savingJobId === jobId) return
+        setSaveError('')
+        setSavingJobId(jobId)
+        try {
+            if (savedByJobId[jobId]) {
+                await unsaveJob(token, jobId)
+                setSavedByJobId((current) => ({ ...current, [jobId]: false }))
+            } else {
+                await saveJob(token, jobId)
+                setSavedByJobId((current) => ({ ...current, [jobId]: true }))
+            }
+        } catch (error) {
+            setSaveError(error.message)
+        } finally {
+            setSavingJobId(null)
+        }
+    }
 
     function handleSelectJob(job) {
         setSelectedJob(job)
@@ -64,9 +93,11 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
                 onLogout={onLogout}
                 isLoggingOut={isLoggingOut}
                 onNavigateDashboard={onNavigateDashboard}
+                onNavigateSavedJobs={onNavigateSavedJobs}
             />
             <div className="mx-auto flex max-w-5xl gap-6 px-4 py-8">
                 <div className="flex flex-col gap-3">
+                    {saveError && <p role="alert" className="text-sm text-red-600">{saveError}</p>}
                     {!hasLoaded && (
                         <p className="text-sm text-gray-500">Loading jobs…</p>
                     )}
@@ -74,17 +105,30 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
                         <p className="text-sm text-gray-500">No jobs found matching your search.</p>
                     )}
                     {jobs.map((job) => (
-                        <button
+                        <div
                             key={job.id}
-                            type="button"
                             onClick={() => handleSelectJob(job)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter' || event.key === ' ') handleSelectJob(job)
+                            }}
                             className={`group block w-100 rounded-xl border p-4 text-left transition hover:border-purple-300 hover:shadow-xs ${
                                 selectedJob?.id === job.id
                                     ? 'border-purple-500 bg-purple-50/30'
                                     : 'border-gray-200 bg-white'
                             }`}
                         >
-                            <h2 className='group-hover:text-purple-600 group-hover:underline font-semibold'>{job.title}</h2>
+                            <div className="flex items-start justify-between gap-3">
+                                <h2 className='group-hover:text-purple-600 group-hover:underline font-semibold'>{job.title}</h2>
+                                {!isRecruiter && (
+                                    <SavedJobButton
+                                        isSaved={Boolean(savedByJobId[job.id])}
+                                        isPending={savingJobId === job.id}
+                                        onToggle={() => handleToggleSaved(job.id)}
+                                    />
+                                )}
+                            </div>
                             <p>{job.company_name}</p>
                             <p>{job.job_schedule}</p>
                             <p>{job.location}</p>
@@ -93,7 +137,7 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
                                     <ApplicationStatusBadge status={statusByJobId[job.id]} />
                                 </div>
                             )}
-                        </button>
+                        </div>
                     ))}
 
                     {/* Pagination Controls */}
@@ -178,6 +222,13 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
                                         </div>
                                     )}
                                 </div>
+                                {!isRecruiter && (
+                                    <SavedJobButton
+                                        isSaved={Boolean(savedByJobId[selectedJob.id])}
+                                        isPending={savingJobId === selectedJob.id}
+                                        onToggle={() => handleToggleSaved(selectedJob.id)}
+                                    />
+                                )}
                                 <a
                                     href={`/jobs/${selectedJob.id}`}
                                     onClick={(e) => {

@@ -23,6 +23,26 @@ export async function recordJobView(token, jobId) {
   await apiRequest(`/api/jobs/${jobId}/view`, { token, method: 'POST', fallbackError: 'Failed to record job view.' })
 }
 
+export function getSavedJobs(token) {
+  return apiRequest('/api/jobs/saved', { token, fallbackError: 'Failed to load saved jobs.' })
+}
+
+export function saveJob(token, jobId) {
+  return apiRequest(`/api/jobs/${jobId}/save`, {
+    token,
+    method: 'POST',
+    fallbackError: 'Failed to save this job.',
+  })
+}
+
+export function unsaveJob(token, jobId) {
+  return apiRequest(`/api/jobs/${jobId}/save`, {
+    token,
+    method: 'DELETE',
+    fallbackError: 'Failed to remove this saved job.',
+  })
+}
+
 export function applyToJob(token, jobId, { resumeId, coverLetter } = {}) {
   return apiRequest(`/api/jobs/${jobId}/apply`, {
     token, method: 'POST', body: { resume_id: resumeId ?? null, cover_letter: coverLetter ?? null },

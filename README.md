@@ -50,16 +50,25 @@ Recruiters can post openings, review applicants, and update candidate status. Th
 
 See the CareerConnect [Wiki Page](../../../wiki) (Work In Progress)
 
-## Backend quality checks
+### Saved job deadline reminders
 
-Ruff checks and formats the Python backend, tests, and utility scripts. Run the
-following commands from the repository root:
+Recruiters can set an optional UTC application `deadline` when creating or
+updating a job. Candidates can bookmark active postings with
+`POST /api/jobs/{job_id}/save`, view bookmarks with `GET /api/jobs/saved`, and
+remove them with `DELETE /api/jobs/{job_id}/save`. When an authenticated user
+loads `GET /api/notifications`, CareerConnect checks their saved jobs and
+creates one `deadline_reminder` notification for each deadline due within the
+next three days (including a deadline at the current instant). Overdue and
+far-future deadlines are skipped. The check is safe to repeat and can be
+called by an external scheduler through the same authenticated endpoint; this
+request-driven trigger keeps deployments without a task queue free of an
+additional worker process.
 
-```bash
-make lint          # Check lint rules and imports
-make format        # Format Python sources in place
-make format-check  # Fail if formatting is out of date
-```
+The React job cards and detail view expose the same bookmark actions, and the
+candidate-only `/saved` page lists bookmarks newest first. A closed posting
+stays in that list with an unavailable label so it can be removed; recruiters
+receive `403` responses for saved-job actions. Saving the same posting more
+than once is idempotent, backed by a `(user_id, job_id)` unique constraint.
 
 ## Proposed features
 - Chat feature (recruiters can chat with applicants directly from the website)

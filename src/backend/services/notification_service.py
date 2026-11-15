@@ -1,16 +1,24 @@
-from datetime import datetime, timezone
-
-from sqlmodel import Session
-
+from datetime import datetime, timedelta, timezone
+from sqlalchemy.exc import IntegrityError
+from sqlmodel import Session, select
 from backend.models import (
-    Application,
-    ApplicationStatus,
-    Job,
     Notification,
     NotificationType,
+    Application,
+    Job,
+    ApplicationStatus,
+    SavedJob,
     User,
 )
 
+DEADLINE_REMINDER_WINDOW = timedelta(days=3)
+
+
+def _as_utc(value: datetime) -> datetime:
+    """Normalize aware and legacy-naive timestamps to UTC for comparisons."""
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
 
 def create_notification(
     session: Session,
@@ -20,7 +28,8 @@ def create_notification(
     notification_type: NotificationType = NotificationType.STATUS_UPDATE,
     reference_id: int | None = None,
     reference_type: str | None = None,
-) -> Notification:
+    dedupe_key: str | None = None,
+ ) -> Notification:
     """Create a new notification for a specific user."""
     notification = Notification(
         user_id=user_id,
@@ -31,6 +40,7 @@ def create_notification(
         created_at=datetime.now(timezone.utc),
         reference_id=reference_id,
         reference_type=reference_type,
+        dedupe_key=dedupe_key,
     )
     session.add(notification)
     return notification
@@ -42,7 +52,7 @@ def notify_status_change(
     job: Job,
     old_status: ApplicationStatus,
     new_status: ApplicationStatus,
-) -> Notification | None:
+ ) -> Notification | None:
     """
     Generate a notification when an application status updates.
     Sends an INTERVIEW_INVITATION if invited to interview,
@@ -51,8 +61,8 @@ def notify_status_change(
     if old_status == new_status:
         return None
 
-    job_title = job.title if job else "your applied position"  # Shouldn't happen
-    company_name = job.company_name if job else "the company"
+    job_title = job.title if job else "your applied position" # Shouldn't happen
+    company_name = job.company_name if job else "the company" 
 
     if new_status == ApplicationStatus.INTERVIEW:
         notification_type = NotificationType.INTERVIEW_INVITATION
@@ -61,7 +71,7 @@ def notify_status_change(
             f"Congratulations! You have been invited for an interview for the {job_title} "
             f"position at {company_name}."
         )
-
+        
     else:
         notification_type = NotificationType.STATUS_UPDATE
         title = f"Application Update: {job_title}"
@@ -80,6 +90,77 @@ def notify_status_change(
         reference_type="application",
     )
 
+
+def generate_deadline_reminders(
+    session: Session,
+    user_id: int,
+    *,
+    now: datetime | None = None,
+    reminder_window: timedelta = DEADLINE_REMINDER_WINDOW,
+) -> list[Notification]:
+    """Create one reminder for each saved job whose deadline is approaching.
+
+    The check is intentionally safe to invoke repeatedly (for example when a
+    user opens their notification panel or a scheduler calls the endpoint).
+    Deadlines at the current instant are included; deadlines already in the
+    past are excluded so an overdue posting cannot generate a reminder on every
+    request.  The UTC deadline is part of the dedupe key, allowing a recruiter
+    to move a deadline and receive a new reminder for the new date.
+
+    The caller owns the transaction and should commit after this function
+    returns.  ``Notification.dedupe_key`` provides a database-level backstop
+    against duplicate writes from concurrent workers.
+    """
+    current = _as_utc(now or datetime.now(timezone.utc))
+    upper_bound = current + reminder_window
+    saved_jobs = session.exec(
+        select(SavedJob, Job)
+        .join(Job, SavedJob.job_id == Job.id)
+        .where(SavedJob.user_id == user_id, Job.is_active)
+    ).all()
+
+    reminders: list[Notification] = []
+    for saved_job, job in saved_jobs:
+        if job.deadline is None:
+            continue
+        deadline = _as_utc(job.deadline)
+        if deadline < current or deadline > upper_bound:
+            continue
+
+        deadline_key = deadline.isoformat()
+        dedupe_key = f"deadline-reminder:{user_id}:{job.id}:{deadline_key}"
+        existing = session.exec(
+            select(Notification.id).where(Notification.dedupe_key == dedupe_key)
+        ).first()
+        if existing is not None:
+            continue
+
+        title = f"Upcoming deadline: {job.title}"
+        message = (
+            f"The application deadline for {job.title} at {job.company_name} "
+            f"is {deadline.strftime('%Y-%m-%d %H:%M UTC')}."
+        )
+        try:
+            # A savepoint converts a concurrent insert racing this check into
+            # a harmless no-op while preserving the caller's transaction.
+            with session.begin_nested():
+                reminder = create_notification(
+                    session=session,
+                    user_id=user_id,
+                    title=title,
+                    message=message,
+                    notification_type=NotificationType.DEADLINE_REMINDER,
+                    reference_id=job.id,
+                    reference_type="job_deadline",
+                    dedupe_key=dedupe_key,
+                )
+                session.flush()
+            reminders.append(reminder)
+        except IntegrityError:
+            # Another worker created the same keyed reminder first.
+            continue
+
+    return reminders
 
 # Only used for recruiter accounts (flag set in "users" DB)
 def notify_new_application_received(
@@ -104,3 +185,5 @@ def notify_new_application_received(
         reference_id=application.id,
         reference_type="application",
     )
+
+

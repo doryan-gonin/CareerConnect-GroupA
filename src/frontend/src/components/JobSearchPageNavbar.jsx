@@ -27,7 +27,7 @@ const SORT_OPTIONS = [
     { label: 'Fewest Hours', sortBy: 'max_hours_per_week', sortOrder: 'asc' },
 ]
 
-function JobSearchPageNavbar({ token, onLogout, isLoggingOut = false, onJobsLoaded, onNavigateDashboard, onReset, onNotificationClick }) {
+function JobSearchPageNavbar({ token, onLogout, isLoggingOut = false, onJobsLoaded, onNavigateDashboard, onNavigateSavedJobs, onReset, onNotificationClick }) {
     const [keyword, setKeyWord] = useState('')
     const [error, setError] = useState('')
     const [isCategoryOpen, setIsCategoryOpen] = useState(false)
@@ -190,6 +190,19 @@ function JobSearchPageNavbar({ token, onLogout, isLoggingOut = false, onJobsLoad
                             className="text-sm font-medium text-purple-600 hover:underline cursor-pointer"
                         >
                             Dashboard
+                        </a>
+                    )}
+
+                    {onNavigateSavedJobs && (
+                        <a
+                            href="/saved"
+                            onClick={(e) => {
+                                e.preventDefault()
+                                onNavigateSavedJobs()
+                            }}
+                            className="text-sm font-medium text-purple-600 hover:underline cursor-pointer"
+                        >
+                            Saved Jobs
                         </a>
                     )}
 

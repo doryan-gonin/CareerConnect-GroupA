@@ -10,6 +10,7 @@ import InterviewPrepPage from './components/InterviewPrepPage'
 import InterviewNewSession from './components/InterviewNewSession'
 import InterviewConversation from './components/InterviewConversation'
 import AnalyticsPage from './components/AnalyticsPage'
+import SavedJobsPage from './components/SavedJobsPage'
 import { logoutUser, getCurrentUser } from './api/auth'
 import { getMyApplications } from './api/applications'
 
@@ -26,6 +27,7 @@ function isAllowedAppPath(path) {
     path === '/dashboard' ||
     path === '/analytics' ||
     path === '/jobs' ||
+    path === '/saved' ||
     path === '/recruiter/dashboard' ||
     /^\/jobs\/\d+$/.test(path) ||
     /^\/jobs\/\d+\/apply$/.test(path) ||
@@ -110,6 +112,10 @@ function App() {
 
     // Role-based route protection
     if (isRecruiter) {
+      if (currentPath === '/saved') {
+        navigate('/dashboard', { replace: true })
+        return
+      }
       if (currentPath.startsWith('/interview') || currentPath === '/analytics') {
         navigate('/dashboard', { replace: true })
         return
@@ -212,6 +218,7 @@ function App() {
         onApply={isRecruiter ? undefined : () => openApplication(jobId)}
         onBackToPosting={() => navigate(`/jobs/${jobId}`)}
         onNavigateJobs={() => navigate('/jobs')}
+        onNavigateSavedJobs={isRecruiter ? undefined : () => navigate('/saved')}
         onNavigateDashboard={() => navigate('/dashboard')}
         onLogout={handleLogout}
         isLoggingOut={isLoggingOut}
@@ -228,10 +235,24 @@ function App() {
         onLogout={handleLogout}
         isLoggingOut={isLoggingOut}
         onNavigateDashboard={() => navigate('/dashboard')}
+        onNavigateSavedJobs={isRecruiter ? undefined : () => navigate('/saved')}
         onViewJob={(jobId) => navigate(`/jobs/${jobId}`)}
         onApplyJob={isRecruiter ? undefined : openApplication}
         isRecruiter={isRecruiter}
         onNotificationClick={handleNotificationClick}
+      />
+    )
+  }
+
+  if (token && currentPath === '/saved' && !isRecruiter) {
+    return (
+      <SavedJobsPage
+        token={token}
+        onLogout={handleLogout}
+        isLoggingOut={isLoggingOut}
+        onNavigateDashboard={() => navigate('/dashboard')}
+        onNavigateJobs={() => navigate('/jobs')}
+        onViewJob={(jobId) => navigate(`/jobs/${jobId}`)}
       />
     )
   }
@@ -292,6 +313,7 @@ function App() {
           onLogout={handleLogout}
           isLoggingOut={isLoggingOut}
           onBrowseJobs={() => navigate('/jobs')}
+          onSavedJobs={isRecruiter ? undefined : () => navigate('/saved')}
           onInterviewPrep={isRecruiter ? undefined : () => navigate('/interview')}
           onDashboard={currentPath !== '/dashboard' ? () => navigate('/dashboard') : undefined}
           isRecruiter={isRecruiter}
