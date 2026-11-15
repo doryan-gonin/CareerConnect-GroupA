@@ -8,6 +8,21 @@ import {
 } from "../api/profiles";
 import type { Resume } from "../api/types";
 import type { ChangeEvent, FormEvent } from "react";
+import { Alert, AlertDescription } from "./ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./ui/alert-dialog";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Skeleton } from "./ui/skeleton";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const MAX_RESUMES = 5;
@@ -21,6 +36,9 @@ function ResumeSection({ token }: { token: string }) {
   const [actionId, setActionId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [resumeToDelete, setResumeToDelete] = useState<{ id: number; fileName: string } | null>(
+    null,
+  );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const refreshResumes = useCallback(async () => {
@@ -146,11 +164,10 @@ function ResumeSection({ token }: { token: string }) {
     }
   }
 
-  async function handleDelete(resumeId: number, fileName: string) {
-    if (!window.confirm(`Are you sure you want to delete "${fileName}"?`)) {
-      return;
-    }
-
+  async function confirmDelete() {
+    if (!resumeToDelete) return;
+    const { id: resumeId, fileName } = resumeToDelete;
+    setResumeToDelete(null);
     setActionId(resumeId);
     setError("");
     setSuccess("");
@@ -176,10 +193,16 @@ function ResumeSection({ token }: { token: string }) {
       </div>
 
       {success && (
-        <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{success}</p>
+        <Alert>
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
       )}
 
-      {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       {/* Upload Form */}
       {resumes.length < MAX_RESUMES ? (
@@ -189,13 +212,13 @@ function ResumeSection({ token }: { token: string }) {
         >
           <label className="block text-sm font-medium text-gray-700">
             Upload a resume (PDF, up to 5MB)
-            <input
+            <Input
               type="file"
               ref={fileInputRef}
               accept=".pdf,application/pdf"
               onChange={handleFileChange}
               disabled={isUploading}
-              className="mt-2 block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-purple-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-purple-700 hover:file:bg-purple-100 disabled:opacity-60"
+              className="mt-2"
             />
           </label>
 
@@ -212,13 +235,9 @@ function ResumeSection({ token }: { token: string }) {
                 Set as default resume
               </label>
 
-              <button
-                type="submit"
-                disabled={isUploading}
-                className="rounded-md bg-purple-600 px-3.5 py-1.5 text-sm font-medium text-white transition hover:bg-purple-700 disabled:opacity-60"
-              >
+              <Button type="submit" disabled={isUploading}>
                 {isUploading ? "Uploading…" : "Upload resume"}
-              </button>
+              </Button>
             </div>
           )}
         </form>
@@ -233,7 +252,10 @@ function ResumeSection({ token }: { token: string }) {
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-2">Your Uploaded Resumes</h3>
         {isLoading ? (
-          <div className="py-6 text-center text-sm text-gray-500">Loading resumes…</div>
+          <div className="flex flex-col gap-3 py-6">
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
         ) : resumes.length === 0 ? (
           <div className="rounded-md bg-gray-50 py-6 text-center text-sm text-gray-500">
             No resumes uploaded yet.
@@ -250,11 +272,7 @@ function ResumeSection({ token }: { token: string }) {
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-gray-900 text-sm">{resume.file_name}</span>
-                      {resume.is_default && (
-                        <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                          Default
-                        </span>
-                      )}
+                      {resume.is_default && <Badge variant="secondary">Default</Badge>}
                     </div>
                     <span className="text-xs text-gray-500">
                       Uploaded on {new Date(resume.uploaded_at).toLocaleDateString()}
@@ -263,33 +281,39 @@ function ResumeSection({ token }: { token: string }) {
 
                   <div className="flex items-center gap-2 text-xs">
                     {!resume.is_default && (
-                      <button
+                      <Button
                         type="button"
+                        variant="link"
+                        size="sm"
                         onClick={() => handleSetDefault(resume.id)}
                         disabled={isWorking}
-                        className="text-purple-600 hover:text-purple-700 font-medium disabled:opacity-50"
                       >
                         Set default
-                      </button>
+                      </Button>
                     )}
 
-                    <button
+                    <Button
                       type="button"
+                      variant="link"
+                      size="sm"
                       onClick={() => handleDownload(resume.id, resume.file_name)}
                       disabled={isWorking}
-                      className="text-gray-600 hover:text-gray-900 font-medium disabled:opacity-50"
                     >
                       Download
-                    </button>
+                    </Button>
 
-                    <button
+                    <Button
                       type="button"
-                      onClick={() => handleDelete(resume.id, resume.file_name)}
+                      variant="link"
+                      size="sm"
+                      className="text-destructive"
+                      onClick={() =>
+                        setResumeToDelete({ id: resume.id, fileName: resume.file_name })
+                      }
                       disabled={isWorking}
-                      className="text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
                     >
                       Delete
-                    </button>
+                    </Button>
                   </div>
                 </li>
               );
@@ -297,6 +321,25 @@ function ResumeSection({ token }: { token: string }) {
           </ul>
         )}
       </div>
+      <AlertDialog
+        open={Boolean(resumeToDelete)}
+        onOpenChange={(open) => !open && setResumeToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete resume?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete “{resumeToDelete?.fileName}”.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

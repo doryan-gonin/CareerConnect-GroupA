@@ -1,4 +1,8 @@
 import type { ChangeEvent } from "react";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Slider } from "./ui/slider";
 
 type SliderNumberInputProps = {
   label: string;
@@ -41,10 +45,6 @@ export default function SliderNumberInput({
     }
   }
 
-  function handleSliderChange(e: ChangeEvent<HTMLInputElement>) {
-    onChange(Number(e.target.value));
-  }
-
   function handleClear() {
     onChange("");
   }
@@ -54,16 +54,16 @@ export default function SliderNumberInput({
       <div className="flex items-center justify-between gap-2 mb-1.5">
         <label className="text-xs font-medium text-gray-700 truncate">{label}</label>
         {isOverridden && (
-          <span className="shrink-0 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+          <Badge variant="outline" className="text-[10px]">
             Override (&gt; {prefix}
             {max.toLocaleString()})
-          </span>
+          </Badge>
         )}
         {isBelowMin && (
-          <span className="shrink-0 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+          <Badge variant="outline" className="text-[10px]">
             Override (&lt; {prefix}
             {min.toLocaleString()})
-          </span>
+          </Badge>
         )}
       </div>
 
@@ -74,29 +74,28 @@ export default function SliderNumberInput({
               {prefix}
             </span>
           )}
-          <input
+          <Input
             type="number"
             min="0"
             value={numericValue}
             onChange={handleNumberChange}
             placeholder={placeholder}
-            className={`w-full rounded-md border border-gray-300 py-1.5 pr-2 text-xs text-gray-900 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 ${
-              prefix ? "pl-6" : "pl-2.5"
-            }`}
+            className={`w-full pr-2 text-xs ${prefix ? "pl-6" : "pl-2.5"}`}
           />
         </div>
 
         {unit && <span className="text-xs text-gray-500 shrink-0 font-medium">{unit}</span>}
 
         {numericValue !== "" && (
-          <button
+          <Button
             type="button"
+            size="icon-xs"
+            variant="ghost"
             onClick={handleClear}
             title="Clear value"
-            className="rounded p-1 text-xs text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition shrink-0"
           >
             ✕
-          </button>
+          </Button>
         )}
       </div>
 
@@ -105,14 +104,15 @@ export default function SliderNumberInput({
           {prefix}
           {min.toLocaleString()}
         </span>
-        <input
-          type="range"
+        <Slider
           min={min}
           max={max}
           step={step}
-          value={sliderValue}
-          onChange={handleSliderChange}
-          className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 accent-purple-600 focus:outline-none"
+          value={[Number(sliderValue || min)]}
+          onValueChange={(values) =>
+            onChange(Array.isArray(values) ? Number(values[0]) : Number(values))
+          }
+          className="w-full"
         />
         <span className="text-[10px] text-gray-400 font-mono shrink-0">
           {prefix}

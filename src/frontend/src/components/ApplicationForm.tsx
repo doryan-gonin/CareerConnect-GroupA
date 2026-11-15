@@ -5,6 +5,12 @@ import { getProfile, getResumes, updateProfile, uploadResume } from "../api/prof
 import { applicationFormSchema } from "../api/schemas";
 import type { Job, Profile, Resume, User } from "../api/types";
 import type { ChangeEvent, FormEvent } from "react";
+import { Alert, AlertDescription } from "./ui/alert";
+import { Button } from "./ui/button";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "./ui/field";
+import { Input } from "./ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Skeleton } from "./ui/skeleton";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_RESUMES = 5;
@@ -276,13 +282,9 @@ function ApplicationForm({ token, job, onBack, onSubmitApplication }: Applicatio
 
   return (
     <div className="mx-auto max-w-3xl rounded-xl bg-white p-6 shadow-sm">
-      <button
-        type="button"
-        onClick={onBack}
-        className="mb-5 text-sm font-medium text-purple-600 hover:underline"
-      >
+      <Button type="button" variant="link" onClick={onBack}>
         ← Back to Posting
-      </button>
+      </Button>
 
       <h1 className="text-2xl font-semibold text-gray-900">
         {checkingApplication
@@ -301,51 +303,46 @@ function ApplicationForm({ token, job, onBack, onSubmitApplication }: Applicatio
       </div>
 
       {error && (
-        <p role="alert" className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
-          {error}
-        </p>
+        <Alert className="mt-4" variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {success && (
-        <p role="status" className="mt-4 rounded-md bg-green-50 p-3 text-sm text-green-700">
-          {success}
-        </p>
+        <Alert className="mt-4">
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
       )}
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
         <div className="rounded-lg border border-gray-200 p-4">
           <h2 className="mb-3 text-lg font-medium text-gray-900">Applicant Information</h2>
 
-          <label htmlFor="applicant-name" className="block text-sm font-medium text-gray-700">
-            Full Name
-          </label>
-
-          <input
-            id="applicant-name"
-            type="text"
-            value={nameEdit ?? profileName}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setNameEdit(e.target.value)}
-            placeholder={profileLoading ? "Loading..." : "Your full name"}
-            disabled={profileLoading || alreadyApplied}
-            className="mt-2 w-full rounded-md border border-gray-300 p-3 text-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            Changes are saved to your profile when you apply.
-          </p>
-
-          <label htmlFor="applicant-email" className="mt-4 block text-sm font-medium text-gray-700">
-            Email Address
-          </label>
-
-          <input
-            id="applicant-email"
-            type="email"
-            value={account?.email_address ?? ""}
-            placeholder={accountLoading ? "Loading email..." : "Email unavailable"}
-            readOnly
-            className="mt-2 w-full rounded-md border border-gray-300 bg-gray-50 p-3 text-gray-700"
-          />
-          <p className="mt-1 text-xs text-gray-500">This is the email on your account.</p>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="applicant-name">Full Name</FieldLabel>
+              <Input
+                id="applicant-name"
+                type="text"
+                value={nameEdit ?? profileName}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setNameEdit(e.target.value)}
+                placeholder={profileLoading ? "Loading..." : "Your full name"}
+                disabled={profileLoading || alreadyApplied}
+              />
+              <FieldDescription>Changes are saved to your profile when you apply.</FieldDescription>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="applicant-email">Email Address</FieldLabel>
+              <Input
+                id="applicant-email"
+                type="email"
+                value={account?.email_address ?? ""}
+                placeholder={accountLoading ? "Loading email..." : "Email unavailable"}
+                readOnly
+              />
+              <FieldDescription>This is the email on your account.</FieldDescription>
+            </Field>
+          </FieldGroup>
         </div>
         {!alreadyApplied && !checkingApplication && (
           <div>
@@ -378,20 +375,22 @@ function ApplicationForm({ token, job, onBack, onSubmitApplication }: Applicatio
                     No resumes available. Upload one to continue.
                   </p>
                 ) : (
-                  <select
+                  <Select
                     value={selectedResumeId}
-                    onChange={(e: ChangeEvent<HTMLSelectElement>) =>
-                      setSelectedResumeId(e.target.value)
-                    }
-                    className="w-full rounded-md border border-gray-300 p-3"
+                    onValueChange={(value) => setSelectedResumeId(String(value ?? ""))}
                   >
-                    {resumes.map((resume) => (
-                      <option key={resume.id} value={resume.id}>
-                        {resume.file_name}
-                        {resume.is_default ? " (Default)" : ""}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a resume" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {resumes.map((resume) => (
+                        <SelectItem key={resume.id} value={String(resume.id)}>
+                          {resume.file_name}
+                          {resume.is_default ? " (Default)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 )}
                 {uploadNotice && (
                   <p role="status" className="mt-2 text-sm text-green-700">
@@ -410,14 +409,14 @@ function ApplicationForm({ token, job, onBack, onSubmitApplication }: Applicatio
                   className="hidden"
                 />
 
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading || resumes.length >= MAX_RESUMES}
-                  className="rounded-lg bg-gray-800 px-4 py-2 text-white disabled:opacity-50"
                 >
                   {isUploading ? "Uploading..." : "Upload Resume"}
-                </button>
+                </Button>
 
                 <p className="text-sm text-gray-500">
                   PDF only, up to 5 MB. It is saved to your profile and selected for this
@@ -432,7 +431,10 @@ function ApplicationForm({ token, job, onBack, onSubmitApplication }: Applicatio
           </div>
         )}
         {checkingApplication ? (
-          <p className="text-center text-sm text-gray-500">Checking application status...</p>
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Skeleton className="h-4 w-4 rounded-full" />
+            Checking application status...
+          </div>
         ) : success ? null : alreadyApplied ? (
           <div
             role="status"
@@ -444,15 +446,15 @@ function ApplicationForm({ token, job, onBack, onSubmitApplication }: Applicatio
             </p>
           </div>
         ) : (
-          <button
+          <Button
             type="submit"
             disabled={
               isSubmitting || isUploading || isLoading || !selectedResumeId || resumeMode === "new"
             }
-            className="w-full rounded-lg bg-purple-600 px-5 py-3 font-medium text-white hover:bg-purple-700 disabled:opacity-50"
+            className="w-full"
           >
             {isSubmitting ? "Submitting..." : "Submit Application"}
-          </button>
+          </Button>
         )}
       </form>
     </div>

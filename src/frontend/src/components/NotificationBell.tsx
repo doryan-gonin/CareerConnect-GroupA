@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useState, type MouseEvent } from "react";
 import { BellIcon } from "lucide-react";
 import {
   deleteNotification,
@@ -45,38 +45,33 @@ function NotificationBell({ token, onNotificationClick }: NotificationBellProps)
   const [isLoading, setIsLoading] = useState(Boolean(token));
   const [error, setError] = useState("");
   const [actionId, setActionId] = useState<ActionId>(null);
-  const hasLoadedRef = useRef(false);
 
   const loadNotifications = useCallback(async () => {
-    if (!token || hasLoadedRef.current || isLoading) return;
-    setIsLoading(true);
+    if (!token || isLoading) return;
+    const hasExistingNotifications = notifications.length > 0;
+    if (!hasExistingNotifications) setIsLoading(true);
     setError("");
     try {
       const data = await getNotifications(token);
       setNotifications(data.notifications);
       setUnreadCount(data.unread_count);
-      hasLoadedRef.current = true;
     } catch (caught) {
-      hasLoadedRef.current = false;
       setError(errorMessage(caught));
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, token]);
+  }, [isLoading, notifications.length, token]);
 
   useEffect(() => {
     if (!token) return undefined;
-    hasLoadedRef.current = false;
     let active = true;
     getNotifications(token)
       .then((data) => {
         if (!active) return;
         setNotifications(data.notifications);
         setUnreadCount(data.unread_count);
-        hasLoadedRef.current = true;
       })
       .catch((caught: unknown) => {
-        hasLoadedRef.current = false;
         if (active) setError(errorMessage(caught));
       })
       .finally(() => {
