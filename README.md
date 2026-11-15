@@ -50,6 +50,20 @@ Recruiters can post openings, review applicants, and update candidate status. Th
 
 See the CareerConnect [Wiki Page](../../../wiki) (Work In Progress)
 
+### Saved job deadline reminders
+
+Recruiters can set an optional UTC application `deadline` when creating or
+updating a job. Candidates can bookmark active postings with
+`POST /api/jobs/{job_id}/save`, view bookmarks with `GET /api/jobs/saved`, and
+remove them with `DELETE /api/jobs/{job_id}/save`. When an authenticated user
+loads `GET /api/notifications`, CareerConnect checks their saved jobs and
+creates one `deadline_reminder` notification for each deadline due within the
+next three days (including a deadline at the current instant). Overdue and
+far-future deadlines are skipped. The check is safe to repeat and can be
+called by an external scheduler through the same authenticated endpoint; this
+request-driven trigger keeps deployments without a task queue free of an
+additional worker process.
+
 ## Proposed features
 - Chat feature (recruiters can chat with applicants directly from the website)
 - Company Reviews (users can leave reviews on companies they worked for to help other job seekers)

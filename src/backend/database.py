@@ -39,12 +39,22 @@ def init_db(target_engine: Engine | None = None):
     SQLModel.metadata.create_all(target)
     # Lightweight schema migration for existing SQLite databases
     with Session(target) as session:
-        try:
-            from sqlalchemy import text
-            session.exec(text("ALTER TABLE user ADD COLUMN is_recruiter BOOLEAN DEFAULT 0 NOT NULL"))
-            session.commit()
-        except Exception:
-            pass
+        from sqlalchemy import text
+
+        # Keep existing SQLite installations usable as the SQLModel schema
+        # grows.  PostgreSQL deployments are normally migrated by their
+        # release process; failed ALTERs are harmless when a column exists.
+        for statement in (
+            "ALTER TABLE user ADD COLUMN is_recruiter BOOLEAN DEFAULT 0 NOT NULL",
+            "ALTER TABLE job ADD COLUMN deadline TIMESTAMP WITH TIME ZONE",
+            "ALTER TABLE notification ADD COLUMN dedupe_key VARCHAR",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_notification_dedupe_key ON notification (dedupe_key)",
+        ):
+            try:
+                session.exec(text(statement))
+                session.commit()
+            except Exception:
+                session.rollback()
 
 def get_session():
     with Session(engine) as session:

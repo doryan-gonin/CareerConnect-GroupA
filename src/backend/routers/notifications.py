@@ -10,6 +10,7 @@ from backend.models import (
     NotificationListResponse,
 )
 from backend.dependencies import get_current_user
+from backend.services.notification_service import generate_deadline_reminders
 
 router = APIRouter(tags=["Notifications"])
 
@@ -25,7 +26,15 @@ def get_my_notifications(
     """
     Retrieve notifications for the current authenticated user.
     Ordered by creation date descending.
+
+    Checking deadlines here gives deployments without a task queue a safe,
+    request-driven scheduler: every authenticated notification refresh checks
+    saved jobs before returning the list. The service is idempotent, so polling
+    or repeated logins cannot create duplicate reminders.
     """
+    generate_deadline_reminders(session, current_user.id)
+    session.commit()
+
     base_query = select(Notification).where(Notification.user_id == current_user.id)
 
     # Calculate total and unread counts for this user

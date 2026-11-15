@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import datetime, timezone
 from fastapi.responses import FileResponse
 import math
 from typing import Annotated, List
@@ -25,6 +26,8 @@ from backend.models import (
     ApplicationResponse,
     SearchLog,
     JobViewLog,
+    SavedJob,
+    SavedJobResponse,
 )
 from backend.dependencies import (
     get_current_user,
@@ -35,6 +38,84 @@ from backend.dependencies import (
 from backend.services.notification_service import notify_new_application_received
 
 router = APIRouter(tags=["Jobs"])
+
+
+def _normalize_deadline(value: datetime | None) -> datetime | None:
+    """Persist deadline instants in UTC even on SQLite (which drops tzinfo)."""
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _saved_job_response(saved: SavedJob, job: Job) -> SavedJobResponse:
+    return SavedJobResponse(
+        id=saved.id,
+        user_id=saved.user_id,
+        job_id=saved.job_id,
+        saved_at=saved.saved_at,
+        job=job,
+    )
+
+
+@router.get("/saved", response_model=List[SavedJobResponse])
+def list_saved_jobs(
+    current_user: Annotated[User, Depends(get_current_applicant)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    """Return the candidate's bookmarked active postings, newest first."""
+    rows = session.exec(
+        select(SavedJob, Job)
+        .join(Job, SavedJob.job_id == Job.id)
+        .where(SavedJob.user_id == current_user.id, Job.is_active)
+        .order_by(col(SavedJob.saved_at).desc())
+    ).all()
+    return [_saved_job_response(saved, job) for saved, job in rows]
+
+
+@router.post("/{job_id}/save", response_model=SavedJobResponse, status_code=status.HTTP_201_CREATED)
+def save_job(
+    job_id: int,
+    current_user: Annotated[User, Depends(get_current_applicant)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    """Bookmark an active posting; repeated saves are safely idempotent."""
+    job = session.get(Job, job_id)
+    if not job or not job.is_active:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job posting not found.")
+
+    saved = session.exec(
+        select(SavedJob).where(
+            SavedJob.user_id == current_user.id,
+            SavedJob.job_id == job_id,
+        )
+    ).first()
+    if saved is None:
+        saved = SavedJob(user_id=current_user.id, job_id=job_id)
+        session.add(saved)
+        session.commit()
+        session.refresh(saved)
+
+    return _saved_job_response(saved, job)
+
+
+@router.delete("/{job_id}/save", status_code=status.HTTP_204_NO_CONTENT)
+def unsave_job(
+    job_id: int,
+    current_user: Annotated[User, Depends(get_current_applicant)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    """Remove a bookmark; deleting an already-removed bookmark is harmless."""
+    saved = session.exec(
+        select(SavedJob).where(
+            SavedJob.user_id == current_user.id,
+            SavedJob.job_id == job_id,
+        )
+    ).first()
+    if saved is not None:
+        session.delete(saved)
+        session.commit()
 @router.get("/mine", response_model=List[JobResponse])
 def list_my_jobs(
     current_user: Annotated[User, Depends(get_current_recruiter)],
@@ -419,6 +500,7 @@ def create_job(
         max_hours_per_week=payload.max_hours_per_week,
         salary_min=payload.salary_min,
         salary_max=payload.salary_max,
+        deadline=_normalize_deadline(payload.deadline),
     )
     session.add(job)
     session.commit()
@@ -450,6 +532,8 @@ def update_job(
         )
 
     update_data = payload.model_dump(exclude_unset=True)
+    if "deadline" in update_data:
+        update_data["deadline"] = _normalize_deadline(update_data["deadline"])
     for field, value in update_data.items():
         setattr(job, field, value)
 

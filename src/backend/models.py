@@ -44,6 +44,7 @@ class NotificationType(str, Enum):
     INTERVIEW_INVITATION = "interview_invitation"
     APPLICATION_RECEIVED = "application_received"
     SYSTEM = "system"
+    DEADLINE_REMINDER = "deadline_reminder"
 
 class InterviewRole(str, Enum):
     USER = "user"
@@ -70,6 +71,7 @@ class User(SQLModel, table=True):
     posted_jobs: List["Job"] = Relationship(back_populates="recruiter")
     applications: List["Application"] = Relationship(back_populates="applicant")
     notifications: List["Notification"] = Relationship(back_populates="user")
+    saved_jobs: List["SavedJob"] = Relationship(back_populates="user")
 
 
 class Profile(SQLModel, table=True):
@@ -113,9 +115,29 @@ class Job(SQLModel, table=True):
     salary_max: int | None = Field(default=None)
     is_active: bool = Field(default=True, index=True)
     posted_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    # A timezone-aware instant at which applications close.  Existing postings
+    # may leave this unset while recruiters add the deadline later.
+    deadline: datetime | None = Field(default=None, index=True)
 
     recruiter: User | None = Relationship(back_populates="posted_jobs")
     applications: List["Application"] = Relationship(back_populates="job")
+    saved_by: List["SavedJob"] = Relationship(back_populates="job")
+
+
+class SavedJob(SQLModel, table=True):
+    """A candidate's bookmark for a job posting."""
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "job_id", name="uq_saved_job_user_job"),
+    )
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True, nullable=False)
+    job_id: int = Field(foreign_key="job.id", index=True, nullable=False)
+    saved_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+
+    user: User | None = Relationship(back_populates="saved_jobs")
+    job: Job | None = Relationship(back_populates="saved_by")
 
 
 class Application(SQLModel, table=True):
@@ -162,6 +184,9 @@ class Notification(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
     reference_id: int | None = Field(default=None)
     reference_type: str | None = Field(default=None)
+    # Nullable for existing notification producers. Deadline reminders set a
+    # stable key so repeated scheduler/login calls are safe and idempotent.
+    dedupe_key: str | None = Field(default=None, unique=True, index=True)
 
     user: User | None = Relationship(back_populates="notifications")
 
@@ -239,6 +264,7 @@ class JobCreate(SQLModel):
     max_hours_per_week: int | None = None
     salary_min: int | None = None
     salary_max: int | None = None
+    deadline: datetime | None = None
 
 class JobUpdate(SQLModel):
     title: str | None = None
@@ -253,6 +279,7 @@ class JobUpdate(SQLModel):
     salary_min: int | None = None
     salary_max: int | None = None
     is_active: bool | None = None
+    deadline: datetime | None = None
 
 class JobResponse(SQLModel):
     id: int
@@ -270,6 +297,15 @@ class JobResponse(SQLModel):
     salary_max: int | None = None
     is_active: bool
     posted_at: datetime
+    deadline: datetime | None = None
+
+
+class SavedJobResponse(SQLModel):
+    id: int
+    user_id: int
+    job_id: int
+    saved_at: datetime
+    job: JobResponse
 
 class JobListResponse(SQLModel):
     jobs: List[JobResponse]
