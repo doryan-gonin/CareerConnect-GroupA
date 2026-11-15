@@ -121,6 +121,8 @@ class TestNotificationTriggers:
         assert data["unread_count"] == 1
         notif = data["notifications"][0]
         assert notif["notification_type"] == "application_received"
+        assert notif["reference_type"] == "application"
+        assert notif["reference_id"] == apply_res.json()["id"]
         assert job.title in notif["title"]
         assert "new candidate" in notif["message"]
 
