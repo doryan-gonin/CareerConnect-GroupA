@@ -101,27 +101,31 @@ function App() {
   useEffect(() => {
     if (!token) return;
 
+    let active = true;
+    const redirect = (path) => {
+      queueMicrotask(() => {
+        if (active) navigate(path, { replace: true });
+      });
+    };
+
     // Redirect obsolete recruiter route to unified dashboard
     if (currentPath === "/recruiter/dashboard") {
-      navigate("/dashboard", { replace: true });
-      return;
+      redirect("/dashboard");
+    } else if (isRecruiter) {
+      // Role-based route protection
+      if (currentPath === "/saved") {
+        redirect("/dashboard");
+      } else if (currentPath.startsWith("/interview") || currentPath === "/analytics") {
+        redirect("/dashboard");
+      } else if (currentPath.endsWith("/apply")) {
+        const match = currentPath.match(/^(\/jobs\/\d+)\/apply$/);
+        redirect(match ? match[1] : "/dashboard");
+      }
     }
 
-    // Role-based route protection
-    if (isRecruiter) {
-      if (currentPath === "/saved") {
-        navigate("/dashboard", { replace: true });
-        return;
-      }
-      if (currentPath.startsWith("/interview") || currentPath === "/analytics") {
-        navigate("/dashboard", { replace: true });
-        return;
-      }
-      if (currentPath.endsWith("/apply")) {
-        const match = currentPath.match(/^(\/jobs\/\d+)\/apply$/);
-        navigate(match ? match[1] : "/dashboard", { replace: true });
-      }
-    }
+    return () => {
+      active = false;
+    };
   }, [token, isRecruiter, currentPath]);
 
   useEffect(() => {
