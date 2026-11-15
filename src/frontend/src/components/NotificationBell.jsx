@@ -38,8 +38,29 @@ function NotificationBell({ token, onNotificationClick }) {
   }, [token]);
 
   useEffect(() => {
-    loadNotifications();
-  }, [loadNotifications]);
+    if (!token) return undefined;
+
+    let active = true;
+    queueMicrotask(() => {
+      if (active) setIsLoading(true);
+    });
+    getNotifications(token)
+      .then((data) => {
+        if (!active) return;
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unread_count || 0);
+      })
+      .catch((err) => {
+        if (active) setError(err.message);
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [token]);
 
   useEffect(() => {
     function closeOnOutsideClick(event) {

@@ -224,7 +224,13 @@ export default function RecruiterDashboard({ token, notificationTarget = null })
     if (!notificationTarget?.jobId) return;
 
     if (selectedJobId !== notificationTarget.jobId) {
-      handleViewApplicants(notificationTarget.jobId);
+      let active = true;
+      queueMicrotask(() => {
+        if (active) void handleViewApplicants(notificationTarget.jobId);
+      });
+      return () => {
+        active = false;
+      };
     }
   }, [handleViewApplicants, notificationTarget?.jobId, selectedJobId]);
 

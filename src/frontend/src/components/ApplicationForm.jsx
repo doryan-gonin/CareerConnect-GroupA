@@ -9,7 +9,7 @@ const MAX_RESUMES = 5;
 function ApplicationForm({ token, job, onBack, onSubmitApplication }) {
   const [resumes, setResumes] = useState([]);
   const [profile, setProfile] = useState(null);
-  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(() => Boolean(token));
   const [selectedResumeId, setSelectedResumeId] = useState("");
   const [nameEdit, setNameEdit] = useState(null);
   const [uploadNotice, setUploadNotice] = useState("");
@@ -21,9 +21,9 @@ function ApplicationForm({ token, job, onBack, onSubmitApplication }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [account, setAccount] = useState(null);
-  const [accountLoading, setAccountLoading] = useState(true);
+  const [accountLoading, setAccountLoading] = useState(() => Boolean(token));
   const [alreadyApplied, setAlreadyApplied] = useState(false);
-  const [checkingApplication, setCheckingApplication] = useState(true);
+  const [checkingApplication, setCheckingApplication] = useState(() => Boolean(token && job?.id));
 
   const profileName = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ");
 
@@ -83,7 +83,9 @@ function ApplicationForm({ token, job, onBack, onSubmitApplication }) {
     if (token) {
       loadProfile();
     } else {
-      setProfileLoading(false);
+      queueMicrotask(() => {
+        if (active) setProfileLoading(false);
+      });
     }
 
     return () => {
@@ -117,7 +119,9 @@ function ApplicationForm({ token, job, onBack, onSubmitApplication }) {
     if (token) {
       loadAccount();
     } else {
-      setAccountLoading(false);
+      queueMicrotask(() => {
+        if (active) setAccountLoading(false);
+      });
     }
 
     return () => {
@@ -154,7 +158,9 @@ function ApplicationForm({ token, job, onBack, onSubmitApplication }) {
     if (token && job?.id) {
       checkExistingApplication();
     } else {
-      setCheckingApplication(false);
+      queueMicrotask(() => {
+        if (active) setCheckingApplication(false);
+      });
     }
 
     return () => {
