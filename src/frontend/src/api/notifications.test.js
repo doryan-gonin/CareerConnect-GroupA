@@ -5,6 +5,7 @@ import {
   markAllNotificationsAsRead,
   markNotificationAsRead,
 } from "./notifications";
+import { API_BASE_URL } from "./client";
 
 describe("notifications API", () => {
   beforeEach(() => {
@@ -21,7 +22,7 @@ describe("notifications API", () => {
       getNotifications("token", { unreadOnly: true, limit: 10, offset: 20 }),
     ).resolves.toEqual(response);
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:8000/api/notifications?unread_only=true&limit=10&offset=20",
+      `${API_BASE_URL}/api/notifications?unread_only=true&limit=10&offset=20`,
       expect.objectContaining({ headers: { Authorization: "Bearer token" } }),
     );
   });
@@ -36,9 +37,9 @@ describe("notifications API", () => {
     await deleteNotification("token", 5);
 
     expect(fetchMock.mock.calls.map(([url, options]) => [url, options.method])).toEqual([
-      ["http://localhost:8000/api/notifications/4/read", "PATCH"],
-      ["http://localhost:8000/api/notifications/read-all", "PATCH"],
-      ["http://localhost:8000/api/notifications/5", "DELETE"],
+      [`${API_BASE_URL}/api/notifications/4/read`, "PATCH"],
+      [`${API_BASE_URL}/api/notifications/read-all`, "PATCH"],
+      [`${API_BASE_URL}/api/notifications/5`, "DELETE"],
     ]);
   });
 

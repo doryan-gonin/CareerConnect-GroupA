@@ -60,8 +60,8 @@ export function saveJob(token, jobId) {
   });
 }
 
-export function unsaveJob(token, jobId) {
-  return apiRequest(`/api/jobs/${jobId}/save`, {
+export async function unsaveJob(token, jobId) {
+  await apiRequest(`/api/jobs/${jobId}/save`, {
     token,
     method: "DELETE",
     fallbackError: "Failed to remove this saved job.",

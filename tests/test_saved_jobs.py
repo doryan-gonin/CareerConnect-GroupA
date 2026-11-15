@@ -1,6 +1,6 @@
 from sqlmodel import select
 
-from backend.models import Job, SavedJob
+from backend.models import SavedJob
 
 
 def _login(client, user):

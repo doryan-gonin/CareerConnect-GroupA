@@ -1,12 +1,14 @@
 from datetime import datetime, timedelta, timezone
+
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
+
 from backend.models import (
+    Application,
+    ApplicationStatus,
+    Job,
     Notification,
     NotificationType,
-    Application,
-    Job,
-    ApplicationStatus,
     SavedJob,
     User,
 )

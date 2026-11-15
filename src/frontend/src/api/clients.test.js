@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { registerUser, loginUser, logoutUser, getCurrentUser } from "./auth";
-import { getMyApplications, withdrawApplication } from "./applications";
+import { getApplication, getMyApplications, withdrawApplication } from "./applications";
 import { createInterviewSession, sendInterviewMessage } from "./interview";
 import { getAnalytics } from "./analytics";
 import { searchJobs, applyToJob, getJobById } from "./jobs";
 import { updateProfile, uploadResume, getResumes, deleteResume } from "./profiles";
+import { API_BASE_URL } from "./client";
 
 let fetchMock;
 beforeEach(() => {
@@ -18,14 +19,14 @@ const lastRequest = () => fetchMock.mock.calls.at(-1);
 describe("API request contracts", () => {
   it("registers recruiter credentials and logs in using backend field names", async () => {
     await registerUser("ada@example.com", "Secure!123", true);
-    expect(lastRequest()[0]).toBe("http://localhost:8000/api/auth/register");
+    expect(lastRequest()[0]).toBe(`${API_BASE_URL}/api/auth/register`);
     expect(JSON.parse(lastRequest()[1].body)).toEqual({
       email_address: "ada@example.com",
       password: "Secure!123",
       is_recruiter: true,
     });
     await loginUser("ada@example.com", "Secure!123");
-    expect(lastRequest()[0]).toBe("http://localhost:8000/api/auth/login");
+    expect(lastRequest()[0]).toBe(`${API_BASE_URL}/api/auth/login`);
     expect(JSON.parse(lastRequest()[1].body)).toEqual({
       email_address: "ada@example.com",
       password: "Secure!123",
@@ -34,7 +35,7 @@ describe("API request contracts", () => {
 
   it("uses the configured API origin for account loading and tolerates offline logout", async () => {
     await getCurrentUser("token");
-    expect(lastRequest()[0]).toBe("http://localhost:8000/api/auth/me");
+    expect(lastRequest()[0]).toBe(`${API_BASE_URL}/api/auth/me`);
     expect(lastRequest()[1].headers.Authorization).toBe("Bearer token");
     fetchMock.mockRejectedValue(new Error("offline"));
     await expect(logoutUser("token")).resolves.toBeUndefined();
@@ -46,6 +47,18 @@ describe("API request contracts", () => {
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
     await expect(withdrawApplication("token", 12)).resolves.toBe(true);
     expect(lastRequest()[1].method).toBe("DELETE");
+  });
+
+  it("loads a single application with authentication", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: 12, status: "Under Review" }), { status: 200 }),
+    );
+    await expect(getApplication("token", 12)).resolves.toEqual({
+      id: 12,
+      status: "Under Review",
+    });
+    expect(lastRequest()[0]).toBe(`${API_BASE_URL}/api/applications/12`);
+    expect(lastRequest()[1].headers.Authorization).toBe("Bearer token");
   });
 
   it("sends interview context and messages as JSON", async () => {

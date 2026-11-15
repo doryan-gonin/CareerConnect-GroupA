@@ -12,28 +12,11 @@ export async function getMyApplications(token, statusFilter) {
   );
 }
 
-export async function getApplication(token, applicationId) {
-  let response;
-  try {
-    response = await fetch(`${API_BASE_URL}/api/applications/${applicationId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-  } catch {
-    throw new Error("Could not reach the server. Is the backend running?");
-  }
-
-  let body = null;
-  try {
-    body = await response.json();
-  } catch {
-    // ignore malformed error bodies
-  }
-
-  if (!response.ok) {
-    throw new Error(extractErrorMessage(body, "Failed to load application."));
-  }
-
-  return body;
+export function getApplication(token, applicationId) {
+  return apiRequest(`/api/applications/${applicationId}`, {
+    token,
+    fallbackError: "Failed to load application.",
+  });
 }
 
 export async function withdrawApplication(token, applicationId) {

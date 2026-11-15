@@ -4,6 +4,8 @@ from sqlmodel import select
 
 from backend.models import Job, Notification, NotificationType, SavedJob
 from backend.services.notification_service import generate_deadline_reminders
+
+
 def _login(client, user):
     response = client.post(
         "/api/auth/login",

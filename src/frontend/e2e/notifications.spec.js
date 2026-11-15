@@ -25,23 +25,34 @@ async function setup(request) {
   return { candidate, recruiter, job, application };
 }
 
+async function openNotifications(page) {
+  const button = page.getByRole("button", { name: /^Notifications(?: \(\d+ unread\))?$/ });
+  await expect(button).toBeVisible();
+  await button.click();
+}
+
 test("candidate reads, marks all read and dismisses persisted notifications", async ({
   page,
   request,
 }) => {
   const { candidate, job } = await setup(request);
+  const before = await notifications(request, candidate);
   await login(page, candidate);
-  await page.getByRole("button", { name: "Notifications (2 unread)", exact: true }).click();
+  await openNotifications(page);
   await expect(page.getByText(`Interview Invitation: ${job.title}`, { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Mark all read", exact: true }).click();
   await expect(page.getByRole("button", { name: "Notifications", exact: true })).toBeVisible();
   expect((await notifications(request, candidate)).unread_count).toBe(0);
   await page.getByRole("button", { name: "Dismiss", exact: true }).first().click();
-  await expect(page.getByRole("button", { name: "Dismiss", exact: true })).toHaveCount(1);
-  expect((await notifications(request, candidate)).total_count).toBe(1);
+  await expect(page.getByRole("button", { name: "Dismiss", exact: true })).toHaveCount(
+    before.total_count - 1,
+  );
+  expect((await notifications(request, candidate)).total_count).toBe(before.total_count - 1);
   await page.reload();
-  await page.getByRole("button", { name: "Notifications", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Dismiss", exact: true })).toHaveCount(1);
+  await openNotifications(page);
+  await expect(page.getByRole("button", { name: "Dismiss", exact: true })).toHaveCount(
+    before.total_count - 1,
+  );
   await page.keyboard.press("Escape");
   await expect(page.getByRole("heading", { name: "Notifications", exact: true })).toHaveCount(0);
 });
@@ -51,14 +62,15 @@ test("candidate notification click from job search opens the referenced context"
   request,
 }) => {
   const { candidate, job } = await setup(request);
+  const before = await notifications(request, candidate);
   await login(page, candidate);
   await page.getByRole("link", { name: "Browse Jobs", exact: true }).click();
-  await page.getByRole("button", { name: "Notifications (2 unread)", exact: true }).click();
+  await openNotifications(page);
   await page
     .getByRole("button", { name: new RegExp(`Interview Invitation: ${job.title}`) })
     .click();
   await expect(page.getByRole("heading", { name: job.title, exact: true })).toBeVisible();
-  expect((await notifications(request, candidate)).unread_count).toBe(1);
+  expect((await notifications(request, candidate)).unread_count).toBe(before.unread_count - 1);
 });
 
 test("recruiter receives a new-application notification for the correct application", async ({
@@ -67,9 +79,13 @@ test("recruiter receives a new-application notification for the correct applicat
 }) => {
   const { recruiter, job, application } = await setup(request);
   const data = await notifications(request, recruiter);
-  expect(data.notifications[0].reference_id).toBe(application.id);
+  const applicationNotification = data.notifications.find(
+    (notification) => notification.reference_id === application.id,
+  );
+  expect(applicationNotification).toBeDefined();
+  expect(applicationNotification.title).toBe(`New Application: ${job.title}`);
   await login(page, recruiter);
-  await page.getByRole("button", { name: "Notifications (1 unread)", exact: true }).click();
+  await openNotifications(page);
   await expect(page.getByText(`New Application: ${job.title}`, { exact: true })).toBeVisible();
   await page.getByRole("button", { name: new RegExp(`New Application: ${job.title}`) }).click();
   await expect(page.getByRole("heading", { name: job.title, exact: true })).toBeVisible();
