@@ -17,7 +17,8 @@ export function useCandidateJobMetadata(token: string, enabled: boolean) {
         getMyApplications(token, undefined, signal),
         getSavedJobs(token, signal),
       ]);
-      const applications = applicationsResult.status === "fulfilled" ? applicationsResult.value : [];
+      const applications =
+        applicationsResult.status === "fulfilled" ? applicationsResult.value : [];
       const savedJobs = savedJobsResult.status === "fulfilled" ? savedJobsResult.value : [];
       return {
         statusByJobId: Object.fromEntries(
