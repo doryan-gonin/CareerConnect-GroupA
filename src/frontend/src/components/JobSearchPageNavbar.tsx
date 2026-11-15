@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type FormEvent } from "react";
+import { useState, useEffect, useRef, useCallback, type FormEvent } from "react";
 import { searchJobs } from "../api/jobs";
 import LocationAutocomplete from "./LocationAutocomplete";
 import NotificationBell from "./NotificationBell";
@@ -90,19 +90,24 @@ function JobSearchPageNavbar({
   const jobTypeRef = useRef<HTMLDivElement | null>(null);
   const scheduleRef = useRef<HTMLDivElement | null>(null);
   const orderRef = useRef<HTMLDivElement | null>(null);
+  const searchedTokenRef = useRef<string | null>(null);
+  const triggerSearchRef = useRef<(overrides?: Partial<SearchOverrides>) => Promise<void>>(
+    async () => undefined,
+  );
 
   useEffect(() => {
     function handleClickOutside(event: PointerEvent) {
-      if (categoryRef.current && !categoryRef.current.contains(event.target as Node)) {
+      const target = event.target;
+      if (target instanceof Node && categoryRef.current && !categoryRef.current.contains(target)) {
         setIsCategoryOpen(false);
       }
-      if (jobTypeRef.current && !jobTypeRef.current.contains(event.target as Node)) {
+      if (target instanceof Node && jobTypeRef.current && !jobTypeRef.current.contains(target)) {
         setIsJobTypeOpen(false);
       }
-      if (scheduleRef.current && !scheduleRef.current.contains(event.target as Node)) {
+      if (target instanceof Node && scheduleRef.current && !scheduleRef.current.contains(target)) {
         setIsScheduleOpen(false);
       }
-      if (orderRef.current && !orderRef.current.contains(event.target as Node)) {
+      if (target instanceof Node && orderRef.current && !orderRef.current.contains(target)) {
         setIsOrderOpen(false);
       }
     }
@@ -123,6 +128,73 @@ function JobSearchPageNavbar({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
+
+  const triggerSearch = useCallback(
+    async (overrides: Partial<SearchOverrides> = {}) => {
+      setError("");
+      const effectiveKeyword = overrides.keyword !== undefined ? overrides.keyword : keyword;
+      const effectiveLocation = overrides.location !== undefined ? overrides.location : location;
+      const effectiveCategory = overrides.category !== undefined ? overrides.category : category;
+      const effectiveJobType = overrides.jobType !== undefined ? overrides.jobType : jobType;
+      const effectiveJobSchedule =
+        overrides.jobSchedule !== undefined ? overrides.jobSchedule : jobSchedule;
+      const effectiveSortBy = overrides.sortBy !== undefined ? overrides.sortBy : sortBy;
+      const effectiveSortOrder =
+        overrides.sortOrder !== undefined ? overrides.sortOrder : sortOrder;
+      const effectivePage = overrides.page !== undefined ? overrides.page : 1;
+      const effectiveAiSuggested =
+        overrides.aiSuggested !== undefined
+          ? overrides.aiSuggested
+          : aiSuggested || effectiveSortBy === "suggestion";
+
+      try {
+        const data = await searchJobs(token, {
+          keyword: effectiveKeyword,
+          location: effectiveLocation,
+          category: effectiveCategory,
+          jobType: effectiveJobType !== "Job Type" ? effectiveJobType : undefined,
+          jobSchedule: effectiveJobSchedule !== "Schedule" ? effectiveJobSchedule : undefined,
+          sortBy: effectiveSortBy || undefined,
+          sortOrder: effectiveSortOrder || undefined,
+          aiSuggested: effectiveAiSuggested,
+          refreshSuggestions: overrides.refreshSuggestions,
+          page: effectivePage,
+        });
+        onJobsLoaded(data.jobs, {
+          page: data.page,
+          totalPages: data.total_pages,
+          total: data.total,
+          limit: data.limit,
+          onPageChange: (newPage) => void triggerSearchRef.current({ page: newPage }),
+        });
+      } catch (err) {
+        onJobsLoaded([], {
+          page: 1,
+          totalPages: 0,
+          total: 0,
+          limit: 20,
+          onPageChange: (newPage) => void triggerSearchRef.current({ page: newPage }),
+        });
+        setError(err instanceof Error ? err.message : "Failed to load jobs.");
+      }
+    },
+    [
+      aiSuggested,
+      category,
+      jobSchedule,
+      jobType,
+      keyword,
+      location,
+      onJobsLoaded,
+      sortBy,
+      sortOrder,
+      token,
+    ],
+  );
+
+  useEffect(() => {
+    triggerSearchRef.current = triggerSearch;
+  }, [triggerSearch]);
 
   async function handleReset() {
     setIsCategoryOpen(false);
@@ -153,58 +225,11 @@ function JobSearchPageNavbar({
     });
   }
 
-  async function triggerSearch(overrides: Partial<SearchOverrides> = {}) {
-    setError("");
-    const effectiveKeyword = overrides.keyword !== undefined ? overrides.keyword : keyword;
-    const effectiveLocation = overrides.location !== undefined ? overrides.location : location;
-    const effectiveCategory = overrides.category !== undefined ? overrides.category : category;
-    const effectiveJobType = overrides.jobType !== undefined ? overrides.jobType : jobType;
-    const effectiveJobSchedule =
-      overrides.jobSchedule !== undefined ? overrides.jobSchedule : jobSchedule;
-    const effectiveSortBy = overrides.sortBy !== undefined ? overrides.sortBy : sortBy;
-    const effectiveSortOrder = overrides.sortOrder !== undefined ? overrides.sortOrder : sortOrder;
-    const effectivePage = overrides.page !== undefined ? overrides.page : 1;
-    const effectiveAiSuggested =
-      overrides.aiSuggested !== undefined
-        ? overrides.aiSuggested
-        : aiSuggested || effectiveSortBy === "suggestion";
-
-    try {
-      const data = await searchJobs(token, {
-        keyword: effectiveKeyword,
-        location: effectiveLocation,
-        category: effectiveCategory,
-        jobType: effectiveJobType !== "Job Type" ? effectiveJobType : undefined,
-        jobSchedule: effectiveJobSchedule !== "Schedule" ? effectiveJobSchedule : undefined,
-        sortBy: effectiveSortBy || undefined,
-        sortOrder: effectiveSortOrder || undefined,
-        aiSuggested: effectiveAiSuggested,
-        refreshSuggestions: overrides.refreshSuggestions,
-        page: effectivePage,
-      });
-      onJobsLoaded(data.jobs, {
-        page: data.page,
-        totalPages: data.total_pages,
-        total: data.total,
-        limit: data.limit,
-        onPageChange: (newPage) => triggerSearch({ page: newPage }),
-      });
-    } catch (err) {
-      onJobsLoaded([], {
-        page: 1,
-        totalPages: 0,
-        total: 0,
-        limit: 20,
-        onPageChange: (newPage) => triggerSearch({ page: newPage }),
-      });
-      setError(err instanceof Error ? err.message : "Failed to load jobs.");
-    }
-  }
-
   useEffect(() => {
-    triggerSearch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (searchedTokenRef.current === token) return;
+    searchedTokenRef.current = token;
+    void triggerSearch();
+  }, [token, triggerSearch]);
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     if (event) event.preventDefault();

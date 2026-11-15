@@ -1,7 +1,14 @@
 import AnalyticsBarChart from "./AnalyticsBarChart";
 import AnalyticsCard from "./AnalyticsCard";
 import ApplicationsSection from "./ApplicationsSection";
-import type { AnalyticsPayload } from "./AnalyticsCard";
+import type {
+  AnalyticsPoint,
+  ApplicationAnalyticsResponse,
+  SalaryDistributionResponse,
+  SearchAnalyticsResponse,
+  ViewAnalyticsPoint,
+  ViewAnalyticsResponse,
+} from "../api/types";
 
 const PERIOD_CHARTS = [
   { title: "Searches", endpoint: "searches", valueKey: "count", unit: "searches" },
@@ -12,7 +19,7 @@ const PERIOD_CHARTS = [
     valueKey: "unique_postings",
     unit: "postings viewed",
   },
-];
+] as const;
 
 function formatSalary(value: number) {
   return `$${Math.round(value).toLocaleString()}`;
@@ -20,14 +27,7 @@ function formatSalary(value: number) {
 
 // The backend returns summary numbers rather than individual salaries, so this
 // shows the spread (min, average, one standard deviation, max) instead of a histogram.
-type SalaryData = AnalyticsPayload & {
-  salary_count: number;
-  minimum_salary: number;
-  maximum_salary: number;
-  average_salary: number;
-  standard_deviation: number;
-};
-function SalaryDistribution({ data }: { data: SalaryData }) {
+function SalaryDistribution({ data }: { data: SalaryDistributionResponse }) {
   if (data.salary_count === 0) {
     return (
       <div className="rounded-md bg-gray-50 py-12 text-center text-sm text-gray-500">
@@ -36,10 +36,10 @@ function SalaryDistribution({ data }: { data: SalaryData }) {
     );
   }
 
-  const min = data.minimum_salary;
-  const max = data.maximum_salary;
-  const average = data.average_salary;
-  const deviation = data.standard_deviation;
+  const min = data.minimum_salary ?? 0;
+  const max = data.maximum_salary ?? min;
+  const average = data.average_salary ?? min;
+  const deviation = data.standard_deviation ?? 0;
   const position = (value: number) => (max === min ? 50 : ((value - min) / (max - min)) * 100);
   const bandStart = position(Math.max(min, average - deviation));
   const bandEnd = position(Math.min(max, average + deviation));
@@ -91,6 +91,20 @@ function SalaryDistribution({ data }: { data: SalaryData }) {
       </p>
     </div>
   );
+}
+
+type TrendAnalyticsResponse =
+  | ApplicationAnalyticsResponse
+  | SearchAnalyticsResponse
+  | ViewAnalyticsResponse;
+
+type ChartPoint = { period: string; count: number };
+
+function toChartPoints(data: TrendAnalyticsResponse): ChartPoint[] {
+  return data.points.map((point: AnalyticsPoint | ViewAnalyticsPoint) => ({
+    period: point.period,
+    count: "count" in point ? point.count : point.unique_postings,
+  }));
 }
 
 function SummaryStat({
@@ -146,13 +160,8 @@ function AnalyticsPage({ token, onBack }: { token: string; onBack: () => void })
           >
             {(data) => (
               <AnalyticsBarChart
-                points={
-                  data.points as unknown as Array<{
-                    period: string;
-                    [key: string]: string | number;
-                  }>
-                }
-                groupBy={String(data.group_by)}
+                points={toChartPoints(data)}
+                groupBy={data.group_by}
                 valueKey={chart.valueKey}
                 unit={chart.unit}
               />
@@ -165,7 +174,7 @@ function AnalyticsPage({ token, onBack }: { token: string; onBack: () => void })
           title="Salary distribution of applied positions"
           endpoint="salary-distribution"
         >
-          {(data) => <SalaryDistribution data={data as SalaryData} />}
+          {(data) => <SalaryDistribution data={data} />}
         </AnalyticsCard>
 
         <div className="lg:col-span-2">

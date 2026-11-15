@@ -1,4 +1,4 @@
-import type { ApplicationStatus } from "../api/types";
+import { isApplicationStatus, type ApplicationStatus } from "../api/types";
 
 const STATUS_STYLES: Record<ApplicationStatus, string> = {
   Applied: "bg-blue-100 text-blue-800",
@@ -13,7 +13,7 @@ interface ApplicationStatusBadgeProps {
 }
 
 function ApplicationStatusBadge({ status }: ApplicationStatusBadgeProps) {
-  const styles = STATUS_STYLES[status as ApplicationStatus] || "bg-gray-100 text-gray-800";
+  const styles = isApplicationStatus(status) ? STATUS_STYLES[status] : "bg-gray-100 text-gray-800";
   return (
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${styles}`}

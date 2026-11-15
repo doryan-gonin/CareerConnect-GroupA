@@ -4,20 +4,47 @@ import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import InterviewNewSession from "./InterviewNewSession";
 import { getMyApplications } from "../api/applications";
 import { createInterviewSession } from "../api/interview";
+import type { ApplicationDetail, InterviewSession } from "../api/types";
 
 vi.mock("../api/applications", () => ({ getMyApplications: vi.fn() }));
 vi.mock("../api/interview", () => ({ createInterviewSession: vi.fn() }));
 
 describe("InterviewNewSession", () => {
+  const application: ApplicationDetail = {
+    id: 7,
+    job_id: 9,
+    applicant_id: 3,
+    resume_id: null,
+    cover_letter: null,
+    status: "Applied",
+    applied_at: "2026-11-15T12:00:00Z",
+    updated_at: null,
+    message: null,
+    resume_name: null,
+    job_title: "Frontend Engineer",
+    company_name: "Acme",
+    location: "Remote",
+    category: "Engineering",
+    job_type: "Permanent",
+    job_schedule: "Full-time",
+  };
+  const session: InterviewSession = {
+    id: 18,
+    job_id: 9,
+    job_title: "Frontend Engineer",
+    company_name: "Acme",
+    created_at: "2026-11-15T12:00:00Z",
+    updated_at: "2026-11-15T12:00:00Z",
+    messages: [],
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("loads applications and starts a session for the selected application", async () => {
-    (getMyApplications as any).mockResolvedValue([
-      { id: 7, job_title: "Frontend Engineer", company_name: "Acme", status: "Applied" },
-    ]);
-    (createInterviewSession as any).mockResolvedValue({ id: 18 });
+    vi.mocked(getMyApplications).mockResolvedValue([application]);
+    vi.mocked(createInterviewSession).mockResolvedValue(session);
     const user = userEvent.setup();
     const onCreated = vi.fn();
 
@@ -39,7 +66,7 @@ describe("InterviewNewSession", () => {
   });
 
   it("offers to browse jobs when there are no applications", async () => {
-    (getMyApplications as any).mockResolvedValue([]);
+    vi.mocked(getMyApplications).mockResolvedValue([]);
     const user = userEvent.setup();
     const onBrowseJobs = vi.fn();
 
@@ -58,7 +85,7 @@ describe("InterviewNewSession", () => {
   });
 
   it("shows an API error when applications cannot be loaded", async () => {
-    (getMyApplications as any).mockRejectedValue(new Error("Failed to load applications."));
+    vi.mocked(getMyApplications).mockRejectedValue(new Error("Failed to load applications."));
 
     render(
       <InterviewNewSession

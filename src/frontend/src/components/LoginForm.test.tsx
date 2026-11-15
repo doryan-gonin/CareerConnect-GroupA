@@ -12,7 +12,11 @@ describe("LoginForm", () => {
   it("submits credentials and passes the token to the parent", async () => {
     const user = userEvent.setup();
     const onLoggedIn = vi.fn();
-    (loginUser as any).mockResolvedValue({ access_token: "access-token", is_recruiter: false });
+    vi.mocked(loginUser).mockResolvedValue({
+      access_token: "access-token",
+      token_type: "bearer",
+      is_recruiter: false,
+    });
     render(<LoginForm onLoggedIn={onLoggedIn} onSwitchToSignup={vi.fn()} />);
 
     await user.type(screen.getByLabelText("Email"), "candidate@example.com");
@@ -25,7 +29,7 @@ describe("LoginForm", () => {
 
   it("shows server errors", async () => {
     const user = userEvent.setup();
-    (loginUser as any).mockRejectedValue(new Error("Invalid credentials."));
+    vi.mocked(loginUser).mockRejectedValue(new Error("Invalid credentials."));
     render(<LoginForm onLoggedIn={vi.fn()} onSwitchToSignup={vi.fn()} />);
 
     await user.type(screen.getByLabelText("Email"), "candidate@example.com");

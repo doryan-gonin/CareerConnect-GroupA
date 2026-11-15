@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import NotificationBell from "./NotificationBell";
 import * as notificationsApi from "../api/notifications";
+import type { Notification } from "../api/types";
 
 vi.mock("../api/notifications", () => ({
   deleteNotification: vi.fn(),
@@ -11,8 +12,9 @@ vi.mock("../api/notifications", () => ({
   markNotificationAsRead: vi.fn(),
 }));
 
-const unread = {
+const unread: Notification = {
   id: 1,
+  user_id: 3,
   title: "Application update",
   message: "Your application moved to Interview.",
   notification_type: "status_update",
@@ -22,24 +24,24 @@ const unread = {
   reference_type: "application",
 };
 
-const read = { ...unread, id: 2, title: "Older update", is_read: true };
+const read: Notification = { ...unread, id: 2, title: "Older update", is_read: true };
 
 describe("NotificationBell", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (notificationsApi.getNotifications as any).mockResolvedValue({
+    vi.mocked(notificationsApi.getNotifications).mockResolvedValue({
       notifications: [unread, read],
       unread_count: 1,
       total_count: 2,
     });
-    (notificationsApi.markNotificationAsRead as any).mockResolvedValue({
+    vi.mocked(notificationsApi.markNotificationAsRead).mockResolvedValue({
       ...unread,
       is_read: true,
     });
-    (notificationsApi.markAllNotificationsAsRead as any).mockResolvedValue({
+    vi.mocked(notificationsApi.markAllNotificationsAsRead).mockResolvedValue({
       message: "Marked 1 notification(s) as read.",
     });
-    (notificationsApi.deleteNotification as any).mockResolvedValue({
+    vi.mocked(notificationsApi.deleteNotification).mockResolvedValue({
       message: "Notification deleted.",
     });
   });

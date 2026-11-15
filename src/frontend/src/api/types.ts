@@ -19,6 +19,32 @@ export type NotificationType =
 export type InterviewRole = "user" | "assistant";
 export type AnalyticsGranularity = "day" | "week" | "month";
 
+export const APPLICATION_STATUSES = [
+  "Applied",
+  "Under Review",
+  "Interview",
+  "Offered",
+  "Rejected",
+] as const satisfies readonly ApplicationStatus[];
+
+export function isApplicationStatus(value: string): value is ApplicationStatus {
+  return APPLICATION_STATUSES.some((status) => status === value);
+}
+
+export function isJobSchedule(value: string): value is JobSchedule {
+  return value === "Full-time" || value === "Part-time";
+}
+
+export function isJobType(value: string): value is JobType {
+  return (
+    value === "Permanent" ||
+    value === "Temporary" ||
+    value === "Contract" ||
+    value === "Seasonal" ||
+    value === "Internship"
+  );
+}
+
 export interface User {
   id: number;
   email_address: string;
@@ -161,6 +187,11 @@ export interface NotificationList {
   notifications: Notification[];
 }
 
+export interface NotificationTarget {
+  applicationId: number;
+  jobId: number;
+}
+
 export interface InterviewMessage {
   role: InterviewRole;
   content: string;
@@ -184,10 +215,52 @@ export interface AnalyticsPoint {
   count: number;
 }
 
-export interface AnalyticsResponse {
+export interface ViewAnalyticsPoint {
+  period: ISODateString;
+  unique_postings: number;
+}
+
+export interface ApplicationAnalyticsResponse {
   start_date: ISODateString;
   end_date: ISODateString;
   group_by: AnalyticsGranularity;
   points: AnalyticsPoint[];
-  [key: string]: unknown;
 }
+
+export interface SearchAnalyticsResponse extends ApplicationAnalyticsResponse {}
+
+export interface ViewAnalyticsResponse {
+  start_date: ISODateString;
+  end_date: ISODateString;
+  group_by: AnalyticsGranularity;
+  points: ViewAnalyticsPoint[];
+}
+
+export interface SalaryDistributionResponse {
+  start_date: ISODateString;
+  end_date: ISODateString;
+  salary_count: number;
+  average_salary: number | null;
+  minimum_salary: number | null;
+  maximum_salary: number | null;
+  standard_deviation: number | null;
+}
+
+export interface ApplicationSummaryResponse {
+  start_date: ISODateString;
+  end_date: ISODateString;
+  category: string | null;
+  category_count: number;
+  location: string | null;
+  location_count: number;
+}
+
+export interface AnalyticsResponseByEndpoint {
+  applications: ApplicationAnalyticsResponse;
+  searches: SearchAnalyticsResponse;
+  views: ViewAnalyticsResponse;
+  "salary-distribution": SalaryDistributionResponse;
+  "application-summary": ApplicationSummaryResponse;
+}
+
+export type AnalyticsResponse = AnalyticsResponseByEndpoint[keyof AnalyticsResponseByEndpoint];

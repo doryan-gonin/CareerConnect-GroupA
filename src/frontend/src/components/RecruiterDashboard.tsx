@@ -12,9 +12,14 @@ import EditJobForm from "./EditJobForm";
 import ApplicationStatusBadge from "./ApplicationStatusBadge";
 import ResumeViewerModal from "./ResumeViewerModal";
 import MarkdownView from "./MarkdownView";
-import type { ApplicationStatus, Job, RecruiterApplication } from "../api/types";
+import { isApplicationStatus } from "../api/types";
+import type {
+  ApplicationStatus,
+  Job,
+  NotificationTarget,
+  RecruiterApplication,
+} from "../api/types";
 
-type NotificationTarget = { applicationId: number; jobId: number };
 type Props = { token: string; notificationTarget?: NotificationTarget | null };
 type Feedback = { type: "success" | "error"; message: string };
 type ResumeModalState = {
@@ -687,13 +692,16 @@ export default function RecruiterDashboard({ token, notificationTarget = null }:
                               <select
                                 id={`application-status-${application.id}`}
                                 value={application.status}
-                                onChange={(event) =>
-                                  handleUpdateApplicationStatus(
-                                    job.id,
-                                    application.id,
-                                    event.target.value as ApplicationStatus,
-                                  )
-                                }
+                                onChange={(event) => {
+                                  const status = event.target.value;
+                                  if (isApplicationStatus(status)) {
+                                    void handleUpdateApplicationStatus(
+                                      job.id,
+                                      application.id,
+                                      status,
+                                    );
+                                  }
+                                }}
                                 disabled={updatingApplicationId === application.id}
                                 className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 disabled:opacity-50"
                               >

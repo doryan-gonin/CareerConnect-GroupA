@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode, ChangeEvent } from "react";
-import { getAnalytics } from "../api/analytics";
-import type { AnalyticsGranularity, AnalyticsResponse } from "../api/types";
+import { getAnalytics, type AnalyticsEndpoint, type AnalyticsParams } from "../api/analytics";
+import type { AnalyticsGranularity, AnalyticsResponseByEndpoint } from "../api/types";
 
 const DEFAULT_RANGE_DAYS = 30;
 
@@ -21,56 +21,62 @@ const inputClass =
   "rounded-md border border-gray-300 px-2 py-1 text-sm text-gray-700 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500";
 
 // Each card owns its period and granularity so every graph can be adjusted on its own.
-export type AnalyticsPayload = AnalyticsResponse & Record<string, any>;
-type AnalyticsCardProps = {
+type AnalyticsCardProps<E extends AnalyticsEndpoint> = {
   token: string;
   title: string;
-  endpoint: string;
+  endpoint: E;
   hasGranularity?: boolean;
-  children: (data: AnalyticsPayload) => ReactNode;
+  children: (data: AnalyticsResponseByEndpoint[E]) => ReactNode;
 };
-type AnalyticsResult = { requestKey: string; data: AnalyticsPayload; error: string };
+type AnalyticsResult<T> =
+  | { status: "success"; requestKey: string; data: T }
+  | { status: "error"; requestKey: string; error: string };
 
-function AnalyticsCard({
+function AnalyticsCard<E extends AnalyticsEndpoint>({
   token,
   title,
   endpoint,
   hasGranularity = false,
   children,
-}: AnalyticsCardProps) {
+}: AnalyticsCardProps<E>) {
   const [startDate, setStartDate] = useState(defaultStartDate);
   const [endDate, setEndDate] = useState(() => toDateInputValue(new Date()));
   const [groupBy, setGroupBy] = useState<AnalyticsGranularity>("day");
-  const [result, setResult] = useState<AnalyticsResult | null>(null);
+  const [result, setResult] = useState<AnalyticsResult<AnalyticsResponseByEndpoint[E]> | null>(
+    null,
+  );
 
   let inputError = "";
   if (!startDate || !endDate) inputError = "Choose a start and end date.";
   else if (startDate > endDate) inputError = "The start date cannot be after the end date.";
 
-  const params = {
-    start_date: startDate,
-    end_date: endDate,
-    ...(hasGranularity ? { group_by: groupBy } : {}),
-  };
+  const params = useMemo<AnalyticsParams>(
+    () => ({
+      start_date: startDate,
+      end_date: endDate,
+      ...(hasGranularity ? { group_by: groupBy } : {}),
+    }),
+    [endDate, groupBy, hasGranularity, startDate],
+  );
   const requestKey = JSON.stringify(params);
   const isCurrent = result?.requestKey === requestKey;
-  const data = isCurrent ? result.data : null;
-  const error = inputError || (isCurrent ? result.error : "");
+  const data = isCurrent && result?.status === "success" ? result.data : null;
+  const error = inputError || (isCurrent && result?.status === "error" ? result.error : "");
   const isLoading = !inputError && !isCurrent;
 
   useEffect(() => {
     if (inputError) return undefined;
     let isMounted = true;
 
-    getAnalytics(token, endpoint, JSON.parse(requestKey))
+    getAnalytics(token, endpoint, params)
       .then((body) => {
-        if (isMounted) setResult({ requestKey, data: body as AnalyticsPayload, error: "" });
+        if (isMounted) setResult({ status: "success", requestKey, data: body });
       })
       .catch((err) => {
         if (isMounted) {
           setResult({
+            status: "error",
             requestKey,
-            data: {} as AnalyticsPayload,
             error: err instanceof Error ? err.message : String(err),
           });
         }
@@ -79,7 +85,7 @@ function AnalyticsCard({
     return () => {
       isMounted = false;
     };
-  }, [token, endpoint, requestKey, inputError]);
+  }, [endpoint, inputError, params, requestKey, token]);
 
   return (
     <section className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
@@ -105,9 +111,10 @@ function AnalyticsCard({
           <select
             aria-label={`${title} granularity`}
             value={groupBy}
-            onChange={(e: ChangeEvent<HTMLSelectElement>) =>
-              setGroupBy(e.target.value as AnalyticsGranularity)
-            }
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+              const value = e.target.value;
+              if (value === "day" || value === "week" || value === "month") setGroupBy(value);
+            }}
             className={inputClass}
           >
             <option value="day">By day</option>
@@ -119,7 +126,7 @@ function AnalyticsCard({
 
       {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       {isLoading && <div className="py-12 text-center text-sm text-gray-500">Loading…</div>}
-      {data && children(data)}
+      {data ? children(data) : null}
     </section>
   );
 }
