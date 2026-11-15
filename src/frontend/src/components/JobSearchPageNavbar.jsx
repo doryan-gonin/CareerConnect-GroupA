@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { searchJobs } from '../api/jobs'
 import LocationAutocomplete from './LocationAutocomplete'
+import NotificationBell from './NotificationBell'
 
 const CATEGORIES = [
     'Software Engineering',
@@ -26,7 +27,7 @@ const SORT_OPTIONS = [
     { label: 'Fewest Hours', sortBy: 'max_hours_per_week', sortOrder: 'asc' },
 ]
 
-function JobSearchPageNavbar({ token, onLogout, isLoggingOut = false, onJobsLoaded, onNavigateDashboard, onReset }) {
+function JobSearchPageNavbar({ token, onLogout, isLoggingOut = false, onJobsLoaded, onNavigateDashboard, onReset, onNotificationClick }) {
     const [keyword, setKeyWord] = useState('')
     const [error, setError] = useState('')
     const [isCategoryOpen, setIsCategoryOpen] = useState(false)
@@ -191,6 +192,8 @@ function JobSearchPageNavbar({ token, onLogout, isLoggingOut = false, onJobsLoad
                             Dashboard
                         </a>
                     )}
+
+                    <NotificationBell token={token} onNotificationClick={onNotificationClick} />
 
                     <button
                         type="button"
