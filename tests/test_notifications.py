@@ -1,3 +1,12 @@
+from sqlmodel import select
+
+from backend.models import Application, ApplicationStatus, Job, Notification, User
+from backend.services.notification_service import (
+    notify_new_application_received,
+    notify_status_change,
+)
+
+
 # Helper function
 def login_and_get_token(client, email_address: str, password: str) -> str:
     payload = {
@@ -261,3 +270,56 @@ class TestNotificationManagement:
             "notifications"
         ]
         assert len(remaining) == 0
+
+
+class TestNotificationIdempotency:
+    def test_status_trigger_retries_do_not_duplicate(self, db_session, candidate_application):
+        application = db_session.get(Application, candidate_application["application_id"])
+        job = db_session.get(Job, candidate_application["job_id"])
+
+        first = notify_status_change(
+            db_session,
+            application,
+            job,
+            ApplicationStatus.APPLIED,
+            ApplicationStatus.UNDER_REVIEW,
+        )
+        second = notify_status_change(
+            db_session,
+            application,
+            job,
+            ApplicationStatus.APPLIED,
+            ApplicationStatus.UNDER_REVIEW,
+        )
+        db_session.commit()
+
+        notifications = db_session.exec(
+            select(Notification).where(
+                Notification.user_id == candidate_application["applicant"]["id"],
+                Notification.reference_id == application.id,
+            )
+        ).all()
+        assert first is not None
+        assert second is not None
+        assert second.id == first.id
+        assert len(notifications) == 1
+
+    def test_recruiter_trigger_retries_do_not_duplicate(self, db_session, candidate_application):
+        application = db_session.get(Application, candidate_application["application_id"])
+        job = db_session.get(Job, candidate_application["job_id"])
+        applicant = db_session.get(User, application.applicant_id)
+
+        first = notify_new_application_received(db_session, job, application, applicant)
+        second = notify_new_application_received(db_session, job, application, applicant)
+        db_session.commit()
+
+        notifications = db_session.exec(
+            select(Notification).where(
+                Notification.user_id == candidate_application["recruiter"]["id"],
+                Notification.reference_id == application.id,
+            )
+        ).all()
+        assert first is not None
+        assert second is not None
+        assert second.id == first.id
+        assert len(notifications) == 1

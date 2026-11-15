@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   getMyJobs,
   closeJob,
@@ -16,7 +16,7 @@ import MarkdownView from './MarkdownView'
 
 
 
-export default function RecruiterDashboard({ token }) {
+export default function RecruiterDashboard({ token, notificationTarget = null }) {
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -204,7 +204,7 @@ async function handleReopenJob(job) {
 
   // Open the applicants list for the selected job.
 
-async function handleViewApplicants(jobId) {
+  const handleViewApplicants = useCallback(async (jobId) => {
   const requestId = ++applicantRequestId.current
 
   if (selectedJobId === jobId) {
@@ -235,7 +235,26 @@ async function handleViewApplicants(jobId) {
       setApplicantsLoading(false)
     }
   }
-}
+  }, [selectedJobId, token])
+
+  // A recruiter notification carries the application id and its job id. Open
+  // that job's applicants panel so the notification lands on the relevant
+  // application instead of the generic dashboard.
+  useEffect(() => {
+    if (!notificationTarget?.jobId) return
+
+    if (selectedJobId !== notificationTarget.jobId) {
+      handleViewApplicants(notificationTarget.jobId)
+    }
+  }, [handleViewApplicants, notificationTarget?.jobId, selectedJobId])
+
+  useEffect(() => {
+    if (!notificationTarget?.applicationId || selectedJobId !== notificationTarget.jobId) return
+    const target = document.querySelector(
+      `[data-application-id="${notificationTarget.applicationId}"]`,
+    )
+    target?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [notificationTarget?.applicationId, notificationTarget?.jobId, selectedJobId, applicants])
 
 
   async function handleOpenResumeModal(jobId, application) {
@@ -651,6 +670,7 @@ async function handleViewApplicants(jobId) {
                       {applicants.map((application) => (
                         <div
                           key={application.id}
+                          data-application-id={application.id}
                           className="p-3 transition hover:bg-gray-50/70"
                         >
                           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">

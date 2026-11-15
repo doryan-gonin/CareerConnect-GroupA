@@ -30,7 +30,19 @@ def create_notification(
     reference_type: str | None = None,
     dedupe_key: str | None = None,
  ) -> Notification:
-    """Create a new notification for a specific user."""
+    """Create a notification, reusing an existing keyed event when present.
+
+    Trigger handlers may be retried after a network timeout.  A stable key
+    makes those retries safe while the unique database index handles races
+    between workers.  Unkeyed notifications retain the historical behavior.
+    """
+    if dedupe_key:
+        existing = session.exec(
+            select(Notification).where(Notification.dedupe_key == dedupe_key)
+        ).first()
+        if existing is not None:
+            return existing
+
     notification = Notification(
         user_id=user_id,
         title=title,
@@ -58,11 +70,22 @@ def notify_status_change(
     Sends an INTERVIEW_INVITATION if invited to interview,
     or a generic STATUS_UPDATE otherwise.
     """
-    if old_status == new_status:
+    if (
+        old_status == new_status
+        or application is None
+        or job is None
+        or application.id is None
+        or application.job_id != job.id
+        or application.applicant_id is None
+    ):
         return None
 
-    job_title = job.title if job else "your applied position" # Shouldn't happen
-    company_name = job.company_name if job else "the company" 
+    applicant = session.get(User, application.applicant_id)
+    if applicant is None or applicant.is_recruiter:
+        return None
+
+    job_title = job.title
+    company_name = job.company_name
 
     if new_status == ApplicationStatus.INTERVIEW:
         notification_type = NotificationType.INTERVIEW_INVITATION
@@ -80,6 +103,19 @@ def notify_status_change(
             f"has been updated to '{new_status.value}'."
         )
 
+    # ``updated_at`` identifies the actual transition in the API transaction.
+    # The status fallback keeps direct/service retries idempotent for legacy
+    # callers that do not populate that timestamp.
+    transition_key = (
+        application.updated_at.isoformat()
+        if application.updated_at is not None
+        else new_status.value
+    )
+    dedupe_key = (
+        f"application-status:{application.id}:{transition_key}"
+        if application.id is not None
+        else None
+    )
     return create_notification(
         session=session,
         user_id=application.applicant_id,
@@ -88,6 +124,7 @@ def notify_status_change(
         notification_type=notification_type,
         reference_id=application.id,
         reference_type="application",
+        dedupe_key=dedupe_key,
     )
 
 
@@ -172,7 +209,20 @@ def notify_new_application_received(
     """
     Generate a notification for a recruiter when a new candidate applies to their job posting.
     """
-    if not job.recruiter_id or job.recruiter_id == applicant.id:
+    if (
+        not job.recruiter_id
+        or not applicant
+        or applicant.id != application.applicant_id
+        or job.id != application.job_id
+        or job.recruiter_id == applicant.id
+    ):
+        return None
+
+    # The job owner is the notification recipient.  Job creation is already
+    # restricted to recruiter accounts; relying on ownership also keeps legacy
+    # rows (created before the role flag existed) working safely.
+    recruiter = session.get(User, job.recruiter_id)
+    if recruiter is None:
         return None
 
     job_title = job.title if job.title else "your job posting"
@@ -184,6 +234,11 @@ def notify_new_application_received(
         notification_type=NotificationType.APPLICATION_RECEIVED,
         reference_id=application.id,
         reference_type="application",
+        dedupe_key=(
+            f"application-received:{application.id}:{job.recruiter_id}"
+            if application.id is not None
+            else None
+        ),
     )
 
 
