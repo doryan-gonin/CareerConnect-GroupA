@@ -73,7 +73,8 @@ function NotificationBell({ token, onNotificationClick }: NotificationBellProps)
 
   useEffect(() => {
     function closeOnOutsideClick(event: globalThis.PointerEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node))
+      const target = event.target;
+      if (target instanceof Node && containerRef.current && !containerRef.current.contains(target))
         setIsOpen(false);
     }
     function closeOnEscape(event: globalThis.KeyboardEvent) {

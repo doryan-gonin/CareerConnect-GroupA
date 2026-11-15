@@ -93,7 +93,12 @@ export default function LocationAutocomplete({
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: globalThis.PointerEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target;
+      if (
+        target instanceof Node &&
+        containerRef.current &&
+        !containerRef.current.contains(target)
+      ) {
         setIsOpen(false);
         setHighlightedIndex(-1);
       }

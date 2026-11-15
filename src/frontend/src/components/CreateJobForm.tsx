@@ -11,7 +11,7 @@ import {
   HOURS_EXTREMUMS,
   SALARY_EXTREMUMS,
 } from "../constants/jobs";
-import type { Job, JobCreate, JobSchedule } from "../api/types";
+import { isJobSchedule, isJobType, type Job, type JobCreate } from "../api/types";
 
 type Props = {
   token: string;
@@ -59,7 +59,7 @@ export default function CreateJobForm({ token, onCreated, onCancel }: Props) {
   }
 
   function handleScheduleChange(event: ChangeEvent<HTMLSelectElement>) {
-    const newSchedule = event.target.value as JobSchedule;
+    const newSchedule = isJobSchedule(event.target.value) ? event.target.value : "Full-time";
     const defaults = SCHEDULE_HOURS_MAP[newSchedule];
     setForm((previous) => ({
       ...previous,
@@ -82,14 +82,14 @@ export default function CreateJobForm({ token, onCreated, onCancel }: Props) {
     const payload: JobCreate = {
       ...form,
       category: finalCategory,
-      job_type: form.job_type as JobCreate["job_type"],
-      job_schedule: form.job_schedule as JobCreate["job_schedule"],
+      job_type: isJobType(form.job_type) ? form.job_type : undefined,
+      job_schedule: isJobSchedule(form.job_schedule) ? form.job_schedule : undefined,
       min_hours_per_week:
-        (form.min_hours_per_week as number | string) === "" || form.min_hours_per_week == null
+        form.min_hours_per_week === "" || form.min_hours_per_week == null
           ? null
           : Number(form.min_hours_per_week),
       max_hours_per_week:
-        (form.max_hours_per_week as number | string) === "" || form.max_hours_per_week == null
+        form.max_hours_per_week === "" || form.max_hours_per_week == null
           ? null
           : Number(form.max_hours_per_week),
       salary_min:

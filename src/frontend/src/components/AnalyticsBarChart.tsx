@@ -4,7 +4,7 @@ import type { AnalyticsGranularity } from "../api/types";
 type ChartPoint = { period: string; [key: string]: string | number };
 type AnalyticsBarChartProps = {
   points: ChartPoint[];
-  groupBy: AnalyticsGranularity | string;
+  groupBy: AnalyticsGranularity;
   valueKey: string;
   unit: string;
 };
@@ -15,9 +15,9 @@ function parsePeriod(period: string) {
 }
 
 function formatPeriod(period: string, groupBy: string) {
-  const options =
+  const options: Intl.DateTimeFormatOptions =
     groupBy === "month" ? { month: "short", year: "numeric" } : { month: "short", day: "numeric" };
-  return parsePeriod(period).toLocaleDateString(undefined, options as Intl.DateTimeFormatOptions);
+  return parsePeriod(period).toLocaleDateString(undefined, options);
 }
 
 function formatTooltipPeriod(period: string, groupBy: string) {

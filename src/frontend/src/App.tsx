@@ -13,7 +13,7 @@ import AnalyticsPage from "./components/AnalyticsPage";
 import SavedJobsPage from "./components/SavedJobsPage";
 import { logoutUser, getCurrentUser } from "./api/auth";
 import { getApplication } from "./api/applications";
-import type { Notification } from "./api/types";
+import type { Notification, NotificationTarget } from "./api/types";
 
 const TOKEN_STORAGE_KEY = "accessToken";
 
@@ -53,10 +53,7 @@ function App(): ReactNode {
   });
   const [signupSuccessMessage, setSignupSuccessMessage] = useState("");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [notificationTarget, setNotificationTarget] = useState<{
-    applicationId: number;
-    jobId: number;
-  } | null>(null);
+  const [notificationTarget, setNotificationTarget] = useState<NotificationTarget | null>(null);
 
   function navigate(newPath: string, { replace = false }: { replace?: boolean } = {}): void {
     const normalized = normalizePath(newPath);
@@ -274,9 +271,7 @@ function App(): ReactNode {
     let pageContent: ReactNode = null;
 
     if (isRecruiter) {
-      pageContent = (
-        <RecruiterDashboard token={token} notificationTarget={notificationTarget as any} />
-      );
+      pageContent = <RecruiterDashboard token={token} notificationTarget={notificationTarget} />;
     } else if (currentPath === "/analytics") {
       pageContent = <AnalyticsPage token={token} onBack={() => navigate("/dashboard")} />;
     } else if (interviewMatch) {
