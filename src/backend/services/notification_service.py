@@ -103,8 +103,16 @@ def notify_status_change(
             f"has been updated to '{new_status.value}'."
         )
 
+    # ``updated_at`` identifies the actual transition in the API transaction.
+    # The status fallback keeps direct/service retries idempotent for legacy
+    # callers that do not populate that timestamp.
+    transition_key = (
+        application.updated_at.isoformat()
+        if application.updated_at is not None
+        else new_status.value
+    )
     dedupe_key = (
-        f"application-status:{application.id}:{new_status.value}"
+        f"application-status:{application.id}:{transition_key}"
         if application.id is not None
         else None
     )
