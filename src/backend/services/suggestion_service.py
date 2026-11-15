@@ -153,6 +153,15 @@ def refresh_suggestions(session: Session, user: User, jobs: list[Job] | None = N
     by_id = {row["job_id"]: row for row in rows}
     now = datetime.now(timezone.utc)
     existing = {item.job_id: item for item in session.exec(select(JobSuggestion).where(JobSuggestion.user_id == user.id)).all()}
+
+    # Remove cached suggestions for jobs that aren't in the current cacheable jobs list (avoids infinitely growing cache)
+    current_job_ids = {job.id for job in jobs}
+
+    for job_id, item in list(existing.items()):
+            if job_id not in current_job_ids:
+                session.delete(item)
+                del existing[job_id]
+
     for job in jobs:
         row = by_id.get(job.id) or {"job_id": job.id, "score": 0.0, "justification": "No matching profile data was available."}
         item = existing.get(job.id) or JobSuggestion(user_id=user.id, job_id=job.id)
