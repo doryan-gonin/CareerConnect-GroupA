@@ -572,6 +572,9 @@ def apply_to_job(
         status=ApplicationStatus.APPLIED,
     )
     session.add(application)
+    # Allocate the application id before creating the recruiter notification so
+    # its reference points to the persisted application.
+    session.flush()
 
     # Notify recruiter about the new application
     notify_new_application_received(

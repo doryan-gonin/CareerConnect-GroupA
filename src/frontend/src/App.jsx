@@ -11,6 +11,7 @@ import InterviewNewSession from './components/InterviewNewSession'
 import InterviewConversation from './components/InterviewConversation'
 import AnalyticsPage from './components/AnalyticsPage'
 import { logoutUser, getCurrentUser } from './api/auth'
+import { getMyApplications } from './api/applications'
 
 const TOKEN_STORAGE_KEY = 'accessToken'
 
@@ -27,6 +28,7 @@ function isAllowedAppPath(path) {
     path === '/jobs' ||
     path === '/recruiter/dashboard' ||
     /^\/jobs\/\d+$/.test(path) ||
+    /^\/jobs\/\d+\/apply$/.test(path) ||
     /^\/interview(\/new|\/\d+)?$/.test(path)
   )
 }
@@ -178,6 +180,22 @@ function App() {
     }
   }
 
+  async function handleNotificationClick(notification) {
+    if (notification.reference_type === 'application' && notification.reference_id && !isRecruiter) {
+      try {
+        const applications = await getMyApplications(token)
+        const application = applications.find((item) => item.id === notification.reference_id)
+        if (application?.job_id) {
+          navigate(`/jobs/${application.job_id}`)
+          return
+        }
+      } catch {
+        // Fall back to the dashboard if the application cannot be resolved.
+      }
+    }
+    navigate('/dashboard')
+  }
+
   function openApplication(jobId) {
     navigate(`/jobs/${jobId}/apply`)
     window.scrollTo(0, 0)
@@ -198,6 +216,7 @@ function App() {
         onLogout={handleLogout}
         isLoggingOut={isLoggingOut}
         isRecruiter={isRecruiter}
+        onNotificationClick={handleNotificationClick}
       />
     )
   }
@@ -212,6 +231,7 @@ function App() {
         onViewJob={(jobId) => navigate(`/jobs/${jobId}`)}
         onApplyJob={isRecruiter ? undefined : openApplication}
         isRecruiter={isRecruiter}
+        onNotificationClick={handleNotificationClick}
       />
     )
   }
@@ -268,12 +288,14 @@ function App() {
     return (
       <div className="min-h-screen bg-gray-50 text-gray-900">
         <Navbar
+          token={token}
           onLogout={handleLogout}
           isLoggingOut={isLoggingOut}
           onBrowseJobs={() => navigate('/jobs')}
           onInterviewPrep={isRecruiter ? undefined : () => navigate('/interview')}
           onDashboard={currentPath !== '/dashboard' ? () => navigate('/dashboard') : undefined}
           isRecruiter={isRecruiter}
+          onNotificationClick={handleNotificationClick}
         />
         <main className="mx-auto max-w-5xl px-4 py-8">
           {pageContent}

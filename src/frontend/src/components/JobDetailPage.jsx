@@ -4,6 +4,7 @@ import { getMyApplications } from '../api/applications'
 import ApplicationForm from './ApplicationForm'
 import ApplicationStatusBadge from './ApplicationStatusBadge'
 import MarkdownView from './MarkdownView'
+import NotificationBell from './NotificationBell'
 
 function formatSalary(min, max) {
   if (min && max) {
@@ -55,6 +56,7 @@ function JobDetailPage({
   onApply,
   onBackToPosting,
   isRecruiter = false,
+  onNotificationClick,
 }) {
   const [jobState, setJobState] = useState({ id: null, job: null, isLoading: true, error: '' })
   const [applicationState, setApplicationState] = useState({ id: null, status: null })
@@ -161,6 +163,8 @@ function JobDetailPage({
                 Dashboard
               </a>
             )}
+
+            <NotificationBell token={token} onNotificationClick={onNotificationClick} />
 
             <button
               type="button"
