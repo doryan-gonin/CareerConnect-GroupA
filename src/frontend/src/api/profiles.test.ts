@@ -16,10 +16,19 @@ describe("profile and resume API", () => {
 
   it("loads the authenticated profile", async () => {
     fetchMock.mockResolvedValue(
-      new Response(JSON.stringify({ first_name: "Ada", last_name: "Lovelace" }), { status: 200 }),
+      new Response(
+        JSON.stringify({
+          id: 3,
+          user_id: 7,
+          first_name: "Ada",
+          last_name: "Lovelace",
+          last_updated: "2026-11-01",
+        }),
+        { status: 200 },
+      ),
     );
 
-    await expect(getProfile("token")).resolves.toEqual({
+    await expect(getProfile("token")).resolves.toMatchObject({
       first_name: "Ada",
       last_name: "Lovelace",
     });
@@ -31,10 +40,19 @@ describe("profile and resume API", () => {
 
   it("sets a default resume", async () => {
     fetchMock.mockResolvedValue(
-      new Response(JSON.stringify({ id: 4, is_default: true }), { status: 200 }),
+      new Response(
+        JSON.stringify({
+          id: 4,
+          user_id: 7,
+          file_name: "resume.pdf",
+          uploaded_at: "2026-11-01",
+          is_default: true,
+        }),
+        { status: 200 },
+      ),
     );
 
-    await expect(setDefaultResume("token", 4)).resolves.toEqual({ id: 4, is_default: true });
+    await expect(setDefaultResume("token", 4)).resolves.toMatchObject({ id: 4, is_default: true });
     expect(fetchMock).toHaveBeenCalledWith(`${API_BASE_URL}/api/profiles/me/resumes/4/default`, {
       method: "PATCH",
       headers: { Authorization: "Bearer token" },

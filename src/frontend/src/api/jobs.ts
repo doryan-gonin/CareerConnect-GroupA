@@ -1,4 +1,12 @@
 import { apiRequest } from "./client";
+import {
+  applicationSchema,
+  emptyResponseSchema,
+  jobListResponseSchema,
+  jobSchema,
+  recruiterApplicationSchema,
+  savedJobSchema,
+} from "./schemas";
 import type {
   ApplicationInput,
   ApplicationStatus,
@@ -56,9 +64,10 @@ export function searchJobs(
   if (page) params.set("page", String(page));
   if (limit) params.set("limit", String(limit));
 
-  return apiRequest<JobListResponse>(`/api/jobs?${params}`, {
+  return apiRequest(`/api/jobs?${params}`, {
     token,
     fallbackError: "Failed to load jobs.",
+    schema: jobListResponseSchema,
   });
 }
 
@@ -67,41 +76,46 @@ export function getJobById(
   jobId: number,
   signal?: AbortSignal,
 ): Promise<Job> {
-  return apiRequest<Job>(`/api/jobs/${jobId}`, {
+  return apiRequest(`/api/jobs/${jobId}`, {
     token,
     signal,
     fallbackError: "Failed to load job posting.",
+    schema: jobSchema,
   });
 }
 
 export async function recordJobView(token: string, jobId: number): Promise<void> {
-  await apiRequest<void>(`/api/jobs/${jobId}/view`, {
+  await apiRequest(`/api/jobs/${jobId}/view`, {
     token,
     method: "POST",
     fallbackError: "Failed to record job view.",
+    schema: emptyResponseSchema,
   });
 }
 
 export function getSavedJobs(token: string): Promise<SavedJob[]> {
-  return apiRequest<SavedJob[]>("/api/jobs/saved", {
+  return apiRequest("/api/jobs/saved", {
     token,
     fallbackError: "Failed to load saved jobs.",
+    schema: savedJobSchema.array(),
   });
 }
 
 export function saveJob(token: string, jobId: number): Promise<SavedJob> {
-  return apiRequest<SavedJob>(`/api/jobs/${jobId}/save`, {
+  return apiRequest(`/api/jobs/${jobId}/save`, {
     token,
     method: "POST",
     fallbackError: "Failed to save this job.",
+    schema: savedJobSchema,
   });
 }
 
 export async function unsaveJob(token: string, jobId: number): Promise<void> {
-  await apiRequest<void>(`/api/jobs/${jobId}/save`, {
+  await apiRequest(`/api/jobs/${jobId}/save`, {
     token,
     method: "DELETE",
     fallbackError: "Failed to remove this saved job.",
+    schema: emptyResponseSchema,
   });
 }
 
@@ -116,31 +130,35 @@ export function applyToJob(
     method: "POST",
     body,
     fallbackError: "Failed to submit application.",
+    schema: applicationSchema,
   });
 }
 
 export function getMyJobs(token: string): Promise<Job[]> {
-  return apiRequest<Job[]>("/api/jobs/mine", {
+  return apiRequest("/api/jobs/mine", {
     token,
     fallbackError: "Failed to load recruiter jobs.",
+    schema: jobSchema.array(),
   });
 }
 
 export function createJob(token: string, jobData: JobCreate): Promise<Job> {
-  return apiRequest<Job>("/api/jobs", {
+  return apiRequest("/api/jobs", {
     token,
     method: "POST",
     body: jobData,
     fallbackError: "Failed to create job posting.",
+    schema: jobSchema,
   });
 }
 
 export function updateJob(token: string, jobId: number, jobData: JobUpdate): Promise<Job> {
-  return apiRequest<Job>(`/api/jobs/${jobId}`, {
+  return apiRequest(`/api/jobs/${jobId}`, {
     token,
     method: "PUT",
     body: jobData,
     fallbackError: "Failed to update job posting.",
+    schema: jobSchema,
   });
 }
 
@@ -149,13 +167,15 @@ export function closeJob(token: string, jobId: number): Promise<unknown> {
     token,
     method: "DELETE",
     fallbackError: "Failed to close job.",
+    schema: emptyResponseSchema,
   });
 }
 
 export function getJobApplicants(token: string, jobId: number): Promise<RecruiterApplication[]> {
-  return apiRequest<RecruiterApplication[]>(`/api/jobs/${jobId}/applications`, {
+  return apiRequest(`/api/jobs/${jobId}/applications`, {
     token,
     fallbackError: "Failed to load applicants.",
+    schema: recruiterApplicationSchema.array(),
   });
 }
 
@@ -168,7 +188,7 @@ export function getApplicantResume(
   jobId: number,
   applicationId: number,
 ): Promise<Blob> {
-  return apiRequest<Blob>(`/api/jobs/${jobId}/applications/${applicationId}/resume`, {
+  return apiRequest(`/api/jobs/${jobId}/applications/${applicationId}/resume`, {
     token,
     cache: "no-store",
     responseType: "blob",
@@ -187,5 +207,6 @@ export function updateApplicantStatus(
     body: { status: newStatus },
     networkError: "Could not connect to the backend.",
     fallbackError: "Failed to update application status.",
+    schema: applicationSchema,
   });
 }

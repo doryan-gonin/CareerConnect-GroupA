@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getProfile, updateProfile } from "../api/profiles";
+import { profileFormSchema } from "../api/schemas";
 import type { Profile } from "../api/types";
 import type { ChangeEvent, FormEvent } from "react";
 
@@ -49,6 +50,11 @@ function ProfileSection({ token }: { token: string }) {
     e.preventDefault();
     setError("");
     setSuccess("");
+    const parsed = profileFormSchema.safeParse({ firstName, lastName });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Please enter your name.");
+      return;
+    }
     setIsSaving(true);
 
     try {

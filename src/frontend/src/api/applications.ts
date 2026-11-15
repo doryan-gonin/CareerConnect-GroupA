@@ -1,4 +1,5 @@
 import { apiRequest } from "./client";
+import { applicationDetailSchema, emptyResponseSchema } from "./schemas";
 import type { ApplicationDetail, ApplicationStatus, Application } from "./types";
 
 export function getMyApplications(
@@ -6,24 +7,27 @@ export function getMyApplications(
   statusFilter?: ApplicationStatus | string,
 ): Promise<ApplicationDetail[]> {
   const query = statusFilter ? `?status=${encodeURIComponent(statusFilter)}` : "";
-  return apiRequest<ApplicationDetail[]>(`/api/applications/me${query}`, {
+  return apiRequest(`/api/applications/me${query}`, {
     token,
     fallbackError: "Failed to load applications.",
+    schema: applicationDetailSchema.array(),
   }).then((applications) => applications || []);
 }
 
 export function getApplication(token: string, applicationId: number): Promise<ApplicationDetail> {
-  return apiRequest<ApplicationDetail>(`/api/applications/${applicationId}`, {
+  return apiRequest(`/api/applications/${applicationId}`, {
     token,
     fallbackError: "Failed to load application.",
+    schema: applicationDetailSchema,
   });
 }
 
 export async function withdrawApplication(token: string, applicationId: number): Promise<true> {
-  await apiRequest<void>(`/api/applications/${applicationId}`, {
+  await apiRequest(`/api/applications/${applicationId}`, {
     token,
     method: "DELETE",
     fallbackError: "Failed to withdraw application.",
+    schema: emptyResponseSchema,
   });
   return true;
 }

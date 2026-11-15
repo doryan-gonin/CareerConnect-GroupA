@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { registerUser } from "../api/auth";
+import { signupFormSchema } from "../api/schemas";
 import { isPasswordValid } from "../utils/passwordRules";
 import PasswordRequirements from "./PasswordRequirements";
 
@@ -23,8 +24,9 @@ function SignupForm({ onSignedUp, onSwitchToLogin }: SignupFormProps) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+    const parsed = signupFormSchema.safeParse({ email, password, confirmPassword, isRecruiter });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Please check the form values.");
       return;
     }
     if (!isPasswordValid(password)) {

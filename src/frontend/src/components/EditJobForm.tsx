@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { updateJob } from "../api/jobs";
+import { jobFormSchema } from "../api/schemas";
 import SliderNumberInput from "./SliderNumberInput";
 import MarkdownEditor from "./MarkdownEditor";
 import LocationAutocomplete from "./LocationAutocomplete";
@@ -120,10 +121,16 @@ export default function EditJobForm({ token, job, onUpdated, onCancel }: Props) 
       return;
     }
 
+    const parsed = jobFormSchema.safeParse(payload);
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Please check the job details.");
+      return;
+    }
+
     setSaving(true);
 
     try {
-      const updatedJob = await updateJob(token, job.id, payload);
+      const updatedJob = await updateJob(token, job.id, { ...payload, ...parsed.data });
       onUpdated(updatedJob);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update job posting.");
