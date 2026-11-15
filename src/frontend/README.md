@@ -35,6 +35,14 @@ same `vp` commands. `vp test --run` allows an empty test set while the base
 application has no unit-test files, and runs all `*.test.*` and `*.spec.*`
 files when they are present.
 
+## TypeScript migration
+
+Source files under `src/` are TypeScript or TSX and JavaScript loading is
+disabled in `tsconfig.json`. Run `npm run typecheck` (or `vp check`) for the
+strict compiler pass. API models, clients, page components, shared components,
+utilities, and tests use explicit TypeScript types with `noImplicitAny` and
+`strictNullChecks` enabled.
+
 ## Browser E2E compatibility
 
 Playwright browser tests remain a separate tool because Vite+ does not replace
