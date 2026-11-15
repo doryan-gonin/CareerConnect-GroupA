@@ -74,7 +74,13 @@ class TestPromptGeneration:
         job = make_job("Data Analyst", "Acme", "Build sales dashboards.")
         prompt = build_system_prompt(job, "")
 
-        for expected in ["Data Analyst", "Acme", "Build sales dashboards.", "Montreal", "Engineering"]:
+        for expected in [
+            "Data Analyst",
+            "Acme",
+            "Build sales dashboards.",
+            "Montreal",
+            "Engineering",
+        ]:
             assert expected in prompt
 
     def test_prompts_differ_by_posting(self):
@@ -190,7 +196,9 @@ class TestContextPassing:
         monkeypatch.setattr(interview_service, "AI_API_BASE_URL", "https://api.example.com/v1")
         monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
         monkeypatch.setattr(interview_service, "AI_MOCK_MODE", False)
-        monkeypatch.setattr(interview_service.httpx, "post", lambda *args, **kwargs: MarkdownProviderResponse())
+        monkeypatch.setattr(
+            interview_service.httpx, "post", lambda *args, **kwargs: MarkdownProviderResponse()
+        )
 
         response = client.post(
             "/api/interview/sessions",
@@ -240,7 +248,9 @@ class TestProviderFailureHandling:
         # Sending a message in mock mode should return mock reply
         msg_response = client.post(
             f"/api/interview/sessions/{session_data['id']}/messages",
-            json={"content": "I am interested in this role because I have 3 years of React experience."},
+            json={
+                "content": "I am interested in this role because I have 3 years of React experience."
+            },
             headers=applicant_headers,
         )
         assert msg_response.status_code == 200
@@ -276,7 +286,9 @@ class TestProviderFailureHandling:
 
         monkeypatch.setattr(interview_service, "AI_API_BASE_URL", "https://api.example.com/v1")
         monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
-        monkeypatch.setattr(interview_service.httpx, "post", lambda *args, **kwargs: NonJsonResponse())
+        monkeypatch.setattr(
+            interview_service.httpx, "post", lambda *args, **kwargs: NonJsonResponse()
+        )
 
         response = client.post(
             "/api/interview/sessions",
@@ -298,7 +310,9 @@ class TestProviderFailureHandling:
 
         monkeypatch.setattr(interview_service, "AI_API_BASE_URL", "https://api.example.com/v1")
         monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
-        monkeypatch.setattr(interview_service.httpx, "post", lambda *args, **kwargs: EmptyChoicesResponse())
+        monkeypatch.setattr(
+            interview_service.httpx, "post", lambda *args, **kwargs: EmptyChoicesResponse()
+        )
 
         response = client.post(
             "/api/interview/sessions",
@@ -320,7 +334,9 @@ class TestProviderFailureHandling:
 
         monkeypatch.setattr(interview_service, "AI_API_BASE_URL", "https://api.example.com/v1")
         monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
-        monkeypatch.setattr(interview_service.httpx, "post", lambda *args, **kwargs: MissingMessageResponse())
+        monkeypatch.setattr(
+            interview_service.httpx, "post", lambda *args, **kwargs: MissingMessageResponse()
+        )
 
         response = client.post(
             "/api/interview/sessions",
@@ -342,7 +358,9 @@ class TestProviderFailureHandling:
 
         monkeypatch.setattr(interview_service, "AI_API_BASE_URL", "https://api.example.com/v1")
         monkeypatch.setattr(interview_service, "AI_API_KEY", "test-key")
-        monkeypatch.setattr(interview_service.httpx, "post", lambda *args, **kwargs: EmptyContentResponse())
+        monkeypatch.setattr(
+            interview_service.httpx, "post", lambda *args, **kwargs: EmptyContentResponse()
+        )
 
         response = client.post(
             "/api/interview/sessions",
@@ -369,4 +387,3 @@ class TestProviderFailureHandling:
         )
         assert response.status_code == 502
         assert "Could not reach the AI provider" in response.json()["detail"]
-

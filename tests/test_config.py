@@ -1,7 +1,7 @@
-import os
 import sys
-import pytest
 from pathlib import Path
+
+import pytest
 
 
 def test_config_constants():
@@ -28,7 +28,9 @@ def test_config_missing_jwt_secret_key_raises(monkeypatch):
 
     with pytest.raises(RuntimeError, match="JWT_SECRET_KEY is not set"):
         import importlib
+
         import backend.config
+
         importlib.reload(backend.config)
 
 
@@ -38,6 +40,7 @@ def test_config_ai_base_url_unset(monkeypatch):
     if "backend.config" in sys.modules:
         monkeypatch.delitem(sys.modules, "backend.config")
     import importlib
+
     import backend.config
 
     reloaded = importlib.reload(backend.config)
@@ -49,6 +52,7 @@ def test_config_ai_base_url_override(monkeypatch):
     if "backend.config" in sys.modules:
         monkeypatch.delitem(sys.modules, "backend.config")
     import importlib
+
     import backend.config
 
     reloaded = importlib.reload(backend.config)
@@ -60,6 +64,7 @@ def test_config_ai_mock_mode(monkeypatch):
     if "backend.config" in sys.modules:
         monkeypatch.delitem(sys.modules, "backend.config")
     import importlib
+
     import backend.config
 
     reloaded = importlib.reload(backend.config)
@@ -67,8 +72,9 @@ def test_config_ai_mock_mode(monkeypatch):
 
 
 def test_init_db_with_target_engine():
-    from sqlmodel import create_engine
     from sqlalchemy import inspect
+    from sqlmodel import create_engine
+
     from backend.database import init_db
 
     memory_engine = create_engine("sqlite://")
@@ -81,8 +87,8 @@ def test_init_db_with_target_engine():
 
 @pytest.mark.anyio
 async def test_lifespan_respects_testing_env(monkeypatch):
-    from backend.main import app, lifespan
     import backend.main as main_module
+    from backend.main import app, lifespan
 
     calls = []
     monkeypatch.setattr(main_module, "init_db", lambda *args, **kwargs: calls.append("init"))
@@ -98,4 +104,3 @@ async def test_lifespan_respects_testing_env(monkeypatch):
     async with lifespan(app):
         pass
     assert calls == ["init"]
-

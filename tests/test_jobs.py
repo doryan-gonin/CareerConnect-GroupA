@@ -45,10 +45,7 @@ class TestGETAllJobs:
         # Verify the response
         assert response.status_code == 200
 
-        salaries = [
-            job["salary_max"]
-            for job in response.json()["jobs"]
-        ]
+        salaries = [job["salary_max"] for job in response.json()["jobs"]]
 
         assert salaries == sorted(salaries, reverse=True)
 
@@ -70,10 +67,18 @@ class TestGETAllJobs:
         assert response.status_code == 422
 
     def test_sort_consistency(self, client, test_jobs):
-        all_jobs = client.get("/api/jobs", params={"sort_by": "salary_max", "sort_order": "desc", "limit": 100}).json()["jobs"]
+        all_jobs = client.get(
+            "/api/jobs", params={"sort_by": "salary_max", "sort_order": "desc", "limit": 100}
+        ).json()["jobs"]
 
-        page_1 = client.get("/api/jobs", params={"sort_by": "salary_max", "sort_order": "desc", "page": 1, "limit": 2}).json()["jobs"]
-        page_2 = client.get("/api/jobs", params={"sort_by": "salary_max", "sort_order": "desc", "page": 2, "limit": 2}).json()["jobs"]
+        page_1 = client.get(
+            "/api/jobs",
+            params={"sort_by": "salary_max", "sort_order": "desc", "page": 1, "limit": 2},
+        ).json()["jobs"]
+        page_2 = client.get(
+            "/api/jobs",
+            params={"sort_by": "salary_max", "sort_order": "desc", "page": 2, "limit": 2},
+        ).json()["jobs"]
 
         paginated_jobs = page_1 + page_2
 
@@ -87,6 +92,7 @@ class TestGETAllJobs:
         jobs_data = response.json()
         assert jobs_data["total"] == 5
         assert all(job["id"] != inactive_job.id for job in jobs_data["jobs"])
+
 
 # ==============================================================================
 # Test Cases for job search by ID
@@ -114,5 +120,3 @@ class TestGETJobByID:
         response = client.get(f"/api/jobs/{inactive_job.id}")
 
         assert response.status_code == 404
-
-

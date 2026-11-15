@@ -1,5 +1,6 @@
 from datetime import date, datetime, time, timedelta, timezone
 from math import sqrt
+
 from sqlmodel import Session, select
 
 from backend.models import (
@@ -17,6 +18,7 @@ from backend.models import (
     ViewAnalyticsResponse,
 )
 
+
 # ---------------------------------- HELPERS -----------------------------------
 def _period_start(value: datetime, group_by: AnalyticsGranularity) -> date:
     if group_by == AnalyticsGranularity.DAY:
@@ -25,15 +27,14 @@ def _period_start(value: datetime, group_by: AnalyticsGranularity) -> date:
         return (value - timedelta(days=value.weekday())).date()
     return value.date().replace(day=1)
 
+
 def _periods_between(
     start_date: date,
     end_date: date,
     group_by: AnalyticsGranularity,
 ) -> list[date]:
     periods: list[date] = []
-    current_period = _period_start(
-        datetime.combine(start_date, time.min), group_by
-    )
+    current_period = _period_start(datetime.combine(start_date, time.min), group_by)
     last_period = _period_start(datetime.combine(end_date, time.min), group_by)
     while current_period <= last_period:
         periods.append(current_period)
@@ -41,14 +42,11 @@ def _periods_between(
             if current_period.month == 12:
                 current_period = date(current_period.year + 1, 1, 1)
             else:
-                current_period = date(
-                    current_period.year, current_period.month + 1, 1
-                )
+                current_period = date(current_period.year, current_period.month + 1, 1)
         else:
-            current_period += timedelta(
-                days=7 if group_by == AnalyticsGranularity.WEEK else 1
-            )
+            current_period += timedelta(days=7 if group_by == AnalyticsGranularity.WEEK else 1)
     return periods
+
 
 def _date_range(start_date: date, end_date: date) -> tuple[datetime, datetime]:
     return (
@@ -56,13 +54,10 @@ def _date_range(start_date: date, end_date: date) -> tuple[datetime, datetime]:
         datetime.combine(end_date + timedelta(days=1), time.min, tzinfo=timezone.utc),
     )
 
+
 # ---------------------------------- Compute -----------------------------------
 def compute_application_analytics(
-    session: Session,
-    user_id: int,
-    start_date: date,
-    end_date: date,
-    group_by: AnalyticsGranularity
+    session: Session, user_id: int, start_date: date, end_date: date, group_by: AnalyticsGranularity
 ) -> ApplicationAnalyticsResponse:
 
     start_datetime, end_datetime = _date_range(start_date, end_date)
@@ -88,11 +83,9 @@ def compute_application_analytics(
         start_date=start_date,
         end_date=end_date,
         group_by=group_by,
-        points=[
-            AnalyticsPoint(period=period, count=count)
-            for period, count in counts.items()
-        ],
+        points=[AnalyticsPoint(period=period, count=count) for period, count in counts.items()],
     )
+
 
 def compute_search_analytics(
     session: Session,
@@ -121,11 +114,9 @@ def compute_search_analytics(
         start_date=start_date,
         end_date=end_date,
         group_by=group_by,
-        points=[
-            AnalyticsPoint(period=period, count=count)
-            for period, count in counts.items()
-        ],
+        points=[AnalyticsPoint(period=period, count=count) for period, count in counts.items()],
     )
+
 
 def compute_view_analytics(
     session: Session,
@@ -134,7 +125,7 @@ def compute_view_analytics(
     end_date: date,
     group_by: AnalyticsGranularity,
 ) -> ViewAnalyticsResponse:
-    
+
     start_datetime, end_datetime = _date_range(start_date, end_date)
 
     view_values = session.exec(
@@ -145,7 +136,9 @@ def compute_view_analytics(
         )
     ).all()
 
-    posting_ids_by_period = {period: set() for period in _periods_between(start_date, end_date, group_by)}
+    posting_ids_by_period = {
+        period: set() for period in _periods_between(start_date, end_date, group_by)
+    }
     for viewed_at, job_id in view_values:
         period = _period_start(viewed_at, group_by)
         if period in posting_ids_by_period:
@@ -161,13 +154,14 @@ def compute_view_analytics(
         ],
     )
 
+
 def compute_salary_distribution(
     session: Session,
     user_id: int,
     start_date: date,
     end_date: date,
 ) -> SalaryDistributionResponse:
-    
+
     start_datetime, end_datetime = _date_range(start_date, end_date)
 
     applied_jobs = session.exec(
@@ -212,13 +206,14 @@ def compute_salary_distribution(
         standard_deviation=sqrt(variance),
     )
 
+
 def compute_application_summary(
     session: Session,
     user_id: int,
     start_date: date,
     end_date: date,
 ) -> ApplicationSummaryResponse:
-    
+
     start_datetime, end_datetime = _date_range(start_date, end_date)
 
     applied_jobs = session.exec(
@@ -242,7 +237,7 @@ def compute_application_summary(
     location, location_count = max(
         locations.items(), key=lambda item: (item[1], item[0]), default=(None, 0)
     )
-    
+
     return ApplicationSummaryResponse(
         start_date=start_date,
         end_date=end_date,

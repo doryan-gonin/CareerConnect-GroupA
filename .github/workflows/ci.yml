@@ -35,6 +35,13 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras --dev
 
+      # Verify backend lint and formatting
+      - name: Run Ruff lint
+        run: uv run ruff check src/backend tests utility
+
+      - name: Check Ruff formatting
+        run: uv run ruff format --check src/backend tests utility
+
       # PyTest testing --> Auth, Profile, Resume
       - name: Run PyTest
         run: uv run pytest tests/ -v

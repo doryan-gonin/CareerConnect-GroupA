@@ -1,26 +1,29 @@
 # SQLMODEL DATABASE TABLES
 
-from pyclbr import Class # Unnecessary import, leaving it in for now
 
+from datetime import date, datetime, timezone
 from enum import Enum
+from typing import List, Optional
+
 from pydantic import EmailStr
 from sqlalchemy import UniqueConstraint
-from sqlmodel import SQLModel, Field, Relationship
-from typing import List, Optional
-from datetime import date, datetime, timezone
+from sqlmodel import Field, Relationship, SQLModel
 
 # ENUMS
+
 
 class JobSchedule(str, Enum):
     FULL_TIME = "Full-time"
     PART_TIME = "Part-time"
+
 
 class JobType(str, Enum):
     PERMANENT = "Permanent"
     TEMPORARY = "Temporary"
     CONTRACT = "Contract"
     SEASONAL = "Seasonal"
-    INTERNSHIP = "Internship"  
+    INTERNSHIP = "Internship"
+
 
 class JobSortBy(str, Enum):
     POSTED_AT = "posted_at"
@@ -28,9 +31,11 @@ class JobSortBy(str, Enum):
     SALARY_MIN = "salary_min"
     HOURS_MAX = "max_hours_per_week"
 
+
 class JobSortOrder(str, Enum):
     ASC = "asc"
     DESC = "desc"
+
 
 class ApplicationStatus(str, Enum):
     APPLIED = "Applied"
@@ -39,22 +44,27 @@ class ApplicationStatus(str, Enum):
     OFFERED = "Offered"
     REJECTED = "Rejected"
 
+
 class NotificationType(str, Enum):
     STATUS_UPDATE = "status_update"
     INTERVIEW_INVITATION = "interview_invitation"
     APPLICATION_RECEIVED = "application_received"
     SYSTEM = "system"
 
+
 class InterviewRole(str, Enum):
     USER = "user"
     ASSISTANT = "assistant"
+
 
 class AnalyticsGranularity(str, Enum):
     DAY = "day"
     WEEK = "week"
     MONTH = "month"
 
+
 # TABLES
+
 
 class User(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -81,16 +91,18 @@ class Profile(SQLModel, table=True):
 
     user: User | None = Relationship(back_populates="profile")
 
+
 class RevokedToken(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     jti: str = Field(unique=True, index=True, nullable=False)
     expires_at: datetime
 
+
 class Resume(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", index=True, nullable=False)
-    file_name: str # Original filename
-    file_path: str # Path on disk
+    file_name: str  # Original filename
+    file_path: str  # Path on disk
     is_default: bool = Field(default=False)
     uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -134,6 +146,7 @@ class Application(SQLModel, table=True):
     applicant: User | None = Relationship(back_populates="applications")
     resume: Resume | None = Relationship()
 
+
 class SearchLog(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", index=True)
@@ -143,14 +156,16 @@ class SearchLog(SQLModel, table=True):
     job_type: JobType | None
     job_schedule: JobSchedule | None
     salary_min: int | None
-    result_count: int | None #Will help the AI know if the search was fruitful or not
+    result_count: int | None  # Will help the AI know if the search was fruitful or not
     searched_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+
 
 class JobViewLog(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", index=True)
     job_id: int = Field(foreign_key="job.id", index=True)
     viewed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+
 
 class Notification(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -165,6 +180,7 @@ class Notification(SQLModel, table=True):
 
     user: User | None = Relationship(back_populates="notifications")
 
+
 class InterviewSession(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", index=True, nullable=False)
@@ -174,6 +190,7 @@ class InterviewSession(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
 
+
 class InterviewSessionMessage(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     session_id: int = Field(foreign_key="interviewsession.id", index=True, nullable=False)
@@ -181,12 +198,15 @@ class InterviewSessionMessage(SQLModel, table=True):
     content: str = Field(nullable=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+
 # REQUEST/RESPONSES SCHEMAS
+
 
 class UserCreate(SQLModel):
     email_address: EmailStr
     password: str
     is_recruiter: bool = False
+
 
 class UserResponse(SQLModel):
     id: int
@@ -194,9 +214,11 @@ class UserResponse(SQLModel):
     is_recruiter: bool
     created_at: datetime
 
-class UserLogin(SQLModel): # We don't need user's name for login
+
+class UserLogin(SQLModel):  # We don't need user's name for login
     email_address: EmailStr
     password: str
+
 
 class ResumeReponse(SQLModel):
     id: int
@@ -205,19 +227,23 @@ class ResumeReponse(SQLModel):
     is_default: bool
     uploaded_at: datetime
 
+
 # TOKEN CLASSES
 class Token(SQLModel):
     access_token: str
     token_type: str
     is_recruiter: bool = False
 
+
 class TokenData(SQLModel):
     id: str | None = None
+
 
 # PROFILE CLASSES
 class ProfileUpdate(SQLModel):
     first_name: str | None = None
     last_name: str | None = None
+
 
 class ProfileResponse(SQLModel):
     id: int
@@ -225,6 +251,7 @@ class ProfileResponse(SQLModel):
     first_name: str
     last_name: str
     last_updated: datetime | None = None
+
 
 # JOB CLASSES
 class JobCreate(SQLModel):
@@ -240,6 +267,7 @@ class JobCreate(SQLModel):
     salary_min: int | None = None
     salary_max: int | None = None
 
+
 class JobUpdate(SQLModel):
     title: str | None = None
     company_name: str | None = None
@@ -253,6 +281,7 @@ class JobUpdate(SQLModel):
     salary_min: int | None = None
     salary_max: int | None = None
     is_active: bool | None = None
+
 
 class JobResponse(SQLModel):
     id: int
@@ -271,6 +300,7 @@ class JobResponse(SQLModel):
     is_active: bool
     posted_at: datetime
 
+
 class JobListResponse(SQLModel):
     jobs: List[JobResponse]
     total: int
@@ -278,11 +308,14 @@ class JobListResponse(SQLModel):
     limit: int
     total_pages: int
 
+
 # APPLICATION CLASSES
+
 
 class ApplicationCreate(SQLModel):
     resume_id: int | None = None
     cover_letter: str | None = None
+
 
 class ApplicationResponse(SQLModel):
     id: int
@@ -294,6 +327,7 @@ class ApplicationResponse(SQLModel):
     applied_at: datetime
     updated_at: datetime | None = None
     message: str | None = None
+
 
 class ApplicationDetailResponse(SQLModel):
     id: int
@@ -312,14 +346,18 @@ class ApplicationDetailResponse(SQLModel):
     job_type: JobType
     job_schedule: JobSchedule
 
+
 class ApplicationStatusUpdate(SQLModel):
     status: ApplicationStatus
 
+
 # ANALYTICS CLASSES
+
 
 class AnalyticsPoint(SQLModel):
     period: date
     count: int
+
 
 class ApplicationAnalyticsResponse(SQLModel):
     start_date: date
@@ -327,18 +365,22 @@ class ApplicationAnalyticsResponse(SQLModel):
     group_by: AnalyticsGranularity
     points: List[AnalyticsPoint]
 
+
 class SearchAnalyticsResponse(ApplicationAnalyticsResponse):
     pass
+
 
 class ViewAnalyticsPoint(SQLModel):
     period: date
     unique_postings: int
+
 
 class ViewAnalyticsResponse(SQLModel):
     start_date: date
     end_date: date
     group_by: AnalyticsGranularity
     points: List[ViewAnalyticsPoint]
+
 
 class SalaryDistributionResponse(SQLModel):
     start_date: date
@@ -349,6 +391,7 @@ class SalaryDistributionResponse(SQLModel):
     maximum_salary: float | None = None
     standard_deviation: float | None = None
 
+
 class ApplicationSummaryResponse(SQLModel):
     start_date: date
     end_date: date
@@ -357,7 +400,9 @@ class ApplicationSummaryResponse(SQLModel):
     location: str | None = None
     location_count: int = 0
 
+
 # NOTIFICATION SCHEMAS
+
 
 class NotificationResponse(SQLModel):
     id: int
@@ -370,22 +415,28 @@ class NotificationResponse(SQLModel):
     reference_id: int | None = None
     reference_type: str | None = None
 
+
 class NotificationListResponse(SQLModel):
     total_count: int
     unread_count: int
     notifications: List[NotificationResponse]
 
+
 # INTERVIEW PREP SCHEMAS
+
 
 class InterviewMessage(SQLModel):
     role: InterviewRole
     content: str
 
+
 class InterviewSessionCreate(SQLModel):
     application_id: int
 
+
 class InterviewMessageCreate(SQLModel):
     content: str
+
 
 class InterviewSessionSummary(SQLModel):
     id: int
@@ -394,6 +445,7 @@ class InterviewSessionSummary(SQLModel):
     company_name: str
     created_at: datetime
     updated_at: datetime
+
 
 class InterviewSessionDetail(InterviewSessionSummary):
     messages: List[InterviewMessage]

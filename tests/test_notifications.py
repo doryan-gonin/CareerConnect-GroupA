@@ -18,8 +18,12 @@ class TestNotificationTriggers:
         applicant = candidate_application["applicant"]
         app_id = candidate_application["application_id"]
 
-        recruiter_token = login_and_get_token(client, recruiter["email_address"], recruiter["password"])
-        applicant_token = login_and_get_token(client, applicant["email_address"], applicant["password"])
+        recruiter_token = login_and_get_token(
+            client, recruiter["email_address"], recruiter["password"]
+        )
+        applicant_token = login_and_get_token(
+            client, applicant["email_address"], applicant["password"]
+        )
 
         recruiter_headers = {"Authorization": f"Bearer {recruiter_token}"}
         applicant_headers = {"Authorization": f"Bearer {applicant_token}"}
@@ -35,7 +39,7 @@ class TestNotificationTriggers:
         # Applicant receives notification
         notifs_res = client.get("/api/notifications", headers=applicant_headers)
         assert notifs_res.status_code == 200
-        
+
         data = notifs_res.json()
         assert data["total_count"] == 1
         assert data["unread_count"] == 1
@@ -48,8 +52,12 @@ class TestNotificationTriggers:
         applicant = candidate_application["applicant"]
         app_id = candidate_application["application_id"]
 
-        recruiter_token = login_and_get_token(client, recruiter["email_address"], recruiter["password"])
-        applicant_token = login_and_get_token(client, applicant["email_address"], applicant["password"])
+        recruiter_token = login_and_get_token(
+            client, recruiter["email_address"], recruiter["password"]
+        )
+        applicant_token = login_and_get_token(
+            client, applicant["email_address"], applicant["password"]
+        )
 
         recruiter_headers = {"Authorization": f"Bearer {recruiter_token}"}
         applicant_headers = {"Authorization": f"Bearer {applicant_token}"}
@@ -70,13 +78,19 @@ class TestNotificationTriggers:
         assert data["notifications"][0]["notification_type"] == "interview_invitation"
         assert "Interview Invitation" in data["notifications"][0]["title"]
 
-    def test_apply_job_triggers_recruiter_notification(self, client, test_user, second_user, test_jobs):
+    def test_apply_job_triggers_recruiter_notification(
+        self, client, test_user, second_user, test_jobs
+    ):
         recruiter = test_user
         applicant = second_user
         job = test_jobs[1]
 
-        recruiter_token = login_and_get_token(client, recruiter["email_address"], recruiter["password"])
-        applicant_token = login_and_get_token(client, applicant["email_address"], applicant["password"])
+        recruiter_token = login_and_get_token(
+            client, recruiter["email_address"], recruiter["password"]
+        )
+        applicant_token = login_and_get_token(
+            client, applicant["email_address"], applicant["password"]
+        )
 
         recruiter_headers = {"Authorization": f"Bearer {recruiter_token}"}
         applicant_headers = {"Authorization": f"Bearer {applicant_token}"}
@@ -110,6 +124,7 @@ class TestNotificationTriggers:
         assert job.title in notif["title"]
         assert "new candidate" in notif["message"]
 
+
 # ==============================================================================
 # Test Cases for Notification Management
 # ==============================================================================
@@ -133,15 +148,27 @@ class TestNotificationManagement:
         applicant = candidate_application["applicant"]
         app_id = candidate_application["application_id"]
 
-        recruiter_token = login_and_get_token(client, recruiter["email_address"], recruiter["password"])
-        applicant_token = login_and_get_token(client, applicant["email_address"], applicant["password"])
+        recruiter_token = login_and_get_token(
+            client, recruiter["email_address"], recruiter["password"]
+        )
+        applicant_token = login_and_get_token(
+            client, applicant["email_address"], applicant["password"]
+        )
 
         recruiter_headers = {"Authorization": f"Bearer {recruiter_token}"}
         applicant_headers = {"Authorization": f"Bearer {applicant_token}"}
 
         # Trigger 2 notifications
-        client.patch(f"/api/applications/{app_id}/status", json={"status": "Under Review"}, headers=recruiter_headers)
-        client.patch(f"/api/applications/{app_id}/status", json={"status": "Interview"}, headers=recruiter_headers)
+        client.patch(
+            f"/api/applications/{app_id}/status",
+            json={"status": "Under Review"},
+            headers=recruiter_headers,
+        )
+        client.patch(
+            f"/api/applications/{app_id}/status",
+            json={"status": "Interview"},
+            headers=recruiter_headers,
+        )
 
         notifs_res = client.get("/api/notifications", headers=applicant_headers)
         notifications = notifs_res.json()["notifications"]
@@ -149,12 +176,16 @@ class TestNotificationManagement:
         first_notif_id = notifications[0]["id"]
 
         # Mark first notification as read
-        read_res = client.patch(f"/api/notifications/{first_notif_id}/read", headers=applicant_headers)
+        read_res = client.patch(
+            f"/api/notifications/{first_notif_id}/read", headers=applicant_headers
+        )
         assert read_res.status_code == 200
         assert read_res.json()["is_read"] is True
 
         # Query only unread
-        unread_res = client.get("/api/notifications", params={"unread_only": True}, headers=applicant_headers)
+        unread_res = client.get(
+            "/api/notifications", params={"unread_only": True}, headers=applicant_headers
+        )
         assert unread_res.status_code == 200
         unread_data = unread_res.json()
         assert unread_data["total_count"] == 2
@@ -166,14 +197,22 @@ class TestNotificationManagement:
         applicant = candidate_application["applicant"]
         app_id = candidate_application["application_id"]
 
-        recruiter_token = login_and_get_token(client, recruiter["email_address"], recruiter["password"])
-        applicant_token = login_and_get_token(client, applicant["email_address"], applicant["password"])
+        recruiter_token = login_and_get_token(
+            client, recruiter["email_address"], recruiter["password"]
+        )
+        applicant_token = login_and_get_token(
+            client, applicant["email_address"], applicant["password"]
+        )
 
         recruiter_headers = {"Authorization": f"Bearer {recruiter_token}"}
         applicant_headers = {"Authorization": f"Bearer {applicant_token}"}
 
         # Trigger notification
-        client.patch(f"/api/applications/{app_id}/status", json={"status": "Under Review"}, headers=recruiter_headers)
+        client.patch(
+            f"/api/applications/{app_id}/status",
+            json={"status": "Under Review"},
+            headers=recruiter_headers,
+        )
 
         # Mark all as read
         read_all_res = client.patch("/api/notifications/read-all", headers=applicant_headers)
@@ -187,14 +226,22 @@ class TestNotificationManagement:
         applicant = candidate_application["applicant"]
         app_id = candidate_application["application_id"]
 
-        recruiter_token = login_and_get_token(client, recruiter["email_address"], recruiter["password"])
-        applicant_token = login_and_get_token(client, applicant["email_address"], applicant["password"])
+        recruiter_token = login_and_get_token(
+            client, recruiter["email_address"], recruiter["password"]
+        )
+        applicant_token = login_and_get_token(
+            client, applicant["email_address"], applicant["password"]
+        )
 
         recruiter_headers = {"Authorization": f"Bearer {recruiter_token}"}
         applicant_headers = {"Authorization": f"Bearer {applicant_token}"}
 
         # Trigger notification
-        client.patch(f"/api/applications/{app_id}/status", json={"status": "Offered"}, headers=recruiter_headers)
+        client.patch(
+            f"/api/applications/{app_id}/status",
+            json={"status": "Offered"},
+            headers=recruiter_headers,
+        )
 
         notifs = client.get("/api/notifications", headers=applicant_headers).json()["notifications"]
         notif_id = notifs[0]["id"]
@@ -208,5 +255,7 @@ class TestNotificationManagement:
         assert delete_res.status_code == 200
 
         # Verify it was removed
-        remaining = client.get("/api/notifications", headers=applicant_headers).json()["notifications"]
+        remaining = client.get("/api/notifications", headers=applicant_headers).json()[
+            "notifications"
+        ]
         assert len(remaining) == 0

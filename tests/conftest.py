@@ -1,45 +1,45 @@
 import os
+
 os.environ["TESTING"] = "1"
 
-import pytest
-import bcrypt
-from fastapi.testclient import TestClient
-from sqlmodel import SQLModel, Session, create_engine
-from sqlalchemy.pool import StaticPool
 from datetime import datetime, timedelta
 
-from backend.main import app
+import bcrypt
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy.pool import StaticPool
+from sqlmodel import Session, SQLModel, create_engine
+
 from backend.database import get_session
+from backend.main import app
 from backend.models import (
-    JobViewLog,
-    User,
-    Resume,
-    Job,
-    JobType,
-    JobSchedule,
     Application,
     ApplicationStatus,
+    Job,
+    JobSchedule,
+    JobType,
+    JobViewLog,
+    Resume,
+    User,
 )
 
-TEST_NOW = datetime(2026, 6, 15, 12, 0, 0) # Fixed datetime for testing purposes
+TEST_NOW = datetime(2026, 6, 15, 12, 0, 0)  # Fixed datetime for testing purposes
 
 # Creates an in-memory DB with static pool to ensure the same connection
 sqlite_url = "sqlite://"
-engine = create_engine(
-    sqlite_url,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool
-)
+engine = create_engine(sqlite_url, connect_args={"check_same_thread": False}, poolclass=StaticPool)
+
 
 @pytest.fixture(autouse=True)
 def setup_and_teardown_db():
     # Creates all tables before each test
     SQLModel.metadata.create_all(engine)
-    
+
     yield  # Tests run here
 
     # Drops all tables after each test
     SQLModel.metadata.drop_all(engine)
+
 
 @pytest.fixture
 def client():
@@ -57,38 +57,42 @@ def client():
     # Clears override after the test
     app.dependency_overrides.clear()
 
+
 @pytest.fixture
 def db_session():
     with Session(engine) as session:
         yield session
+
 
 # ---------------------------------- Users -------------------------------------
 @pytest.fixture
 def test_user():
     # Creates a test user in the database for testing
     plain_password = "Test@123"
-    hashed_password = bcrypt.hashpw(plain_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    hashed_password = bcrypt.hashpw(plain_password.encode("utf-8"), bcrypt.gensalt()).decode(
+        "utf-8"
+    )
 
     with Session(engine) as session:
-        db_user = User(
-            email_address="test@example.com",
-            password_hash=hashed_password
-        )
+        db_user = User(email_address="test@example.com", password_hash=hashed_password)
         session.add(db_user)
 
         session.commit()
         session.refresh(db_user)
 
         return {
-            "id": db_user.id, 
+            "id": db_user.id,
             "email_address": db_user.email_address,
-            "password": plain_password
+            "password": plain_password,
         }
+
 
 @pytest.fixture
 def second_user():
     plain_password = "Test@123"
-    hashed_password = bcrypt.hashpw(plain_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    hashed_password = bcrypt.hashpw(plain_password.encode("utf-8"), bcrypt.gensalt()).decode(
+        "utf-8"
+    )
 
     with Session(engine) as session:
         db_user = User(
@@ -107,10 +111,13 @@ def second_user():
             "is_recruiter": False,
         }
 
+
 @pytest.fixture
 def recruiter_user():
     plain_password = "Test@123"
-    hashed_password = bcrypt.hashpw(plain_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    hashed_password = bcrypt.hashpw(plain_password.encode("utf-8"), bcrypt.gensalt()).decode(
+        "utf-8"
+    )
 
     with Session(engine) as session:
         db_user = User(
@@ -129,6 +136,7 @@ def recruiter_user():
             "is_recruiter": True,
         }
 
+
 # ---------------------------------- Resumes -----------------------------------
 @pytest.fixture
 def add_resumes_for_user(test_user, tmp_path):
@@ -143,7 +151,7 @@ def add_resumes_for_user(test_user, tmp_path):
                 user_id=test_user["id"],
                 file_name=f"resume_{i}.pdf",
                 file_path=str(file_path),
-                is_default=(i == 0)  # Make the first one default
+                is_default=(i == 0),  # Make the first one default
             )
             session.add(resume)
             resumes.append(resume)
@@ -155,9 +163,10 @@ def add_resumes_for_user(test_user, tmp_path):
 
     return resumes
 
+
 # ----------------------------------- Jobs -------------------------------------
 # It is important to note that test_user in this case is the recruiter
-# Since we are testing in an isolated environment, we can use the same user for 
+# Since we are testing in an isolated environment, we can use the same user for
 # both recruiter and applicant roles
 # Further tests will make sure that this isn't possible in the real-world
 @pytest.fixture
@@ -166,19 +175,19 @@ def test_jobs(test_user):
     with Session(engine) as session:
         for i in range(5):
             job = Job(
-                recruiter_id = test_user["id"],
-                title = f"Job Title {i + 1}",
-                company_name = f"Company {i + 1}",
-                description = f"Description for job {i + 1}",
-                location = f"Location {i + 1}",
-                category = "Design" if i == 4 else "Engineering",
-                job_type = JobType.PERMANENT,
-                job_schedule = JobSchedule.FULL_TIME,
-                min_hours_per_week = 40,
-                max_hours_per_week = 40,
-                salary_min = 50000 + i * 1000,
-                salary_max = 70000 + i * 1000,
-                posted_at = TEST_NOW
+                recruiter_id=test_user["id"],
+                title=f"Job Title {i + 1}",
+                company_name=f"Company {i + 1}",
+                description=f"Description for job {i + 1}",
+                location=f"Location {i + 1}",
+                category="Design" if i == 4 else "Engineering",
+                job_type=JobType.PERMANENT,
+                job_schedule=JobSchedule.FULL_TIME,
+                min_hours_per_week=40,
+                max_hours_per_week=40,
+                salary_min=50000 + i * 1000,
+                salary_max=70000 + i * 1000,
+                posted_at=TEST_NOW,
             )
 
             session.add(job)
@@ -189,6 +198,7 @@ def test_jobs(test_user):
             session.refresh(job)
 
     return jobs
+
 
 @pytest.fixture
 def inactive_job(test_user):
@@ -209,24 +219,31 @@ def inactive_job(test_user):
         session.refresh(job)
         return job
 
+
 # --------------------------------- Analytics ----------------------------------
 @pytest.fixture
 def test_applications(test_user, test_jobs):
     with Session(engine) as session:
         for i, job in enumerate(test_jobs):
             application = Application(
-                applicant_id = test_user["id"],
-                job_id = job.id,
-                applied_at = TEST_NOW - timedelta(days=i),
+                applicant_id=test_user["id"],
+                job_id=job.id,
+                applied_at=TEST_NOW - timedelta(days=i),
             )
             session.add(application)
         session.commit()
     return len(test_jobs)  # Return the number of applications created
 
+
 @pytest.fixture
-def test_searches(client, test_user, test_jobs): # We have a field keeping tracks of searches returning results (for the AI features)
+def test_searches(
+    client, test_user, test_jobs
+):  # We have a field keeping tracks of searches returning results (for the AI features)
     # Since we don't have a dedicated endpoint for searches, we have to simulate it by calling GET jobs with search parameters
-    login_response = client.post("/api/auth/login", json ={"email_address": test_user["email_address"],"password": test_user["password"]})
+    login_response = client.post(
+        "/api/auth/login",
+        json={"email_address": test_user["email_address"], "password": test_user["password"]},
+    )
     assert login_response.status_code == 200
 
     token = login_response.json()["access_token"]
@@ -246,18 +263,16 @@ def test_searches(client, test_user, test_jobs): # We have a field keeping track
 
     return len(searches)  # Return the number of searches made
 
+
 @pytest.fixture
 def test_views(test_user, test_jobs):
     with Session(engine) as session:
         for job in test_jobs:
-            job_view = JobViewLog(
-                user_id = test_user["id"],
-                job_id = job.id,
-                viewed_at = TEST_NOW
-            )
+            job_view = JobViewLog(user_id=test_user["id"], job_id=job.id, viewed_at=TEST_NOW)
             session.add(job_view)
         session.commit()
     return len(test_jobs)  # Return the number of views logged
+
 
 # ------------------------------- Applications ---------------------------------
 @pytest.fixture

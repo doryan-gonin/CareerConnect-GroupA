@@ -1,23 +1,24 @@
 # REGISTRATION AND LOGIN ENDPOINTS
-from datetime import datetime,timedelta, timezone
-from typing import Annotated
 import re
 import uuid
+from datetime import datetime, timedelta, timezone
+from typing import Annotated
 
+import bcrypt
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
-import bcrypt
-from backend.database import get_session
-from backend.models import User, UserCreate, UserResponse, UserLogin, Token, RevokedToken, Profile
-from backend.dependencies import get_current_user, get_token_payload
+
 from backend.config import (
-    SECRET_KEY,
-    ALGORITHM,
     ACCESS_TOKEN_EXPIRE_MINUTES,
-    MAX_FAILED_ATTEMPTS,
+    ALGORITHM,
     LOCKOUT_DURATION_MINUTES,
+    MAX_FAILED_ATTEMPTS,
+    SECRET_KEY,
 )
+from backend.database import get_session
+from backend.dependencies import get_current_user, get_token_payload
+from backend.models import Profile, RevokedToken, Token, User, UserCreate, UserLogin, UserResponse
 
 router = APIRouter(tags=["Authentication"])
 
@@ -35,7 +36,10 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode.update({"exp": expire, "jti": str(uuid.uuid4())})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+
 # ----------------------------------------------------------------------------------------------
+
 
 def validate_password_strength(password: str) -> None:
     problems = []
@@ -58,6 +62,7 @@ def validate_password_strength(password: str) -> None:
             detail="Password must have: " + ", ".join(problems) + ".",
         )
 
+
 # Endpoint to create a new user
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register_user(payload: UserCreate, session: Annotated[Session, Depends(get_session)]) -> User:
@@ -67,9 +72,12 @@ def register_user(payload: UserCreate, session: Annotated[Session, Depends(get_s
     # Make sure user doesn't already exist
     existing = session.exec(select(User).where(User.email_address == clean_email)).first()
     if existing:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An account with this email already exists.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="An account with this email already exists.",
+        )
 
-    validate_password_strength(payload.password)#will force the user to have a valid password
+    validate_password_strength(payload.password)  # will force the user to have a valid password
     # Hash password
     pw_bytes: bytes = payload.password.encode("utf-8")
     pw_hashed: bytes = bcrypt.hashpw(pw_bytes, bcrypt.gensalt())
@@ -78,33 +86,36 @@ def register_user(payload: UserCreate, session: Annotated[Session, Depends(get_s
     pw_hash_str: str = pw_hashed.decode("utf-8")
 
     new_user: User = User(
-        email_address = clean_email,
-        password_hash = pw_hash_str,
-        is_recruiter = payload.is_recruiter,
+        email_address=clean_email,
+        password_hash=pw_hash_str,
+        is_recruiter=payload.is_recruiter,
     )
 
     session.add(new_user)
     session.flush()
 
-    new_profile = Profile(
-        user_id = new_user.id,
-        first_name = "",
-        last_name = ""
-    )
+    new_profile = Profile(user_id=new_user.id, first_name="", last_name="")
     session.add(new_profile)
 
     session.commit()
     session.refresh(new_user)
     return new_user
 
-@router.post("/login", response_model=Token) # Logging in requires a POST request with email and password (GET stores info in URL so not secure)
+
+@router.post(
+    "/login", response_model=Token
+)  # Logging in requires a POST request with email and password (GET stores info in URL so not secure)
 def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_session)]):
     # User Lookup
-    user = session.exec(select(User).where(User.email_address == payload.email_address.strip().casefold())).first()
+    user = session.exec(
+        select(User).where(User.email_address == payload.email_address.strip().casefold())
+    ).first()
     if user is None:
         # Prevent timing attacks by performing dummy bcrypt check
         bcrypt.checkpw("dummy".encode("utf-8"), DUMMY_PASSWORD_HASH)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.") # Generic 401 response
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password."
+        )  # Generic 401 response
 
     # Locked out?
     now = datetime.now(timezone.utc)
@@ -117,7 +128,7 @@ def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_sessi
         if locked_until_utc > now:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Too many failed attempts. Try again later."
+                detail="Too many failed attempts. Try again later.",
             )
         else:
             # Lockout expired: reset failed attempts counter and clear lockout timestamp
@@ -133,7 +144,9 @@ def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_sessi
             user.locked_until = now + timedelta(minutes=LOCKOUT_DURATION_MINUTES)
         session.add(user)
         session.commit()
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password."
+        )
 
     # Success: reset counters
     if user.failed_attempts != 0 or user.locked_until is not None:
@@ -141,25 +154,32 @@ def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_sessi
         user.locked_until = None
         session.add(user)
         session.commit()
-    
+
     # JWT Generation and response
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
     access_token = create_access_token(
-        data={"sub": str(user.id), "is_recruiter": user.is_recruiter}, # We use the ID as the email might change AND is PII
-        expires_delta=access_token_expires)
-    
+        data={
+            "sub": str(user.id),
+            "is_recruiter": user.is_recruiter,
+        },  # We use the ID as the email might change AND is PII
+        expires_delta=access_token_expires,
+    )
+
     return {"access_token": access_token, "token_type": "bearer", "is_recruiter": user.is_recruiter}
+
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(
     payload: Annotated[dict, Depends(get_token_payload)],
     session: Annotated[Session, Depends(get_session)],
 ):
-    session.add(RevokedToken(
-        jti=payload["jti"],
-        expires_at=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
-    ))
+    session.add(
+        RevokedToken(
+            jti=payload["jti"],
+            expires_at=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
+        )
+    )
     session.commit()
 
 
@@ -171,16 +191,22 @@ def refresh_token(
 ):
 
     # Revoke the old token, then hand out a fresh one
-    session.add(RevokedToken(
-        jti=payload["jti"],
-        expires_at=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
-    ))
+    session.add(
+        RevokedToken(
+            jti=payload["jti"],
+            expires_at=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
+        )
+    )
     session.commit()
     return {
-        "access_token": create_access_token(data={"sub": str(user.id), "is_recruiter": user.is_recruiter}),
+        "access_token": create_access_token(
+            data={"sub": str(user.id), "is_recruiter": user.is_recruiter}
+        ),
         "token_type": "bearer",
         "is_recruiter": user.is_recruiter,
     }
+
+
 @router.get("/me", response_model=UserResponse)
 def get_authenticated_user(
     current_user: Annotated[User, Depends(get_current_user)],

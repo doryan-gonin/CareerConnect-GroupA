@@ -1,10 +1,13 @@
 # ENTRYPOINT
-from os import getenv
 from contextlib import asynccontextmanager
+from os import getenv
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from backend.database import init_db
-from backend.routers import auth, profiles, jobs, applications, analytics, notifications, interview
+from backend.routers import analytics, applications, auth, interview, jobs, notifications, profiles
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -16,11 +19,12 @@ async def lifespan(app: FastAPI):
 
     # Code here runs once when server closes
 
-app = FastAPI(title = "CareerConnect", lifespan=lifespan)
+
+app = FastAPI(title="CareerConnect", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Good for testing
+    allow_origins=["*"],  # Good for testing
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,9 +38,11 @@ app.include_router(analytics.router, prefix="/api/analytics")
 app.include_router(notifications.router, prefix="/api/notifications")
 app.include_router(interview.router, prefix="/api/interview")
 
+
 @app.get("/")
 def read_root():
-    return {"message": "Hello World", "status": "running"} 
+    return {"message": "Hello World", "status": "running"}
+
 
 if __name__ == "__main__":
     import uvicorn
