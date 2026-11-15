@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
+import { BellIcon } from "lucide-react";
 import {
   deleteNotification,
   getNotifications,
@@ -6,6 +7,18 @@ import {
   markNotificationAsRead,
 } from "../api/notifications";
 import type { Notification as AppNotification } from "../api/types";
+import { Alert, AlertDescription } from "./ui/alert";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { Skeleton } from "./ui/skeleton";
 
 function formatNotificationDate(value: string): string {
   if (!value) return "";
@@ -13,6 +26,7 @@ function formatNotificationDate(value: string): string {
   if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" });
 }
+
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Something went wrong. Please try again.";
 }
@@ -28,39 +42,41 @@ function NotificationBell({ token, onNotificationClick }: NotificationBellProps)
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(Boolean(token));
   const [error, setError] = useState("");
   const [actionId, setActionId] = useState<ActionId>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const hasLoadedRef = useRef(false);
 
   const loadNotifications = useCallback(async () => {
-    if (!token) return;
+    if (!token || hasLoadedRef.current || isLoading) return;
     setIsLoading(true);
     setError("");
     try {
       const data = await getNotifications(token);
-      setNotifications(data.notifications || []);
-      setUnreadCount(data.unread_count || 0);
+      setNotifications(data.notifications);
+      setUnreadCount(data.unread_count);
+      hasLoadedRef.current = true;
     } catch (caught) {
+      hasLoadedRef.current = false;
       setError(errorMessage(caught));
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [isLoading, token]);
 
   useEffect(() => {
     if (!token) return undefined;
+    hasLoadedRef.current = false;
     let active = true;
-    queueMicrotask(() => {
-      if (active) setIsLoading(true);
-    });
     getNotifications(token)
       .then((data) => {
         if (!active) return;
-        setNotifications(data.notifications || []);
-        setUnreadCount(data.unread_count || 0);
+        setNotifications(data.notifications);
+        setUnreadCount(data.unread_count);
+        hasLoadedRef.current = true;
       })
       .catch((caught: unknown) => {
+        hasLoadedRef.current = false;
         if (active) setError(errorMessage(caught));
       })
       .finally(() => {
@@ -70,23 +86,6 @@ function NotificationBell({ token, onNotificationClick }: NotificationBellProps)
       active = false;
     };
   }, [token]);
-
-  useEffect(() => {
-    function closeOnOutsideClick(event: globalThis.PointerEvent) {
-      const target = event.target;
-      if (target instanceof Node && containerRef.current && !containerRef.current.contains(target))
-        setIsOpen(false);
-    }
-    function closeOnEscape(event: globalThis.KeyboardEvent) {
-      if (event.key === "Escape") setIsOpen(false);
-    }
-    document.addEventListener("pointerdown", closeOnOutsideClick);
-    document.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.removeEventListener("pointerdown", closeOnOutsideClick);
-      document.removeEventListener("keydown", closeOnEscape);
-    };
-  }, []);
 
   async function handleNotificationClick(notification: AppNotification) {
     setActionId(notification.id);
@@ -106,6 +105,7 @@ function NotificationBell({ token, onNotificationClick }: NotificationBellProps)
       setActionId(null);
     }
   }
+
   async function handleDismiss(event: MouseEvent<HTMLButtonElement>, notificationId: number) {
     event.stopPropagation();
     setActionId(notificationId);
@@ -122,6 +122,7 @@ function NotificationBell({ token, onNotificationClick }: NotificationBellProps)
       setActionId(null);
     }
   }
+
   async function handleMarkAllRead() {
     if (!unreadCount) return;
     setActionId("all");
@@ -137,111 +138,130 @@ function NotificationBell({ token, onNotificationClick }: NotificationBellProps)
       setActionId(null);
     }
   }
-  function toggleNotifications() {
-    const nextIsOpen = !isOpen;
-    setIsOpen(nextIsOpen);
-    if (nextIsOpen) void loadNotifications();
-  }
 
   return (
-    <div className="relative" ref={containerRef}>
-      <button
-        type="button"
-        onClick={toggleNotifications}
-        aria-label={unreadCount ? `Notifications (${unreadCount} unread)` : "Notifications"}
-        aria-expanded={isOpen}
-        className="relative rounded-md p-1.5 text-gray-600 transition hover:bg-gray-100 hover:text-purple-600"
-      >
-        <svg
-          aria-hidden="true"
-          className="h-5 w-5"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"
+    <DropdownMenu
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        if (open) void loadNotifications();
+      }}
+    >
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={unreadCount ? `Notifications (${unreadCount} unread)` : "Notifications"}
+            aria-expanded={isOpen}
+            onClick={() => {
+              if (!isOpen) {
+                setIsOpen(true);
+                void loadNotifications();
+              }
+            }}
+            className="relative text-muted-foreground"
           />
-        </svg>
+        }
+      >
+        <BellIcon aria-hidden="true" />
         {unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-red-600 px-1 text-center text-[10px] font-bold leading-4 text-white">
+          <Badge
+            variant="destructive"
+            className="absolute -top-1 -right-1 min-w-4 px-1 text-[10px] leading-4"
+          >
             {unreadCount > 99 ? "99+" : unreadCount}
-          </span>
+          </Badge>
         )}
-      </button>
-      {isOpen && (
-        <div className="absolute right-0 z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
-          <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-            <h2 className="text-sm font-semibold text-gray-900">Notifications</h2>
-            <button
-              type="button"
-              onClick={handleMarkAllRead}
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" className="w-[min(22rem,calc(100vw-2rem))] p-0">
+        <DropdownMenuGroup>
+          <div className="flex items-center justify-between px-4 py-3">
+            <DropdownMenuLabel className="p-0 text-foreground">Notifications</DropdownMenuLabel>
+            <Button
+              variant="link"
+              size="xs"
+              onClick={() => void handleMarkAllRead()}
               disabled={!unreadCount || actionId === "all"}
-              className="text-xs font-medium text-purple-600 hover:underline disabled:cursor-not-allowed disabled:text-gray-400"
             >
               Mark all read
-            </button>
+            </Button>
           </div>
-          {error && (
-            <p className="border-b border-red-100 bg-red-50 px-4 py-2 text-xs text-red-700">
-              {error}
-            </p>
-          )}
-          {isLoading ? (
-            <p className="px-4 py-6 text-center text-sm text-gray-500">Loading notifications…</p>
-          ) : notifications.length === 0 ? (
-            <p className="px-4 py-6 text-center text-sm text-gray-500">You’re all caught up.</p>
-          ) : (
-            <ul className="max-h-96 overflow-y-auto">
+          <DropdownMenuSeparator />
+        </DropdownMenuGroup>
+
+        {error && (
+          <Alert variant="destructive" className="m-3">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {isLoading ? (
+          <div className="flex flex-col gap-2 px-4 py-4" aria-label="Loading notifications">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        ) : notifications.length === 0 ? (
+          <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+            You’re all caught up.
+          </p>
+        ) : (
+          <DropdownMenuGroup>
+            <div className="max-h-96 overflow-y-auto">
               {notifications.map((notification) => (
-                <li
+                <div
                   key={notification.id}
-                  className={`border-b border-gray-100 px-4 py-3 ${notification.is_read ? "bg-white" : "bg-purple-50/60"}`}
+                  className={`flex items-start gap-3 border-b border-border px-4 py-3 last:border-b-0 ${notification.is_read ? "bg-background" : "bg-accent/50"}`}
                 >
-                  <div className="flex items-start gap-3">
-                    <button
-                      type="button"
-                      onClick={() => void handleNotificationClick(notification)}
-                      disabled={actionId === notification.id}
-                      className="min-w-0 flex-1 text-left transition hover:text-purple-700 disabled:cursor-wait"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <span
-                          className={`text-sm ${notification.is_read ? "font-medium text-gray-700" : "font-semibold text-gray-900"}`}
-                        >
-                          {notification.title}
-                        </span>
-                        {!notification.is_read && (
-                          <span
-                            className="mt-1 h-2 w-2 shrink-0 rounded-full bg-purple-600"
-                            aria-label="Unread"
-                          />
-                        )}
-                      </div>
-                      <p className="mt-1 text-xs leading-5 text-gray-600">{notification.message}</p>
-                      <span className="mt-2 block text-[11px] text-gray-400">
-                        {formatNotificationDate(notification.created_at)}
+                  <button
+                    type="button"
+                    onClick={() => void handleNotificationClick(notification)}
+                    disabled={actionId === notification.id}
+                    className="min-w-0 flex-1 text-left transition hover:text-primary disabled:cursor-wait"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <span
+                        className={
+                          notification.is_read
+                            ? "text-sm font-medium text-muted-foreground"
+                            : "text-sm font-semibold text-foreground"
+                        }
+                      >
+                        {notification.title}
                       </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(event) => void handleDismiss(event, notification.id)}
-                      disabled={actionId === notification.id}
-                      className="shrink-0 text-[11px] font-medium text-gray-500 hover:text-red-600 hover:underline disabled:cursor-wait"
-                    >
-                      Dismiss
-                    </button>
-                  </div>
-                </li>
+                      {!notification.is_read && (
+                        <span
+                          className="mt-1 size-2 shrink-0 rounded-full bg-primary"
+                          aria-label="Unread"
+                        />
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                      {notification.message}
+                    </p>
+                    <span className="mt-2 block text-[11px] text-muted-foreground">
+                      {formatNotificationDate(notification.created_at)}
+                    </span>
+                  </button>
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    onClick={(event) => void handleDismiss(event, notification.id)}
+                    disabled={actionId === notification.id}
+                    className="shrink-0 text-muted-foreground hover:text-destructive"
+                  >
+                    Dismiss
+                  </Button>
+                </div>
               ))}
-            </ul>
-          )}
-        </div>
-      )}
-    </div>
+            </div>
+          </DropdownMenuGroup>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
+
 export default NotificationBell;
