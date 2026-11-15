@@ -1,215 +1,54 @@
-import { API_BASE_URL } from './client'
+import { apiRequest } from './client'
 
-// Handles API communication for user profiles and resume management.
+const PROFILE_PATH = '/api/profiles/me'
 
-function extractErrorMessage(body, fallback) {
-  const detail = body?.detail
-  if (typeof detail === 'string') return detail
-  if (Array.isArray(detail)) {
-    return detail.map((item) => item.msg).join(' ')
-  }
-  return fallback
+export function getProfile(token) {
+  return apiRequest(PROFILE_PATH, { token, fallbackError: 'Failed to load profile.' })
 }
 
-export async function getProfile(token) {
-  let response
-  try {
-    response = await fetch(`${API_BASE_URL}/api/profiles/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-  } catch {
-    throw new Error('Could not reach the server. Is the backend running?')
-  }
-
-  let body = null
-  try {
-    body = await response.json()
-  } catch {
-    // ignore
-  }
-
-  if (!response.ok) {
-    throw new Error(extractErrorMessage(body, 'Failed to load profile.'))
-  }
-
-  return body
-}
-
-export async function updateProfile(token, { firstName, lastName }) {
-  let response
-  try {
-    response = await fetch(`${API_BASE_URL}/api/profiles/me`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        first_name: firstName,
-        last_name: lastName,
-      }),
-    })
-  } catch {
-    throw new Error('Could not reach the server. Is the backend running?')
-  }
-
-  let body = null
-  try {
-    body = await response.json()
-  } catch {
-    // ignore
-  }
-
-  if (!response.ok) {
-    throw new Error(extractErrorMessage(body, 'Failed to update profile.'))
-  }
-
-  return body
+export function updateProfile(token, { firstName, lastName }) {
+  return apiRequest(PROFILE_PATH, {
+    token, method: 'PUT', body: { first_name: firstName, last_name: lastName },
+    fallbackError: 'Failed to update profile.',
+  })
 }
 
 export async function getResumes(token) {
-  let response
-  try {
-    response = await fetch(`${API_BASE_URL}/api/profiles/me/resumes`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-  } catch {
-    throw new Error('Could not reach the server. Is the backend running?')
-  }
-
-  let body = null
-  try {
-    body = await response.json()
-  } catch {
-    // ignore
-  }
-
-  if (!response.ok) {
-    throw new Error(extractErrorMessage(body, 'Failed to load resumes.'))
-  }
-
-  return body || []
+  return (await apiRequest(`${PROFILE_PATH}/resumes`, { token, fallbackError: 'Failed to load resumes.' })) || []
 }
 
-export async function uploadResume(token, file, makeDefault = false) {
-  const formData = new FormData()
-  formData.append('file', file)
-
-  const url = `${API_BASE_URL}/api/profiles/me/resumes?make_default=${Boolean(makeDefault)}`
-
-  let response
-  try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    })
-  } catch {
-    throw new Error('Could not reach the server. Is the backend running?')
-  }
-
-  let body = null
-  try {
-    body = await response.json()
-  } catch {
-    // ignore
-  }
-
-  if (!response.ok) {
-    throw new Error(extractErrorMessage(body, 'Failed to upload resume.'))
-  }
-
-  return body
+export function uploadResume(token, file, makeDefault = false) {
+  const body = new FormData()
+  body.append('file', file)
+  return apiRequest(`${PROFILE_PATH}/resumes?make_default=${Boolean(makeDefault)}`, {
+    token, method: 'POST', body, fallbackError: 'Failed to upload resume.',
+  })
 }
 
-export async function setDefaultResume(token, resumeId) {
-  let response
-  try {
-    response = await fetch(`${API_BASE_URL}/api/profiles/me/resumes/${resumeId}/default`, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-  } catch {
-    throw new Error('Could not reach the server. Is the backend running?')
-  }
-
-  let body = null
-  try {
-    body = await response.json()
-  } catch {
-    // ignore
-  }
-
-  if (!response.ok) {
-    throw new Error(extractErrorMessage(body, 'Failed to set default resume.'))
-  }
-
-  return body
+export function setDefaultResume(token, resumeId) {
+  return apiRequest(`${PROFILE_PATH}/resumes/${resumeId}/default`, {
+    token, method: 'PATCH', fallbackError: 'Failed to set default resume.',
+  })
 }
 
 export async function downloadResume(token, resumeId, fileName = 'resume.pdf') {
-  let response
-  try {
-    response = await fetch(`${API_BASE_URL}/api/profiles/me/resumes/${resumeId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-  } catch {
-    throw new Error('Could not reach the server. Is the backend running?')
-  }
-
-  if (!response.ok) {
-    let body = null
-    try {
-      body = await response.json()
-    } catch {
-      // ignore
-    }
-    throw new Error(extractErrorMessage(body, 'Could not download resume.'))
-  }
-
-  const blob = await response.blob()
+  const blob = await apiRequest(`${PROFILE_PATH}/resumes/${resumeId}`, {
+    token, responseType: 'blob', fallbackError: 'Could not download resume.',
+  })
   const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = fileName
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  window.URL.revokeObjectURL(url)
+  const link = document.createElement('a')
+  try {
+    link.href = url
+    link.download = fileName
+    document.body.appendChild(link)
+    link.click()
+  } finally {
+    link.remove()
+    window.URL.revokeObjectURL(url)
+  }
 }
 
 export async function deleteResume(token, resumeId) {
-  let response
-  try {
-    response = await fetch(`${API_BASE_URL}/api/profiles/me/resumes/${resumeId}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-  } catch {
-    throw new Error('Could not reach the server. Is the backend running?')
-  }
-
-  if (!response.ok) {
-    let body = null
-    try {
-      body = await response.json()
-    } catch {
-      // ignore
-    }
-    throw new Error(extractErrorMessage(body, 'Failed to delete resume.'))
-  }
-
+  await apiRequest(`${PROFILE_PATH}/resumes/${resumeId}`, { token, method: 'DELETE', fallbackError: 'Failed to delete resume.' })
   return true
 }

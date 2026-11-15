@@ -1,37 +1,9 @@
-import { API_BASE_URL } from './client'
+import { apiRequest } from './client'
 
 // Handles API communication for AI interview preparation sessions.
 
-function extractErrorMessage(body, fallback) {
-  const detail = body?.detail
-  if (typeof detail === 'string') return detail
-  if (Array.isArray(detail)) {
-    return detail.map((item) => item.msg).join(' ')
-  }
-  return fallback
-}
-
 async function request(token, path, fallbackError, options = {}) {
-  let response
-  try {
-    response = await fetch(`${API_BASE_URL}/api/interview${path}`, {
-      ...options,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-      },
-    })
-  } catch {
-    throw new Error('Could not reach the server. Is the backend running?')
-  }
-
-  const body = await response.json().catch(() => null)
-
-  if (!response.ok) {
-    throw new Error(extractErrorMessage(body, fallbackError))
-  }
-
-  return body
+  return apiRequest(`/api/interview${path}`, { ...options, token, fallbackError })
 }
 
 export function getInterviewSessions(token) {
