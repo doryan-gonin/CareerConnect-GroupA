@@ -88,6 +88,12 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
                             <p>{job.company_name}</p>
                             <p>{job.job_schedule}</p>
                             <p>{job.location}</p>
+                            {job.ai_suggested && (
+                                <div className="mt-2 rounded-md bg-purple-50 px-2.5 py-2 text-xs text-purple-800">
+                                    <span className="font-semibold">✨ AI suggested</span>
+                                    {job.suggestion_justification && <span className="ml-1">— {job.suggestion_justification}</span>}
+                                </div>
+                            )}
                             {statusByJobId[job.id] && (
                                 <div className="mt-2">
                                     <ApplicationStatusBadge status={statusByJobId[job.id]} />
@@ -196,6 +202,11 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
                             <p className="mt-2 text-sm text-gray-600">{selectedJob.location}</p>
                             <p className="text-sm text-gray-600">Category: {selectedJob.category}</p>
                             <p className="text-sm text-gray-600">Type: {selectedJob.job_type} · {selectedJob.job_schedule}</p>
+                            {selectedJob.ai_suggested && selectedJob.suggestion_justification && (
+                                <p className="mt-2 rounded-md bg-purple-50 p-2 text-xs text-purple-800">
+                                    <span className="font-semibold">Why this was suggested:</span> {selectedJob.suggestion_justification}
+                                </p>
+                            )}
                             {(selectedJob.salary_min || selectedJob.salary_max) && (
                                 <p className="text-sm text-gray-700 font-medium mt-1">
                                     Salary: ${selectedJob.salary_min?.toLocaleString() ?? '?'} - ${selectedJob.salary_max?.toLocaleString() ?? '?'}

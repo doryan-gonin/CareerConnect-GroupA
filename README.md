@@ -56,3 +56,9 @@ See the CareerConnect [Wiki Page](../../../wiki) (Work In Progress)
 - Ghost Posting Prevention (after a long period of inactivity, a posting gets demoted to avoid having people apply for no reason)
 - AI interview Preparation (based on the posting you applied to, AI can help you get ready for your interview)
 - AI suggested postings (Job Seekers can get advice on which postings suit their profiles)
+
+### AI suggested postings
+
+Applicants can enable **AI suggested** in the job search toolbar or choose **Best AI match** from the sort menu. Results include a short justification and are cached per user in `JobSuggestion`. The cache is warmed after applicant login, expires after `AI_SUGGESTIONS_CACHE_TTL_MINUTES` (default 360), and can be refreshed with `POST /api/jobs/suggestions/refresh`.
+
+The adapter uses the existing OpenAI-compatible settings: `AI_API_BASE_URL` (base URL, for example a Shipyard `.../v1` URL), `AI_API_KEY`, and `AI_MODEL`. It posts to `/chat/completions` with a JSON-only response format. Set `AI_MOCK_MODE=true` for deterministic local/test recommendations; provider failures automatically use the same deterministic fallback. Never commit the API key.

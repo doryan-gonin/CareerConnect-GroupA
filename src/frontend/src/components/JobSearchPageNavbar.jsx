@@ -18,6 +18,7 @@ const CATEGORIES = [
 ]
 
 const SORT_OPTIONS = [
+    { label: 'Best AI match', sortBy: 'suggestion', sortOrder: 'desc', aiSuggested: true },
     { label: 'Newest First', sortBy: 'posted_at', sortOrder: 'desc' },
     { label: 'Oldest First', sortBy: 'posted_at', sortOrder: 'asc' },
     { label: 'Highest Salary', sortBy: 'salary_max', sortOrder: 'desc' },
@@ -40,6 +41,7 @@ function JobSearchPageNavbar({ token, onLogout, isLoggingOut = false, onJobsLoad
     const [sortBy, setSortBy] = useState('')
     const [sortOrder, setSortOrder] = useState('')
     const [location, setLocation] = useState('')
+    const [aiSuggested, setAiSuggested] = useState(false)
 
     const categoryRef = useRef(null)
     const jobTypeRef = useRef(null)
@@ -92,6 +94,7 @@ function JobSearchPageNavbar({ token, onLogout, isLoggingOut = false, onJobsLoad
         setKeyWord('')
         setCategory('')
         setOrderDisplay('Order')
+        setAiSuggested(false)
         setError('')
         if (onReset) onReset()
         await triggerSearch({
@@ -103,6 +106,7 @@ function JobSearchPageNavbar({ token, onLogout, isLoggingOut = false, onJobsLoad
             sortBy: '',
             sortOrder: '',
             page: 1,
+            aiSuggested: false,
         })
     }
 
@@ -116,6 +120,7 @@ function JobSearchPageNavbar({ token, onLogout, isLoggingOut = false, onJobsLoad
         const effectiveSortBy = overrides.sortBy !== undefined ? overrides.sortBy : sortBy
         const effectiveSortOrder = overrides.sortOrder !== undefined ? overrides.sortOrder : sortOrder
         const effectivePage = overrides.page !== undefined ? overrides.page : 1
+        const effectiveAiSuggested = overrides.aiSuggested !== undefined ? overrides.aiSuggested : (aiSuggested || effectiveSortBy === 'suggestion')
 
         try {
             const data = await searchJobs(token, {
@@ -126,6 +131,8 @@ function JobSearchPageNavbar({ token, onLogout, isLoggingOut = false, onJobsLoad
                 jobSchedule: effectiveJobSchedule !== 'Schedule' ? effectiveJobSchedule : undefined,
                 sortBy: effectiveSortBy || undefined,
                 sortOrder: effectiveSortOrder || undefined,
+                aiSuggested: effectiveAiSuggested,
+                refreshSuggestions: overrides.refreshSuggestions,
                 page: effectivePage,
             })
             onJobsLoaded(data.jobs, {
@@ -272,6 +279,19 @@ function JobSearchPageNavbar({ token, onLogout, isLoggingOut = false, onJobsLoad
                                     </div>
                                 )}
                             </div>
+
+                            <button
+                                type="button"
+                                aria-pressed={aiSuggested}
+                                onClick={() => {
+                                    const next = !aiSuggested
+                                    setAiSuggested(next)
+                                    triggerSearch({ aiSuggested: next, refreshSuggestions: next, page: 1 })
+                                }}
+                                className={`rounded-md border px-3 py-1.5 text-sm font-medium transition ${aiSuggested ? 'border-purple-600 bg-purple-600 text-white' : 'border-purple-300 bg-white text-purple-700 hover:bg-purple-50'}`}
+                            >
+                                ✨ AI suggested
+                            </button>
 
                             <div ref={jobTypeRef} className="relative inline-block">
                                 <button
@@ -440,6 +460,7 @@ function JobSearchPageNavbar({ token, onLogout, isLoggingOut = false, onJobsLoad
                                                     setOrderDisplay(opt.label)
                                                     setSortBy(opt.sortBy)
                                                     setSortOrder(opt.sortOrder)
+                                                    if (opt.aiSuggested) setAiSuggested(true)
                                                     setIsOrderOpen(false)
                                                     triggerSearch({ sortBy: opt.sortBy, sortOrder: opt.sortOrder })
                                                 }}
