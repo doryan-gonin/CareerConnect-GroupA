@@ -1,73 +1,73 @@
-import { useState, useEffect, useCallback } from 'react'
-import { getMyApplications, withdrawApplication } from '../api/applications'
-import ApplicationStatusBadge from './ApplicationStatusBadge'
+import { useState, useEffect, useCallback } from "react";
+import { getMyApplications, withdrawApplication } from "../api/applications";
+import ApplicationStatusBadge from "./ApplicationStatusBadge";
 
-const STATUS_OPTIONS = ['Applied', 'Under Review', 'Interview', 'Offered', 'Rejected']
+const STATUS_OPTIONS = ["Applied", "Under Review", "Interview", "Offered", "Rejected"];
 
 function ApplicationsSection({ token }) {
-  const [applications, setApplications] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [statusFilter, setStatusFilter] = useState('')
-  const [actionId, setActionId] = useState(null)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [applications, setApplications] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [actionId, setActionId] = useState(null);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const refreshApplications = useCallback(async () => {
     try {
-      const data = await getMyApplications(token, statusFilter || undefined)
-      setApplications(data)
+      const data = await getMyApplications(token, statusFilter || undefined);
+      setApplications(data);
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     }
-  }, [token, statusFilter])
+  }, [token, statusFilter]);
 
   useEffect(() => {
-    let isMounted = true
+    let isMounted = true;
 
     async function load() {
-      setIsLoading(true)
+      setIsLoading(true);
       try {
-        const data = await getMyApplications(token, statusFilter || undefined)
+        const data = await getMyApplications(token, statusFilter || undefined);
         if (isMounted) {
-          setApplications(data)
+          setApplications(data);
         }
       } catch (err) {
         if (isMounted) {
-          setError(err.message)
+          setError(err.message);
         }
       } finally {
         if (isMounted) {
-          setIsLoading(false)
+          setIsLoading(false);
         }
       }
     }
 
     if (token) {
-      load()
+      load();
     }
 
     return () => {
-      isMounted = false
-    }
-  }, [token, statusFilter])
+      isMounted = false;
+    };
+  }, [token, statusFilter]);
 
   async function handleWithdraw(applicationId, jobTitle) {
     if (!window.confirm(`Withdraw your application for "${jobTitle}"?`)) {
-      return
+      return;
     }
 
-    setActionId(applicationId)
-    setError('')
-    setSuccess('')
+    setActionId(applicationId);
+    setError("");
+    setSuccess("");
 
     try {
-      await withdrawApplication(token, applicationId)
-      setSuccess(`Application for "${jobTitle}" withdrawn.`)
-      await refreshApplications()
+      await withdrawApplication(token, applicationId);
+      setSuccess(`Application for "${jobTitle}" withdrawn.`);
+      await refreshApplications();
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setActionId(null)
+      setActionId(null);
     }
   }
 
@@ -90,32 +90,33 @@ function ApplicationsSection({ token }) {
       </div>
 
       {success && (
-        <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
-          {success}
-        </p>
+        <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{success}</p>
       )}
 
-      {error && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      )}
+      {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       {isLoading ? (
         <div className="py-6 text-center text-sm text-gray-500">Loading applications…</div>
       ) : applications.length === 0 ? (
         <div className="rounded-md bg-gray-50 py-6 text-center text-sm text-gray-500">
-          {statusFilter ? `No applications with status "${statusFilter}".` : 'No applications submitted yet.'}
+          {statusFilter
+            ? `No applications with status "${statusFilter}".`
+            : "No applications submitted yet."}
         </div>
       ) : (
         <ul className="divide-y divide-gray-100 border-t border-gray-100">
           {applications.map((application) => {
-            const isWorking = actionId === application.id
+            const isWorking = actionId === application.id;
             return (
-              <li key={application.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <li
+                key={application.id}
+                className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-900 text-sm">{application.job_title}</span>
+                    <span className="font-medium text-gray-900 text-sm">
+                      {application.job_title}
+                    </span>
                     <ApplicationStatusBadge status={application.status} />
                   </div>
                   <span className="text-xs text-gray-500">
@@ -135,12 +136,12 @@ function ApplicationsSection({ token }) {
                   Withdraw
                 </button>
               </li>
-            )
+            );
           })}
         </ul>
       )}
     </div>
-  )
+  );
 }
 
-export default ApplicationsSection
+export default ApplicationsSection;

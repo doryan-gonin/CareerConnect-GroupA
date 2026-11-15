@@ -1,163 +1,166 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   getResumes,
   uploadResume,
   setDefaultResume,
   downloadResume,
   deleteResume,
-} from '../api/profiles'
+} from "../api/profiles";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5 MB
-const MAX_RESUMES = 5
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_RESUMES = 5;
 
 function ResumeSection({ token }) {
-  const [resumes, setResumes] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [selectedFile, setSelectedFile] = useState(null)
-  const [makeDefault, setMakeDefault] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
-  const [actionId, setActionId] = useState(null)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const fileInputRef = useRef(null)
+  const [resumes, setResumes] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [makeDefault, setMakeDefault] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [actionId, setActionId] = useState(null);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const fileInputRef = useRef(null);
 
   const refreshResumes = useCallback(async () => {
     try {
-      const data = await getResumes(token)
-      setResumes(data)
+      const data = await getResumes(token);
+      setResumes(data);
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     }
-  }, [token])
+  }, [token]);
 
   useEffect(() => {
-    let isMounted = true
+    let isMounted = true;
 
     async function initialLoad() {
       try {
-        const data = await getResumes(token)
+        const data = await getResumes(token);
         if (isMounted) {
-          setResumes(data)
+          setResumes(data);
         }
       } catch (err) {
         if (isMounted) {
-          setError(err.message)
+          setError(err.message);
         }
       } finally {
         if (isMounted) {
-          setIsLoading(false)
+          setIsLoading(false);
         }
       }
     }
 
     if (token) {
-      initialLoad()
+      initialLoad();
     }
 
     return () => {
-      isMounted = false
-    }
-  }, [token])
+      isMounted = false;
+    };
+  }, [token]);
 
   function handleFileChange(e) {
-    setError('')
-    setSuccess('')
-    const file = e.target.files?.[0]
+    setError("");
+    setSuccess("");
+    const file = e.target.files?.[0];
     if (!file) {
-      setSelectedFile(null)
-      return
+      setSelectedFile(null);
+      return;
     }
 
-    if (!file.name.toLowerCase().endsWith('.pdf') || (file.type && file.type !== 'application/pdf')) {
-      setError('Only PDF files are allowed.')
-      setSelectedFile(null)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-      return
+    if (
+      !file.name.toLowerCase().endsWith(".pdf") ||
+      (file.type && file.type !== "application/pdf")
+    ) {
+      setError("Only PDF files are allowed.");
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      setError('Resume must be under 5 megabytes.')
-      setSelectedFile(null)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-      return
+      setError("Resume must be under 5 megabytes.");
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
     }
 
-    setSelectedFile(file)
+    setSelectedFile(file);
   }
 
   async function handleUpload(e) {
-    e.preventDefault()
-    if (!selectedFile) return
+    e.preventDefault();
+    if (!selectedFile) return;
 
     if (resumes.length >= MAX_RESUMES) {
-      setError('User already has 5 (or more) resumes.')
-      return
+      setError("User already has 5 (or more) resumes.");
+      return;
     }
 
-    setIsUploading(true)
-    setError('')
-    setSuccess('')
+    setIsUploading(true);
+    setError("");
+    setSuccess("");
 
     try {
-      await uploadResume(token, selectedFile, makeDefault)
-      setSuccess(`"${selectedFile.name}" uploaded successfully.`)
-      setSelectedFile(null)
-      setMakeDefault(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-      await refreshResumes()
+      await uploadResume(token, selectedFile, makeDefault);
+      setSuccess(`"${selectedFile.name}" uploaded successfully.`);
+      setSelectedFile(null);
+      setMakeDefault(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      await refreshResumes();
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
     }
   }
 
   async function handleSetDefault(resumeId) {
-    setActionId(resumeId)
-    setError('')
-    setSuccess('')
+    setActionId(resumeId);
+    setError("");
+    setSuccess("");
 
     try {
-      await setDefaultResume(token, resumeId)
-      setSuccess('Default resume updated.')
-      await refreshResumes()
+      await setDefaultResume(token, resumeId);
+      setSuccess("Default resume updated.");
+      await refreshResumes();
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setActionId(null)
+      setActionId(null);
     }
   }
 
   async function handleDownload(resumeId, fileName) {
-    setActionId(resumeId)
-    setError('')
+    setActionId(resumeId);
+    setError("");
 
     try {
-      await downloadResume(token, resumeId, fileName)
+      await downloadResume(token, resumeId, fileName);
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setActionId(null)
+      setActionId(null);
     }
   }
 
   async function handleDelete(resumeId, fileName) {
     if (!window.confirm(`Are you sure you want to delete "${fileName}"?`)) {
-      return
+      return;
     }
 
-    setActionId(resumeId)
-    setError('')
-    setSuccess('')
+    setActionId(resumeId);
+    setError("");
+    setSuccess("");
 
     try {
-      await deleteResume(token, resumeId)
-      setSuccess(`"${fileName}" deleted.`)
-      await refreshResumes()
+      await deleteResume(token, resumeId);
+      setSuccess(`"${fileName}" deleted.`);
+      await refreshResumes();
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setActionId(null)
+      setActionId(null);
     }
   }
 
@@ -171,20 +174,17 @@ function ResumeSection({ token }) {
       </div>
 
       {success && (
-        <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
-          {success}
-        </p>
+        <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{success}</p>
       )}
 
-      {error && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      )}
+      {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       {/* Upload Form */}
       {resumes.length < MAX_RESUMES ? (
-        <form onSubmit={handleUpload} className="rounded-md border border-dashed border-gray-300 bg-gray-50 p-4">
+        <form
+          onSubmit={handleUpload}
+          className="rounded-md border border-dashed border-gray-300 bg-gray-50 p-4"
+        >
           <label className="block text-sm font-medium text-gray-700">
             Upload a resume (PDF, up to 5MB)
             <input
@@ -215,14 +215,15 @@ function ResumeSection({ token }) {
                 disabled={isUploading}
                 className="rounded-md bg-purple-600 px-3.5 py-1.5 text-sm font-medium text-white transition hover:bg-purple-700 disabled:opacity-60"
               >
-                {isUploading ? 'Uploading…' : 'Upload resume'}
+                {isUploading ? "Uploading…" : "Upload resume"}
               </button>
             </div>
           )}
         </form>
       ) : (
         <p className="rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-600">
-          You have reached the maximum limit of 5 resumes. Delete an existing resume to upload a new one.
+          You have reached the maximum limit of 5 resumes. Delete an existing resume to upload a new
+          one.
         </p>
       )}
 
@@ -238,9 +239,12 @@ function ResumeSection({ token }) {
         ) : (
           <ul className="divide-y divide-gray-100 border-t border-gray-100">
             {resumes.map((resume) => {
-              const isWorking = actionId === resume.id
+              const isWorking = actionId === resume.id;
               return (
-                <li key={resume.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <li
+                  key={resume.id}
+                  className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+                >
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-gray-900 text-sm">{resume.file_name}</span>
@@ -286,13 +290,13 @@ function ResumeSection({ token }) {
                     </button>
                   </div>
                 </li>
-              )
+              );
             })}
           </ul>
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default ResumeSection
+export default ResumeSection;

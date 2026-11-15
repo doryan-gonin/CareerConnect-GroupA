@@ -1,6 +1,6 @@
-import ApplicationsSection from './ApplicationsSection'
-import ProfileSection from './ProfileSection'
-import ResumeSection from './ResumeSection'
+import ApplicationsSection from "./ApplicationsSection";
+import ProfileSection from "./ProfileSection";
+import ResumeSection from "./ResumeSection";
 
 // Authenticated dashboard screen for managing profile, documents, and applications
 function LoggedInScreen({ token, onViewAnalytics }) {
@@ -31,7 +31,7 @@ function LoggedInScreen({ token, onViewAnalytics }) {
 
       <ApplicationsSection token={token} />
     </div>
-  )
+  );
 }
 
-export default LoggedInScreen
+export default LoggedInScreen;

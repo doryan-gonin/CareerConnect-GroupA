@@ -35,13 +35,6 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras --dev
 
-      # Verify backend lint and formatting
-      - name: Run Ruff lint
-        run: uv run ruff check src/backend tests utility
-
-      - name: Check Ruff formatting
-        run: uv run ruff format --check src/backend tests utility
-
       # PyTest testing --> Auth, Profile, Resume
       - name: Run PyTest
         run: uv run pytest tests/ -v
@@ -61,23 +54,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # The Playwright web server starts the real FastAPI app with uv.
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: .python-version
-
-      - name: Install backend dependencies for E2E
-        run: uv sync --all-extras --dev
-        working-directory: .
-
-      # Set up Node and cache npm dependencies
+      # Set up the Node runtime required by Vite+.
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -85,18 +62,34 @@ jobs:
           cache: "npm"
           cache-dependency-path: ./src/frontend/package-lock.json
 
-      # Clean install of dependencies
+      # Bootstrap the pinned Vite+ CLI before installing project dependencies.
+      # Vite+ then delegates installation to the package manager selected by
+      # package-lock.json and provides all frontend build checks.
+      - name: Install Vite+
+        run: npm install --global vite-plus@1.6.0
+
+      # Clean install of dependencies from the npm lockfile.
       - name: Install dependencies
-        run: npm ci # Follows the lockfile (compared to npm install)
+        run: vp install --frozen-lockfile
+
+      # Run the unified Vite+ checks.
+      - name: Lint frontend
+        run: vp lint
+
+      - name: Check frontend formatting
+        run: vp fmt --check
+
+      - name: Run frontend unit tests
+        run: vp test --run --passWithNoTests
+
+      # Playwright remains a separate browser runner. Run it through vp exec
+      # when a checkout supplies a Playwright config and dependency.
+      - name: Run Playwright E2E tests
+        if: ${{ hashFiles('src/frontend/playwright.config.*') != '' }}
+        run: |
+          vp exec playwright install --with-deps chromium
+          vp exec playwright test
 
       # Build the frontend
       - name: Build frontend
-        run: npm run build
-
-      # Install the browser used by the deterministic Playwright suite
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
-
-      # Run browser-level frontend tests against the disposable E2E backend
-      - name: Run Playwright E2E tests
-        run: npm run e2e
+        run: vp build

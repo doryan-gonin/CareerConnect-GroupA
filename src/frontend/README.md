@@ -1,22 +1,44 @@
-# React + Vite
+# CareerConnect frontend
 
-## Frontend tests
+This React application uses [Vite+](https://viteplus.dev/) 1.6.0 as its
+unified JavaScript toolchain. Vite+ provides the Vite development server and
+build, Oxlint linting, Oxfmt formatting, and Vitest-compatible unit testing
+through one pinned CLI. Node 24 is pinned in `.node-version` and npm 11.20.0
+is recorded in `package.json`.
 
-Install dependencies with `npm ci`. Install the Chromium browser once with `npm run e2e:install`, then run the Playwright suite with `npm run e2e`. The suite starts Vite and a disposable backend automatically, so it does not require a separately running backend or external AI credentials. Use `npm run e2e:ui` for interactive debugging.
+## Install and develop
 
-The E2E suite starts a disposable FastAPI/SQLite backend and uses `AI_MOCK_MODE=true`; it does not use production data or external AI credentials.
+From this directory, install the lockfile exactly with:
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+```sh
+vp install --frozen-lockfile
+```
 
-Currently, two official plugins are available:
+Use these Vite+ commands during development:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```sh
+vp dev                 # start the Vite development server
+vp build               # create a production build
+vp preview             # preview the production build
+vp lint                # run Oxlint through Vite+
+vp fmt                 # format with Oxfmt through Vite+
+vp fmt --check         # verify formatting without writing files
+vp test --run          # run unit tests (Vitest-compatible)
+vp test watch          # run tests in watch mode
+vp test --run --coverage
+vp check               # format, lint, and type checks
+```
 
-## React Compiler
+The equivalent npm scripts are available for editors and existing automation
+(`npm run build`, `npm run lint`, `npm test`, and so on); they delegate to the
+same `vp` commands. `vp test --run` allows an empty test set while the base
+application has no unit-test files, and runs all `*.test.*` and `*.spec.*`
+files when they are present.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Browser E2E compatibility
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+Playwright browser tests remain a separate tool because Vite+ does not replace
+the Playwright runner. If the Playwright suite is enabled for a checkout,
+install its browser with `vp exec playwright install --with-deps chromium` and
+run it with `vp exec playwright test`. The Vite+ build, lint, format, and unit
+test commands do not install or invoke Playwright.

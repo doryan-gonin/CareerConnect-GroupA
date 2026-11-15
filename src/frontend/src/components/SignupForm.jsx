@@ -1,39 +1,39 @@
-import { useState } from 'react'
-import { registerUser } from '../api/auth'
-import { isPasswordValid } from '../utils/passwordRules'
-import PasswordRequirements from './PasswordRequirements'
+import { useState } from "react";
+import { registerUser } from "../api/auth";
+import { isPasswordValid } from "../utils/passwordRules";
+import PasswordRequirements from "./PasswordRequirements";
 
 // onSignedUp is called after a successful registration so the parent
 // (App.jsx) can switch over to the login page.
 function SignupForm({ onSignedUp, onSwitchToLogin }) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [isRecruiter, setIsRecruiter] = useState(false)
-  const [error, setError] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isRecruiter, setIsRecruiter] = useState(false);
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event) {
-    event.preventDefault()
-    setError('')
+    event.preventDefault();
+    setError("");
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.')
-      return
+      setError("Passwords do not match.");
+      return;
     }
     if (!isPasswordValid(password)) {
-      setError('Please meet all password requirements below.')
-      return
+      setError("Please meet all password requirements below.");
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
-      await registerUser(email, password, isRecruiter)
-      onSignedUp(email, isRecruiter)
+      await registerUser(email, password, isRecruiter);
+      onSignedUp(email, isRecruiter);
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }
 
@@ -41,11 +41,7 @@ function SignupForm({ onSignedUp, onSwitchToLogin }) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <h1 className="text-2xl font-semibold text-gray-900">Create your account</h1>
 
-      {error && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      )}
+      {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       <div className="flex flex-col gap-1.5">
         <span className="text-sm font-medium text-gray-700">Account Type</span>
@@ -57,8 +53,8 @@ function SignupForm({ onSignedUp, onSwitchToLogin }) {
             onClick={() => setIsRecruiter(false)}
             className={`flex flex-col items-center justify-center rounded-lg border p-3 text-center transition cursor-pointer ${
               !isRecruiter
-                ? 'border-purple-600 bg-purple-50 text-purple-900 ring-1 ring-purple-600'
-                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                ? "border-purple-600 bg-purple-50 text-purple-900 ring-1 ring-purple-600"
+                : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
             }`}
           >
             <span className="text-sm font-semibold">Job Seeker</span>
@@ -72,8 +68,8 @@ function SignupForm({ onSignedUp, onSwitchToLogin }) {
             onClick={() => setIsRecruiter(true)}
             className={`flex flex-col items-center justify-center rounded-lg border p-3 text-center transition cursor-pointer ${
               isRecruiter
-                ? 'border-purple-600 bg-purple-50 text-purple-900 ring-1 ring-purple-600'
-                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                ? "border-purple-600 bg-purple-50 text-purple-900 ring-1 ring-purple-600"
+                : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
             }`}
           >
             <span className="text-sm font-semibold">Recruiter</span>
@@ -124,16 +120,16 @@ function SignupForm({ onSignedUp, onSwitchToLogin }) {
         disabled={isSubmitting}
         className="mt-2 rounded-md bg-purple-600 px-4 py-2 font-medium text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {isSubmitting ? 'Creating account…' : 'Sign up'}
+        {isSubmitting ? "Creating account…" : "Sign up"}
       </button>
 
       <p className="text-center text-sm text-gray-600">
-        Already have an account?{' '}
+        Already have an account?{" "}
         <a
           href="/login"
           onClick={(e) => {
-            e.preventDefault()
-            onSwitchToLogin()
+            e.preventDefault();
+            onSwitchToLogin();
           }}
           className="font-medium text-purple-600 hover:underline cursor-pointer"
         >
@@ -141,7 +137,7 @@ function SignupForm({ onSignedUp, onSwitchToLogin }) {
         </a>
       </p>
     </form>
-  )
+  );
 }
 
-export default SignupForm
+export default SignupForm;

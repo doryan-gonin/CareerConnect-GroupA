@@ -1,38 +1,43 @@
-import { useState } from 'react'
+import { useState } from "react";
 
 function parsePeriod(period) {
-  const [year, month, day] = period.split('-').map(Number)
-  return new Date(year, month - 1, day)
+  const [year, month, day] = period.split("-").map(Number);
+  return new Date(year, month - 1, day);
 }
 
 function formatPeriod(period, groupBy) {
-  const options = groupBy === 'month' ? { month: 'short', year: 'numeric' } : { month: 'short', day: 'numeric' }
-  return parsePeriod(period).toLocaleDateString(undefined, options)
+  const options =
+    groupBy === "month" ? { month: "short", year: "numeric" } : { month: "short", day: "numeric" };
+  return parsePeriod(period).toLocaleDateString(undefined, options);
 }
 
 function formatTooltipPeriod(period, groupBy) {
   const date = parsePeriod(period).toLocaleDateString(undefined, {
-    month: 'short',
-    year: 'numeric',
-    ...(groupBy === 'month' ? {} : { day: 'numeric' }),
-  })
-  return `${groupBy === 'week' ? 'Week of ' : ''}${date}`
+    month: "short",
+    year: "numeric",
+    ...(groupBy === "month" ? {} : { day: "numeric" }),
+  });
+  return `${groupBy === "week" ? "Week of " : ""}${date}`;
 }
 
 function AnalyticsBarChart({ points, groupBy, valueKey, unit }) {
-  const [hovered, setHovered] = useState(null)
-  const maxValue = Math.max(0, ...points.map((point) => point[valueKey]))
+  const [hovered, setHovered] = useState(null);
+  const maxValue = Math.max(0, ...points.map((point) => point[valueKey]));
 
   if (maxValue === 0) {
-    return <div className="rounded-md bg-gray-50 py-12 text-center text-sm text-gray-500">No {unit} in this period.</div>
+    return (
+      <div className="rounded-md bg-gray-50 py-12 text-center text-sm text-gray-500">
+        No {unit} in this period.
+      </div>
+    );
   }
 
-  const step = Math.max(1, Math.ceil(maxValue / 4))
-  const top = Math.ceil(maxValue / step) * step
-  const ticks = Array.from({ length: top / step + 1 }, (_, index) => index * step)
-  const count = points.length
-  const labelStep = Math.ceil(count / (groupBy === 'month' ? 4 : 5))
-  const hoveredPoint = hovered === null ? null : points[hovered]
+  const step = Math.max(1, Math.ceil(maxValue / 4));
+  const top = Math.ceil(maxValue / step) * step;
+  const ticks = Array.from({ length: top / step + 1 }, (_, index) => index * step);
+  const count = points.length;
+  const labelStep = Math.ceil(count / (groupBy === "month" ? 4 : 5));
+  const hoveredPoint = hovered === null ? null : points[hovered];
 
   return (
     <div className="flex flex-col gap-2">
@@ -72,7 +77,7 @@ function AnalyticsBarChart({ points, groupBy, valueKey, unit }) {
                   onMouseEnter={() => setHovered(index)}
                 >
                   <div
-                    className={`w-full max-w-10 rounded-t ${hovered === index ? 'bg-purple-800' : 'bg-purple-600'}`}
+                    className={`w-full max-w-10 rounded-t ${hovered === index ? "bg-purple-800" : "bg-purple-600"}`}
                     style={{ height: `${(point[valueKey] / top) * 100}%` }}
                   />
                 </div>
@@ -84,7 +89,7 @@ function AnalyticsBarChart({ points, groupBy, valueKey, unit }) {
                 className="pointer-events-none absolute top-0 z-10 rounded bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white"
                 style={{
                   left: `${((hovered + 0.5) / count) * 100}%`,
-                  transform: `translateX(${hovered < count / 3 ? '0' : hovered > (2 * count) / 3 ? '-100%' : '-50%'})`,
+                  transform: `translateX(${hovered < count / 3 ? "0" : hovered > (2 * count) / 3 ? "-100%" : "-50%"})`,
                 }}
               >
                 {formatTooltipPeriod(hoveredPoint.period, groupBy)}: {hoveredPoint[valueKey]} {unit}
@@ -101,7 +106,7 @@ function AnalyticsBarChart({ points, groupBy, valueKey, unit }) {
                   style={
                     index === 0
                       ? { left: 0 }
-                      : { left: `${((index + 0.5) / count) * 100}%`, transform: 'translateX(-50%)' }
+                      : { left: `${((index + 0.5) / count) * 100}%`, transform: "translateX(-50%)" }
                   }
                 >
                   {formatPeriod(point.period, groupBy)}
@@ -134,7 +139,7 @@ function AnalyticsBarChart({ points, groupBy, valueKey, unit }) {
         </div>
       </details>
     </div>
-  )
+  );
 }
 
-export default AnalyticsBarChart
+export default AnalyticsBarChart;

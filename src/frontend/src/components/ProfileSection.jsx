@@ -1,71 +1,71 @@
-import { useState, useEffect } from 'react'
-import { getProfile, updateProfile } from '../api/profiles'
+import { useState, useEffect } from "react";
+import { getProfile, updateProfile } from "../api/profiles";
 
 function ProfileSection({ token }) {
-  const [profile, setProfile] = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isEditing, setIsEditing] = useState(false)
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [profile, setProfile] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    let isMounted = true
+    let isMounted = true;
 
     async function loadProfile() {
       try {
-        setError('')
-        const data = await getProfile(token)
+        setError("");
+        const data = await getProfile(token);
         if (isMounted) {
-          setProfile(data)
-          setFirstName(data.first_name || '')
-          setLastName(data.last_name || '')
+          setProfile(data);
+          setFirstName(data.first_name || "");
+          setLastName(data.last_name || "");
         }
       } catch (err) {
         if (isMounted) {
-          setError(err.message)
+          setError(err.message);
         }
       } finally {
         if (isMounted) {
-          setIsLoading(false)
+          setIsLoading(false);
         }
       }
     }
 
     if (token) {
-      loadProfile()
+      loadProfile();
     }
 
     return () => {
-      isMounted = false
-    }
-  }, [token])
+      isMounted = false;
+    };
+  }, [token]);
 
   async function handleSave(e) {
-    e.preventDefault()
-    setError('')
-    setSuccess('')
-    setIsSaving(true)
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setIsSaving(true);
 
     try {
-      const updated = await updateProfile(token, { firstName, lastName })
-      setProfile(updated)
-      setIsEditing(false)
-      setSuccess('Profile updated successfully.')
+      const updated = await updateProfile(token, { firstName, lastName });
+      setProfile(updated);
+      setIsEditing(false);
+      setSuccess("Profile updated successfully.");
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
   }
 
   function handleCancel() {
-    setFirstName(profile?.first_name || '')
-    setLastName(profile?.last_name || '')
-    setIsEditing(false)
-    setError('')
+    setFirstName(profile?.first_name || "");
+    setLastName(profile?.last_name || "");
+    setIsEditing(false);
+    setError("");
   }
 
   return (
@@ -76,9 +76,9 @@ function ProfileSection({ token }) {
           <button
             type="button"
             onClick={() => {
-              setSuccess('')
-              setError('')
-              setIsEditing(true)
+              setSuccess("");
+              setError("");
+              setIsEditing(true);
             }}
             className="text-sm font-medium text-purple-600 hover:text-purple-700"
           >
@@ -88,16 +88,10 @@ function ProfileSection({ token }) {
       </div>
 
       {success && (
-        <p className="mt-4 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
-          {success}
-        </p>
+        <p className="mt-4 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{success}</p>
       )}
 
-      {error && (
-        <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      )}
+      {error && <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       {isLoading ? (
         <div className="py-8 text-center text-sm text-gray-500">Loading profile…</div>
@@ -131,7 +125,7 @@ function ProfileSection({ token }) {
               disabled={isSaving}
               className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700 disabled:opacity-60"
             >
-              {isSaving ? 'Saving…' : 'Save changes'}
+              {isSaving ? "Saving…" : "Save changes"}
             </button>
             <button
               type="button"
@@ -162,15 +156,13 @@ function ProfileSection({ token }) {
           {profile?.last_updated && (
             <div className="flex flex-col sm:flex-row sm:justify-between border-t border-gray-100 pt-3">
               <dt className="text-gray-500">Last Updated</dt>
-              <dd className="text-gray-600">
-                {new Date(profile.last_updated).toLocaleString()}
-              </dd>
+              <dd className="text-gray-600">{new Date(profile.last_updated).toLocaleString()}</dd>
             </div>
           )}
         </dl>
       )}
     </div>
-  )
+  );
 }
 
-export default ProfileSection
+export default ProfileSection;
