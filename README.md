@@ -64,6 +64,12 @@ called by an external scheduler through the same authenticated endpoint; this
 request-driven trigger keeps deployments without a task queue free of an
 additional worker process.
 
+The React job cards and detail view expose the same bookmark actions, and the
+candidate-only `/saved` page lists bookmarks newest first. A closed posting
+stays in that list with an unavailable label so it can be removed; recruiters
+receive `403` responses for saved-job actions. Saving the same posting more
+than once is idempotent, backed by a `(user_id, job_id)` unique constraint.
+
 ## Proposed features
 - Chat feature (recruiters can chat with applicants directly from the website)
 - Company Reviews (users can leave reviews on companies they worked for to help other job seekers)

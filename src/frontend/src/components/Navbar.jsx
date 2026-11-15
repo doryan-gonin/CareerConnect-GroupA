@@ -17,6 +17,7 @@ function Navbar({
   onLogout,
   isLoggingOut = false,
   onBrowseJobs,
+  onSavedJobs,
   onInterviewPrep,
   onDashboard,
   isRecruiter = false,
@@ -49,6 +50,7 @@ function Navbar({
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           {onDashboard && <NavLink href="/dashboard" onClick={onDashboard}>Dashboard</NavLink>}
           {onBrowseJobs && <NavLink href="/jobs" onClick={onBrowseJobs}>Browse Jobs</NavLink>}
+          {!isRecruiter && onSavedJobs && <NavLink href="/saved" onClick={onSavedJobs}>Saved Jobs</NavLink>}
           {!isRecruiter && onInterviewPrep && <NavLink href="/interview" onClick={onInterviewPrep}>Interview Prep</NavLink>}
 
           <button

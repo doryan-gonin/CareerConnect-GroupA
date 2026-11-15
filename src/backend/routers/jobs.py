@@ -4,6 +4,7 @@ from fastapi.responses import FileResponse
 import math
 from typing import Annotated, List
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select, col, or_, func
 
 from backend.database import get_session
@@ -64,11 +65,16 @@ def list_saved_jobs(
     current_user: Annotated[User, Depends(get_current_applicant)],
     session: Annotated[Session, Depends(get_session)],
 ):
-    """Return the candidate's bookmarked active postings, newest first."""
+    """Return the candidate's bookmarks, newest first.
+
+    Closed postings remain visible so a candidate can understand why a saved
+    item is unavailable and remove the stale bookmark. They are never returned
+    by the public job search and cannot be saved again.
+    """
     rows = session.exec(
         select(SavedJob, Job)
         .join(Job, SavedJob.job_id == Job.id)
-        .where(SavedJob.user_id == current_user.id, Job.is_active)
+        .where(SavedJob.user_id == current_user.id)
         .order_by(col(SavedJob.saved_at).desc())
     ).all()
     return [_saved_job_response(saved, job) for saved, job in rows]
@@ -93,9 +99,24 @@ def save_job(
     ).first()
     if saved is None:
         saved = SavedJob(user_id=current_user.id, job_id=job_id)
-        session.add(saved)
-        session.commit()
-        session.refresh(saved)
+        try:
+            # The unique constraint makes retries safe even when two browser
+            # requests race before either has committed.
+            with session.begin_nested():
+                session.add(saved)
+                session.flush()
+            session.commit()
+            session.refresh(saved)
+        except IntegrityError:
+            session.rollback()
+            saved = session.exec(
+                select(SavedJob).where(
+                    SavedJob.user_id == current_user.id,
+                    SavedJob.job_id == job_id,
+                )
+            ).first()
+            if saved is None:
+                raise
 
     return _saved_job_response(saved, job)
 

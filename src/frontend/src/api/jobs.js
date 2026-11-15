@@ -1,4 +1,4 @@
-import { API_BASE_URL } from './client'
+import { API_BASE_URL } from './client.js'
 
 // Handles API communication for browsing and applying to job postings.
 
@@ -91,6 +91,58 @@ export async function recordJobView(token, jobId) {
 
   if (!response.ok) {
     throw new Error('Failed to record job view.')
+  }
+}
+
+export async function getSavedJobs(token) {
+  let response
+  try {
+    response = await fetch(`${API_BASE_URL}/api/jobs/saved`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  } catch {
+    throw new Error('Could not reach the server. Is the backend running?')
+  }
+
+  const body = await response.json().catch(() => null)
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(body, 'Failed to load saved jobs.'))
+  }
+  return body
+}
+
+export async function saveJob(token, jobId) {
+  let response
+  try {
+    response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}/save`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  } catch {
+    throw new Error('Could not reach the server. Is the backend running?')
+  }
+
+  const body = await response.json().catch(() => null)
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(body, 'Failed to save this job.'))
+  }
+  return body
+}
+
+export async function unsaveJob(token, jobId) {
+  let response
+  try {
+    response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}/save`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  } catch {
+    throw new Error('Could not reach the server. Is the backend running?')
+  }
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null)
+    throw new Error(extractErrorMessage(body, 'Failed to remove this saved job.'))
   }
 }
 

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { getJobById, applyToJob } from '../api/jobs'
+import { getJobById, applyToJob, getSavedJobs, saveJob, unsaveJob } from '../api/jobs'
 import { getMyApplications } from '../api/applications'
 import ApplicationForm from './ApplicationForm'
 import ApplicationStatusBadge from './ApplicationStatusBadge'
 import MarkdownView from './MarkdownView'
+import SavedJobButton from './SavedJobButton'
 
 function formatSalary(min, max) {
   if (min && max) {
@@ -49,6 +50,7 @@ function JobDetailPage({
   jobId,
   onNavigateJobs,
   onNavigateDashboard,
+  onNavigateSavedJobs,
   onLogout,
   isLoggingOut = false,
   isApplying = false,
@@ -58,6 +60,9 @@ function JobDetailPage({
 }) {
   const [jobState, setJobState] = useState({ id: null, job: null, isLoading: true, error: '' })
   const [applicationState, setApplicationState] = useState({ id: null, status: null })
+  const [isSaved, setIsSaved] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const job = jobState.id === jobId ? jobState.job : null
   const isLoading = jobState.id !== jobId || jobState.isLoading
   const loadError = jobState.id === jobId ? jobState.error : ''
@@ -100,6 +105,35 @@ function JobDetailPage({
       active = false
     }
   }, [token, jobId, isRecruiter])
+
+  useEffect(() => {
+    if (isRecruiter) return
+    let active = true
+    getSavedJobs(token)
+      .then((savedJobs) => {
+        if (active) setIsSaved(savedJobs.some((saved) => saved.job_id === jobId))
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [token, jobId, isRecruiter])
+
+  async function handleToggleSaved() {
+    setSaveError('')
+    setIsSaving(true)
+    try {
+      if (isSaved) {
+        await unsaveJob(token, jobId)
+        setIsSaved(false)
+      } else {
+        await saveJob(token, jobId)
+        setIsSaved(true)
+      }
+    } catch (error) {
+      setSaveError(error.message)
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   async function handleSubmitApplication({ job_id, resume_id }) {
     await applyToJob(token, job_id, { resumeId: resume_id })
@@ -162,6 +196,19 @@ function JobDetailPage({
               </a>
             )}
 
+            {!isRecruiter && onNavigateSavedJobs && (
+              <a
+                href="/saved"
+                onClick={(e) => {
+                  e.preventDefault()
+                  onNavigateSavedJobs()
+                }}
+                className="text-sm font-medium text-purple-600 hover:underline cursor-pointer"
+              >
+                Saved Jobs
+              </a>
+            )}
+
             <button
               type="button"
               onClick={onLogout}
@@ -220,7 +267,8 @@ function JobDetailPage({
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs sm:p-10">
             {/* Header */}
             <div className="flex flex-col gap-2 border-b border-gray-100 pb-6">
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                 <span className="text-base font-semibold text-purple-600">
                   {job.company_name}
                 </span>
@@ -235,12 +283,17 @@ function JobDetailPage({
                     <span className="text-xs text-gray-500">Posted {postedDisplay}</span>
                   </>
                 )}
+                </div>
+                {!isRecruiter && (
+                  <SavedJobButton isSaved={isSaved} isPending={isSaving} onToggle={handleToggleSaved} />
+                )}
               </div>
 
               <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
                 {job.title}
               </h1>
               <p className="text-sm text-gray-600">{job.location}</p>
+              {saveError && <p role="alert" className="mt-2 text-sm text-red-600">{saveError}</p>}
             </div>
 
             {/* Specifications Grid */}
