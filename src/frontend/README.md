@@ -1,5 +1,11 @@
 # React + Vite
 
+## Frontend tests
+
+Install dependencies with `npm ci`. Install the Chromium browser once with `npm run e2e:install`, then run the Playwright suite with `npm run e2e`. The suite starts Vite and a disposable backend automatically, so it does not require a separately running backend or external AI credentials. Use `npm run e2e:ui` for interactive debugging.
+
+The E2E suite starts a disposable FastAPI/SQLite backend and uses `AI_MOCK_MODE=true`; it does not use production data or external AI credentials.
+
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
 Currently, two official plugins are available:
