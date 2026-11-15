@@ -50,6 +50,17 @@ Recruiters can post openings, review applicants, and update candidate status. Th
 
 See the CareerConnect [Wiki Page](../../../wiki) (Work In Progress)
 
+## Backend quality checks
+
+Ruff checks and formats the Python backend, tests, and utility scripts. Run the
+following commands from the repository root:
+
+```bash
+make lint          # Check lint rules and imports
+make format        # Format Python sources in place
+make format-check  # Fail if formatting is out of date
+```
+
 ## Proposed features
 - Chat feature (recruiters can chat with applicants directly from the website)
 - Company Reviews (users can leave reviews on companies they worked for to help other job seekers)

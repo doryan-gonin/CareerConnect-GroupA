@@ -1,16 +1,18 @@
 from typing import Annotated
+
 import jwt
-from jwt.exceptions import InvalidTokenError
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jwt.exceptions import InvalidTokenError
 from sqlmodel import Session, select
 
-from backend.config import SECRET_KEY, ALGORITHM
+from backend.config import ALGORITHM, SECRET_KEY
 from backend.database import get_session
-from backend.models import User, RevokedToken
+from backend.models import RevokedToken, User
 
 bearer_scheme = HTTPBearer()
 optional_bearer_scheme = HTTPBearer(auto_error=False)
+
 
 def get_token_payload(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer_scheme)],
@@ -36,23 +38,29 @@ def get_token_payload(
 
     return payload
 
+
 def get_current_user(
     payload: Annotated[dict, Depends(get_token_payload)],
-    session: Annotated[Session, Depends(get_session)]
+    session: Annotated[Session, Depends(get_session)],
 ) -> User:
     user_id = payload.get("sub")
     if user_id is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject."
+        )
 
     # Wrap int(user_id) in a try except block in case the user_id is not an integer
     try:
         user = session.get(User, int(user_id))
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject."
+        )
 
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found.")
     return user
+
 
 def get_current_recruiter(
     current_user: Annotated[User, Depends(get_current_user)],
@@ -64,6 +72,7 @@ def get_current_recruiter(
         )
     return current_user
 
+
 def get_current_applicant(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> User:
@@ -73,6 +82,7 @@ def get_current_applicant(
             detail="Recruiters cannot perform candidate actions.",
         )
     return current_user
+
 
 # Jobs GET endpoints can be accessed without being registered as a user
 def get_optional_current_user(

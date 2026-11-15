@@ -3,10 +3,7 @@
 # ==============================================================================
 class TestLogin:
     def test_success(self, test_user, client):
-        payload = {
-            "email_address": test_user["email_address"],
-            "password": "Test@123"
-        }
+        payload = {"email_address": test_user["email_address"], "password": "Test@123"}
 
         # Send the request to the endpoint
         response = client.post("/api/auth/login", json=payload)
@@ -16,19 +13,13 @@ class TestLogin:
         assert "access_token" in response.json()
 
     def test_invalid_password(self, test_user, client):
-        payload = {
-            "email_address": test_user["email_address"],
-            "password": "invalidpassword"
-        }
+        payload = {"email_address": test_user["email_address"], "password": "invalidpassword"}
 
         response = client.post("/api/auth/login", json=payload)
         assert response.status_code == 401
 
     def test_unregistered_email(self, client):
-        payload = {
-            "email_address": "unregistered@example.com",
-            "password": "anypassword"
-        }
+        payload = {"email_address": "unregistered@example.com", "password": "anypassword"}
         response = client.post("/api/auth/login", json=payload)
         assert response.status_code == 401
 
@@ -47,8 +38,10 @@ class TestLogin:
         assert "Too many failed attempts" in locked_res.json()["detail"]
 
     def test_account_relockout_fixed_after_lockout_expires(self, test_user, client, db_session):
+        from datetime import datetime, timedelta, timezone
+
         from sqlmodel import select
-        from datetime import datetime, timezone, timedelta
+
         from backend.models import User
 
         # Trigger lockout (5 failures)
@@ -92,21 +85,20 @@ class TestLogin:
         assert user.failed_attempts == 0
         assert user.locked_until is None
 
+
 # ==============================================================================
 # Test Cases for the registration endpoint
 # ==============================================================================
 class TestRegistration:
     def test_success(self, client):
-        payload = {
-            "email_address": "newuser@example.com",
-            "password": "NewUser@123"
-        }
+        payload = {"email_address": "newuser@example.com", "password": "NewUser@123"}
         response = client.post("/api/auth/register", json=payload)
         assert response.status_code == 201
 
     def test_registration_creates_profile(self, client, db_session):
         from sqlmodel import select
-        from backend.models import User, Profile
+
+        from backend.models import Profile, User
 
         email = "profile_check@example.com"
         payload = {
@@ -130,23 +122,18 @@ class TestRegistration:
         assert user.profile.id == profile.id
 
     def test_existing_email(self, test_user, client):
-        payload = {
-            "email_address": test_user["email_address"],
-            "password": "AnotherPassword@123"
-        }
+        payload = {"email_address": test_user["email_address"], "password": "AnotherPassword@123"}
         response = client.post("/api/auth/register", json=payload)
         assert response.status_code == 400
 
     def test_invalid_email_format(self, client):
-        payload = {
-            "email_address": "invalidemail",
-            "password": "ValidPassword@123"
-        }
+        payload = {"email_address": "invalidemail", "password": "ValidPassword@123"}
         response = client.post("/api/auth/register", json=payload)
         assert response.status_code == 422
 
     def test_registration_as_recruiter(self, client, db_session):
         from sqlmodel import select
+
         from backend.models import User
 
         payload = {
@@ -159,7 +146,9 @@ class TestRegistration:
         data = response.json()
         assert data["is_recruiter"] is True
 
-        user = db_session.exec(select(User).where(User.email_address == "newrecruiter@example.com")).first()
+        user = db_session.exec(
+            select(User).where(User.email_address == "newrecruiter@example.com")
+        ).first()
         assert user is not None
         assert user.is_recruiter is True
 
@@ -179,7 +168,10 @@ class TestRegistration:
 class TestRolePermissions:
     def test_login_and_me_return_is_recruiter(self, client, test_user, recruiter_user):
         # Applicant login
-        app_res = client.post("/api/auth/login", json={"email_address": test_user["email_address"], "password": test_user["password"]})
+        app_res = client.post(
+            "/api/auth/login",
+            json={"email_address": test_user["email_address"], "password": test_user["password"]},
+        )
         assert app_res.status_code == 200
         assert app_res.json()["is_recruiter"] is False
         app_token = app_res.json()["access_token"]
@@ -189,7 +181,13 @@ class TestRolePermissions:
         assert me_app.json()["is_recruiter"] is False
 
         # Recruiter login
-        rec_res = client.post("/api/auth/login", json={"email_address": recruiter_user["email_address"], "password": recruiter_user["password"]})
+        rec_res = client.post(
+            "/api/auth/login",
+            json={
+                "email_address": recruiter_user["email_address"],
+                "password": recruiter_user["password"],
+            },
+        )
         assert rec_res.status_code == 200
         assert rec_res.json()["is_recruiter"] is True
         rec_token = rec_res.json()["access_token"]
@@ -199,10 +197,19 @@ class TestRolePermissions:
         assert me_rec.json()["is_recruiter"] is True
 
     def test_recruiter_can_post_and_applicant_cannot(self, client, test_user, recruiter_user):
-        app_res = client.post("/api/auth/login", json={"email_address": test_user["email_address"], "password": test_user["password"]})
+        app_res = client.post(
+            "/api/auth/login",
+            json={"email_address": test_user["email_address"], "password": test_user["password"]},
+        )
         app_token = app_res.json()["access_token"]
 
-        rec_res = client.post("/api/auth/login", json={"email_address": recruiter_user["email_address"], "password": recruiter_user["password"]})
+        rec_res = client.post(
+            "/api/auth/login",
+            json={
+                "email_address": recruiter_user["email_address"],
+                "password": recruiter_user["password"],
+            },
+        )
         rec_token = rec_res.json()["access_token"]
 
         job_payload = {
@@ -216,12 +223,16 @@ class TestRolePermissions:
         }
 
         # Applicant cannot post a job
-        app_post = client.post("/api/jobs", json=job_payload, headers={"Authorization": f"Bearer {app_token}"})
+        app_post = client.post(
+            "/api/jobs", json=job_payload, headers={"Authorization": f"Bearer {app_token}"}
+        )
         assert app_post.status_code == 403
         assert "Only recruiters" in app_post.json()["detail"]
 
         # Recruiter can post a job
-        rec_post = client.post("/api/jobs", json=job_payload, headers={"Authorization": f"Bearer {rec_token}"})
+        rec_post = client.post(
+            "/api/jobs", json=job_payload, headers={"Authorization": f"Bearer {rec_token}"}
+        )
         assert rec_post.status_code == 201
         created_job = rec_post.json()
         assert created_job["title"] == "Backend Developer"
@@ -236,10 +247,19 @@ class TestRolePermissions:
         assert len(rec_mine.json()) >= 1
 
     def test_applicant_can_apply_and_recruiter_cannot(self, client, test_user, recruiter_user):
-        app_res = client.post("/api/auth/login", json={"email_address": test_user["email_address"], "password": test_user["password"]})
+        app_res = client.post(
+            "/api/auth/login",
+            json={"email_address": test_user["email_address"], "password": test_user["password"]},
+        )
         app_token = app_res.json()["access_token"]
 
-        rec_res = client.post("/api/auth/login", json={"email_address": recruiter_user["email_address"], "password": recruiter_user["password"]})
+        rec_res = client.post(
+            "/api/auth/login",
+            json={
+                "email_address": recruiter_user["email_address"],
+                "password": recruiter_user["password"],
+            },
+        )
         rec_token = rec_res.json()["access_token"]
 
         # Recruiter posts a job
@@ -276,7 +296,9 @@ class TestRolePermissions:
         assert rec_apply.status_code == 403
 
         # Recruiter cannot view candidate applications list
-        rec_apps = client.get("/api/applications/me", headers={"Authorization": f"Bearer {rec_token}"})
+        rec_apps = client.get(
+            "/api/applications/me", headers={"Authorization": f"Bearer {rec_token}"}
+        )
         assert rec_apps.status_code == 403
 
         # Applicant can upload a resume and apply
@@ -295,6 +317,8 @@ class TestRolePermissions:
         assert app_apply.status_code == 201
 
         # Applicant can view their applications list
-        app_apps = client.get("/api/applications/me", headers={"Authorization": f"Bearer {app_token}"})
+        app_apps = client.get(
+            "/api/applications/me", headers={"Authorization": f"Bearer {app_token}"}
+        )
         assert app_apps.status_code == 200
         assert len(app_apps.json()) == 1

@@ -1,6 +1,7 @@
 import os
-import re
+
 import httpx
+
 try:
     from pypdf import PdfReader
     from pypdf.errors import PdfReadError
@@ -9,8 +10,8 @@ except ImportError:  # pragma: no cover
     PdfReadError = Exception
 from fastapi import HTTPException, status
 
-from backend.config import AI_API_KEY, AI_API_BASE_URL, AI_MODEL, AI_MOCK_MODE
-from backend.models import Job, Resume, InterviewMessage, InterviewRole
+from backend.config import AI_API_BASE_URL, AI_API_KEY, AI_MOCK_MODE, AI_MODEL
+from backend.models import InterviewMessage, InterviewRole, Job, Resume
 
 # Keeps token usage (and therefore free-tier rate limits) bounded regardless
 # of how large the resume or job description is.
@@ -38,7 +39,7 @@ def extract_resume_text(resume: Resume | None) -> str:
 
 def build_system_prompt(job: Job, resume_text: str) -> str:
     resume_section = (
-        f"The candidate's resume content is below:\n\"\"\"\n{resume_text}\n\"\"\""
+        f'The candidate\'s resume content is below:\n"""\n{resume_text}\n"""'
         if resume_text
         else "The candidate has not provided a resume; prepare them using the job posting alone."
     )
@@ -85,7 +86,9 @@ def _generate_mock_reply(messages: list[InterviewMessage]) -> str:
         )
 
     # Deterministic rotation based on user turn count:
-    user_turn_count = sum(1 for m in messages if getattr(m, "role", None) in (InterviewRole.USER, "user"))
+    user_turn_count = sum(
+        1 for m in messages if getattr(m, "role", None) in (InterviewRole.USER, "user")
+    )
 
     mock_responses = [
         (

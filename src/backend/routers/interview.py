@@ -1,25 +1,30 @@
 from datetime import datetime, timezone
 from typing import Annotated, List
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select, col
+from sqlmodel import Session, col, select
 
 from backend.database import get_session
+from backend.dependencies import get_current_applicant
 from backend.models import (
-    User,
+    Application,
+    InterviewMessage,
+    InterviewMessageCreate,
+    InterviewRole,
+    InterviewSession,
+    InterviewSessionCreate,
+    InterviewSessionDetail,
+    InterviewSessionMessage,
+    InterviewSessionSummary,
     Job,
     Resume,
-    Application,
-    InterviewRole,
-    InterviewMessage,
-    InterviewSession,
-    InterviewSessionMessage,
-    InterviewSessionCreate,
-    InterviewMessageCreate,
-    InterviewSessionSummary,
-    InterviewSessionDetail,
+    User,
 )
-from backend.dependencies import get_current_applicant
-from backend.services.interview_service import get_interview_reply, get_opening_message, validate_new_message
+from backend.services.interview_service import (
+    get_interview_reply,
+    get_opening_message,
+    validate_new_message,
+)
 
 router = APIRouter(tags=["Interview Prep"])
 
@@ -27,11 +32,15 @@ router = APIRouter(tags=["Interview Prep"])
 def _get_owned_session(session_id: int, current_user: User, session: Session) -> InterviewSession:
     interview = session.get(InterviewSession, session_id)
     if not interview or interview.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview session not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Interview session not found."
+        )
     return interview
 
 
-def _resolve_resume(application: Application, current_user: User, session: Session) -> Resume | None:
+def _resolve_resume(
+    application: Application, current_user: User, session: Session
+) -> Resume | None:
     """Uses the resume sent with the application, then the default, then the most recent."""
     if application.resume_id is not None:
         resume = session.get(Resume, application.resume_id)
@@ -79,7 +88,9 @@ def list_sessions(
     return [InterviewSessionSummary(**_summary_fields(interview, job)) for interview, job in rows]
 
 
-@router.post("/sessions", response_model=InterviewSessionDetail, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/sessions", response_model=InterviewSessionDetail, status_code=status.HTTP_201_CREATED
+)
 def create_session(
     payload: InterviewSessionCreate,
     current_user: Annotated[User, Depends(get_current_applicant)],
@@ -97,10 +108,16 @@ def create_session(
     # The AI call comes first so a provider failure leaves no empty session behind
     opening_message = get_opening_message(job, resume)
 
-    interview = InterviewSession(user_id=current_user.id, job_id=job.id, resume_id=resume.id if resume else None)
+    interview = InterviewSession(
+        user_id=current_user.id, job_id=job.id, resume_id=resume.id if resume else None
+    )
     session.add(interview)
     session.flush()
-    session.add(InterviewSessionMessage(session_id=interview.id, role=InterviewRole.ASSISTANT, content=opening_message))
+    session.add(
+        InterviewSessionMessage(
+            session_id=interview.id, role=InterviewRole.ASSISTANT, content=opening_message
+        )
+    )
     session.commit()
     session.refresh(interview)
 
@@ -118,7 +135,9 @@ def get_session_detail(
 ):
     interview = _get_owned_session(session_id, current_user, session)
     job = session.get(Job, interview.job_id)
-    return InterviewSessionDetail(**_summary_fields(interview, job), messages=_load_messages(interview.id, session))
+    return InterviewSessionDetail(
+        **_summary_fields(interview, job), messages=_load_messages(interview.id, session)
+    )
 
 
 @router.post("/sessions/{session_id}/messages", response_model=InterviewMessage)
@@ -139,8 +158,16 @@ def send_message(
     # Nothing is saved until the AI answers, so a failed send can simply be retried
     reply = get_interview_reply(job, resume, history)
 
-    session.add(InterviewSessionMessage(session_id=interview.id, role=InterviewRole.USER, content=payload.content))
-    session.add(InterviewSessionMessage(session_id=interview.id, role=InterviewRole.ASSISTANT, content=reply))
+    session.add(
+        InterviewSessionMessage(
+            session_id=interview.id, role=InterviewRole.USER, content=payload.content
+        )
+    )
+    session.add(
+        InterviewSessionMessage(
+            session_id=interview.id, role=InterviewRole.ASSISTANT, content=reply
+        )
+    )
     interview.updated_at = datetime.now(timezone.utc)
     session.add(interview)
     session.commit()

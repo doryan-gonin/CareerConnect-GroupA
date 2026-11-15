@@ -1,15 +1,16 @@
-from typing import Annotated, List
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlmodel import Session, select, func, col
+from sqlmodel import Session, col, func, select
 
 from backend.database import get_session
-from backend.models import (
-    User,
-    Notification,
-    NotificationResponse,
-    NotificationListResponse,
-)
 from backend.dependencies import get_current_user
+from backend.models import (
+    Notification,
+    NotificationListResponse,
+    NotificationResponse,
+    User,
+)
 
 router = APIRouter(tags=["Notifications"])
 
@@ -19,7 +20,9 @@ def get_my_notifications(
     session: Annotated[Session, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
     unread_only: bool = Query(default=False, description="Filter only unread notifications"),
-    limit: int = Query(default=50, ge=1, le=100, description="Max number of notifications to return"),
+    limit: int = Query(
+        default=50, ge=1, le=100, description="Max number of notifications to return"
+    ),
     offset: int = Query(default=0, ge=0, description="Offset for pagination"),
 ):
     """
@@ -35,8 +38,7 @@ def get_my_notifications(
 
     unread_count = session.exec(
         select(func.count(Notification.id)).where(
-            Notification.user_id == current_user.id,
-            col(Notification.is_read).is_(False)
+            Notification.user_id == current_user.id, col(Notification.is_read).is_(False)
         )
     ).one()
 
@@ -113,8 +115,7 @@ def mark_all_notifications_as_read(
     """Mark all unread notifications for the current user as read."""
     notifications = session.exec(
         select(Notification).where(
-            Notification.user_id == current_user.id,
-            col(Notification.is_read).is_(False)
+            Notification.user_id == current_user.id, col(Notification.is_read).is_(False)
         )
     ).all()
 
@@ -149,4 +150,3 @@ def delete_notification(
     session.delete(notification)
     session.commit()
     return {"message": "Notification deleted successfully."}
-

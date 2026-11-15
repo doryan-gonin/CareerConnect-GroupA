@@ -2,8 +2,9 @@
 Seed script to populate CareerConnect database with realistic job postings
 for testing and demonstration of Feature 2 (Job Search & Filtering).
 """
-import sys
+
 import argparse
+import sys
 from pathlib import Path
 
 # Ensure 'src' is in sys.path so 'backend' package is discoverable
@@ -14,8 +15,9 @@ if str(SRC_DIR) not in sys.path:
 
 import bcrypt
 from sqlmodel import Session, select
+
 from backend.database import engine, init_db
-from backend.models import User, Profile, Job, JobType, JobSchedule
+from backend.models import Job, JobSchedule, JobType, Profile, User
 
 DEMO_RECRUITER_EMAIL = "recruiter@careerconnect.com"
 DEMO_RECRUITER_PASSWORD = "Password123!"
@@ -28,7 +30,9 @@ def get_or_create_demo_recruiter(session: Session) -> User:
     ).first()
 
     if not recruiter:
-        pw_hashed = bcrypt.hashpw(DEMO_RECRUITER_PASSWORD.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+        pw_hashed = bcrypt.hashpw(DEMO_RECRUITER_PASSWORD.encode("utf-8"), bcrypt.gensalt()).decode(
+            "utf-8"
+        )
         recruiter = User(
             email_address=DEMO_RECRUITER_EMAIL.casefold(),
             password_hash=pw_hashed,
@@ -45,7 +49,9 @@ def get_or_create_demo_recruiter(session: Session) -> User:
         )
         session.add(profile)
         session.commit()
-        print(f"Created demo recruiter account: {DEMO_RECRUITER_EMAIL} (Password: {DEMO_RECRUITER_PASSWORD})")
+        print(
+            f"Created demo recruiter account: {DEMO_RECRUITER_EMAIL} (Password: {DEMO_RECRUITER_PASSWORD})"
+        )
     else:
         print(f"Using existing demo recruiter account: {DEMO_RECRUITER_EMAIL}")
 
@@ -347,12 +353,18 @@ def seed_jobs(reset: bool = False):
 
         session.commit()
         total = session.exec(select(Job)).all()
-        print(f"Seeding complete! Added: {added}, Skipped (existing): {skipped}, Total jobs in DB: {len(total)}")
+        print(
+            f"Seeding complete! Added: {added}, Skipped (existing): {skipped}, Total jobs in DB: {len(total)}"
+        )
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Seed CareerConnect database with sample job postings")
-    parser.add_argument("--reset", action="store_true", help="Delete all existing jobs before seeding")
+    parser = argparse.ArgumentParser(
+        description="Seed CareerConnect database with sample job postings"
+    )
+    parser.add_argument(
+        "--reset", action="store_true", help="Delete all existing jobs before seeding"
+    )
     args = parser.parse_args()
 
     seed_jobs(reset=args.reset)

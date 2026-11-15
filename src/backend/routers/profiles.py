@@ -4,22 +4,25 @@ import shutil
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-
 from typing import Annotated, List
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlmodel import Session, select
 
-from backend.database import get_session
-from backend.models import User, Profile, Resume, ProfileUpdate, ProfileResponse, ResumeReponse
-from backend.dependencies import get_current_user, get_current_applicant
 from backend.config import UPLOAD_DIR
+from backend.database import get_session
+from backend.dependencies import get_current_applicant, get_current_user
+from backend.models import Profile, ProfileResponse, ProfileUpdate, Resume, ResumeReponse, User
 
 router = APIRouter(tags=["Profiles"])
 
+
 # Helper to ensure user has a profile
 def get_or_create_profile(user_id: int, session: Session) -> Profile:
-    profile: Profile | None = session.exec(select(Profile).where(Profile.user_id == user_id)).first()
+    profile: Profile | None = session.exec(
+        select(Profile).where(Profile.user_id == user_id)
+    ).first()
     if not profile:
         profile = Profile(user_id=user_id, first_name="", last_name="")
         session.add(profile)
@@ -27,14 +30,23 @@ def get_or_create_profile(user_id: int, session: Session) -> Profile:
         session.refresh(profile)
     return profile
 
+
 # Get profile
 @router.get("/me", response_model=ProfileResponse)
-def read_my_profile(current_user: Annotated[User, Depends(get_current_user)], session: Annotated[Session, Depends(get_session)]):
+def read_my_profile(
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)],
+):
     return get_or_create_profile(current_user.id, session)
+
 
 # Update profile
 @router.put("/me", response_model=ProfileResponse)
-def update_profile(payload: ProfileUpdate, current_user: Annotated[User, Depends(get_current_user)], session: Annotated[Session, Depends(get_session)]):
+def update_profile(
+    payload: ProfileUpdate,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)],
+):
 
     profile: Profile = get_or_create_profile(current_user.id, session)
 
@@ -54,32 +66,56 @@ def update_profile(payload: ProfileUpdate, current_user: Annotated[User, Depends
 # RESUME ENDPOINTS
 # ----------------
 
+
 # Get all resumes
 @router.get("/me/resumes", response_model=List[ResumeReponse])
-def list_resumes(current_user: Annotated[User, Depends(get_current_applicant)], session: Annotated[Session, Depends(get_session)]):
-    resumes = session.exec(select(Resume).where(Resume.user_id == current_user.id).order_by(Resume.is_default.desc(), Resume.uploaded_at.desc())).all()
+def list_resumes(
+    current_user: Annotated[User, Depends(get_current_applicant)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    resumes = session.exec(
+        select(Resume)
+        .where(Resume.user_id == current_user.id)
+        .order_by(Resume.is_default.desc(), Resume.uploaded_at.desc())
+    ).all()
     return resumes
+
 
 # Get specific resume
 @router.get("/me/resumes/{resume_id}")
-def download_resume(resume_id: int, current_user: Annotated[User, Depends(get_current_applicant)], session: Annotated[Session, Depends(get_session)]):
-    resume = session.exec(select(Resume).where(Resume.id == resume_id, Resume.user_id == current_user.id)).first()
+def download_resume(
+    resume_id: int,
+    current_user: Annotated[User, Depends(get_current_applicant)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    resume = session.exec(
+        select(Resume).where(Resume.id == resume_id, Resume.user_id == current_user.id)
+    ).first()
 
     if not resume or not os.path.exists(resume.file_path):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found on server.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found on server."
+        )
 
-    return FileResponse(path=resume.file_path, media_type="application/pdf", filename=resume.file_name)
+    return FileResponse(
+        path=resume.file_path, media_type="application/pdf", filename=resume.file_name
+    )
+
 
 # Upload resume
 @router.post("/me/resumes", response_model=ResumeReponse, status_code=status.HTTP_201_CREATED)
-async def upload_resume(file: Annotated[UploadFile, File(...)],
-                  current_user: Annotated[User, Depends(get_current_applicant)], 
-                  session: Annotated[Session, Depends(get_session)],
-                  make_default: bool = False):
-    
+async def upload_resume(
+    file: Annotated[UploadFile, File(...)],
+    current_user: Annotated[User, Depends(get_current_applicant)],
+    session: Annotated[Session, Depends(get_session)],
+    make_default: bool = False,
+):
+
     # Enforce pdf
     if not file.filename.lower().endswith(".pdf") or file.content_type != "application/pdf":
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only pdf files are allowed.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Only pdf files are allowed."
+        )
 
     # Check if file size is bigger than 5 megabytes
     max_size = 5 * 1024 * 1024
@@ -91,7 +127,10 @@ async def upload_resume(file: Annotated[UploadFile, File(...)],
         if total_bytes > max_size:
             # FastAPI uses starlette which temporarily stores files > 1mb on disk to save RAM so closing the file deletes the temp file
             await file.close()
-            raise HTTPException(status_code=status.HTTP_413_CONTENT_TOO_LARGE, detail="Resume must be under 5 megabytes.")
+            raise HTTPException(
+                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                detail="Resume must be under 5 megabytes.",
+            )
 
     await file.seek(0)
 
@@ -100,7 +139,9 @@ async def upload_resume(file: Annotated[UploadFile, File(...)],
 
     # Limit amout of resumes on an account to 5
     if len(existing_resumes) >= 5:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User already has 5 (or more) resumes.")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="User already has 5 (or more) resumes."
+        )
 
     # First resume is automatically default
     is_first = len(existing_resumes) == 0
@@ -123,7 +164,7 @@ async def upload_resume(file: Annotated[UploadFile, File(...)],
         user_id=current_user.id,
         file_name=file.filename,
         file_path=str(file_path),
-        is_default=should_be_default
+        is_default=should_be_default,
     )
 
     await file.close()
@@ -133,27 +174,41 @@ async def upload_resume(file: Annotated[UploadFile, File(...)],
     session.refresh(new_resume)
     return new_resume
 
+
 # Set default resume
 @router.patch("/me/resumes/{resume_id}/default", response_model=ResumeReponse)
-def set_default_resume(resume_id: int, current_user: Annotated[User, Depends(get_current_applicant)], session: Annotated[Session, Depends(get_session)]):
-    target_resume = session.exec(select(Resume).where(Resume.id == resume_id, Resume.user_id == current_user.id)).first()
+def set_default_resume(
+    resume_id: int,
+    current_user: Annotated[User, Depends(get_current_applicant)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    target_resume = session.exec(
+        select(Resume).where(Resume.id == resume_id, Resume.user_id == current_user.id)
+    ).first()
 
     if not target_resume:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found.")
 
     all_resumes = session.exec(select(Resume).where(Resume.user_id == current_user.id)).all()
     for r in all_resumes:
-        r.is_default = (r.id == target_resume.id)
+        r.is_default = r.id == target_resume.id
         session.add(r)
 
     session.commit()
     session.refresh(target_resume)
     return target_resume
 
+
 # Delete resume
 @router.delete("/me/resumes/{resume_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_resume(resume_id: int, current_user: Annotated[User, Depends(get_current_applicant)], session: Annotated[Session, Depends(get_session)]):
-    resume = session.exec(select(Resume).where(Resume.id == resume_id, Resume.user_id == current_user.id)).first()
+def delete_resume(
+    resume_id: int,
+    current_user: Annotated[User, Depends(get_current_applicant)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    resume = session.exec(
+        select(Resume).where(Resume.id == resume_id, Resume.user_id == current_user.id)
+    ).first()
 
     if not resume:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found.")
@@ -174,7 +229,7 @@ def delete_resume(resume_id: int, current_user: Annotated[User, Depends(get_curr
             select(Resume)
             .where(Resume.user_id == current_user.id)
             .order_by(Resume.uploaded_at.desc())
-            ).first()
+        ).first()
 
         if fallback:
             fallback.is_default = True

@@ -1,12 +1,16 @@
 from datetime import datetime, timezone
+
 from sqlmodel import Session
+
 from backend.models import (
+    Application,
+    ApplicationStatus,
+    Job,
     Notification,
     NotificationType,
-    Application,
-    Job,
-    ApplicationStatus,
+    User,
 )
+
 
 def create_notification(
     session: Session,
@@ -16,7 +20,7 @@ def create_notification(
     notification_type: NotificationType = NotificationType.STATUS_UPDATE,
     reference_id: int | None = None,
     reference_type: str | None = None,
- ) -> Notification:
+) -> Notification:
     """Create a new notification for a specific user."""
     notification = Notification(
         user_id=user_id,
@@ -38,7 +42,7 @@ def notify_status_change(
     job: Job,
     old_status: ApplicationStatus,
     new_status: ApplicationStatus,
- ) -> Notification | None:
+) -> Notification | None:
     """
     Generate a notification when an application status updates.
     Sends an INTERVIEW_INVITATION if invited to interview,
@@ -47,8 +51,8 @@ def notify_status_change(
     if old_status == new_status:
         return None
 
-    job_title = job.title if job else "your applied position" # Shouldn't happen
-    company_name = job.company_name if job else "the company" 
+    job_title = job.title if job else "your applied position"  # Shouldn't happen
+    company_name = job.company_name if job else "the company"
 
     if new_status == ApplicationStatus.INTERVIEW:
         notification_type = NotificationType.INTERVIEW_INVITATION
@@ -57,7 +61,7 @@ def notify_status_change(
             f"Congratulations! You have been invited for an interview for the {job_title} "
             f"position at {company_name}."
         )
-        
+
     else:
         notification_type = NotificationType.STATUS_UPDATE
         title = f"Application Update: {job_title}"
@@ -75,6 +79,7 @@ def notify_status_change(
         reference_id=application.id,
         reference_type="application",
     )
+
 
 # Only used for recruiter accounts (flag set in "users" DB)
 def notify_new_application_received(
@@ -99,5 +104,3 @@ def notify_new_application_received(
         reference_id=application.id,
         reference_type="application",
     )
-
-

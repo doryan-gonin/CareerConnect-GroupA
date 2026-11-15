@@ -1,20 +1,21 @@
 from datetime import datetime, timezone
 from typing import Annotated, List
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlmodel import Session, select, col
+from sqlmodel import Session, col, select
 
 from backend.database import get_session
+from backend.dependencies import get_current_applicant, get_current_recruiter, get_current_user
 from backend.models import (
-    User,
+    Application,
+    ApplicationDetailResponse,
+    ApplicationResponse,
+    ApplicationStatus,
+    ApplicationStatusUpdate,
     Job,
     Resume,
-    Application,
-    ApplicationStatus,
-    ApplicationResponse,
-    ApplicationDetailResponse,
-    ApplicationStatusUpdate,
+    User,
 )
-from backend.dependencies import get_current_user, get_current_applicant, get_current_recruiter
 from backend.services.notification_service import notify_status_change
 
 router = APIRouter(tags=["Applications"])
@@ -24,7 +25,11 @@ router = APIRouter(tags=["Applications"])
 def list_my_applications(
     session: Annotated[Session, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_applicant)],
-    status_filter: ApplicationStatus | None = Query(default=None, alias="status", description="Filter by status (Applied, Under Review, Interview, Offered, Rejected)"),
+    status_filter: ApplicationStatus | None = Query(
+        default=None,
+        alias="status",
+        description="Filter by status (Applied, Under Review, Interview, Offered, Rejected)",
+    ),
 ):
     """
     List all applications submitted by the logged-in candidate with full job metadata.
