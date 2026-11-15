@@ -9,13 +9,13 @@ authors = [
 requires-python = ">=3.14"
 dependencies = [
     "bcrypt>=5.0.0",
-    "fastapi[standard]>=0.141.1",
-    "pyjwt>=2.15.0",
-    "python-dotenv>=1.2.3",
-    "sqlmodel>=0.0.44",
-    "psycopg[binary]>=3.1.0",
+    "fastapi[standard]>=0.163.0",
+    "pyjwt>=2.15.1",
+    "python-dotenv>=1.2.4",
+    "sqlmodel>=0.0.44,<0.0.45",
+    "psycopg[binary]>=3.3.9",
     "httpx>=0.28.1",
-    "pypdf>=5.0.0",
+    "pypdf>=7.1.0",
 ]
 
 [tool.uv]
@@ -30,8 +30,8 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    "httpx2>=2.13.1",
-    "pytest>=9.1.1",
+    "httpx2>=2.16.0",
+    "pytest>=9.2.0",
 ]
 
 [tool.pytest.ini_options]
