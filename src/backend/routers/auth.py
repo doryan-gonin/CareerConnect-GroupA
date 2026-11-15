@@ -18,6 +18,7 @@ from backend.config import (
 )
 from backend.database import get_session
 from backend.dependencies import get_current_user, get_token_payload
+from backend.services.suggestion_service import refresh_suggestions
 from backend.models import Profile, RevokedToken, Token, User, UserCreate, UserLogin, UserResponse
 
 router = APIRouter(tags=["Authentication"])
@@ -165,6 +166,12 @@ def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_sessi
         },  # We use the ID as the email might change AND is PII
         expires_delta=access_token_expires,
     )
+
+    if not user.is_recruiter:
+        try:
+            refresh_suggestions(session, user)
+        except Exception:
+            session.rollback()
 
     return {"access_token": access_token, "token_type": "bearer", "is_recruiter": user.is_recruiter}
 

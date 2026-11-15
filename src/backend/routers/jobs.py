@@ -27,6 +27,7 @@ from backend.models import (
     ApplicationResponse,
     SearchLog,
     JobViewLog,
+    JobSuggestion,
     SavedJob,
     SavedJobResponse,
 )
@@ -37,6 +38,7 @@ from backend.dependencies import (
     get_current_applicant,
 )
 from backend.services.notification_service import notify_new_application_received
+from backend.services.suggestion_service import get_cached_suggestions, refresh_suggestions
 
 router = APIRouter(tags=["Jobs"])
 
@@ -154,6 +156,15 @@ def list_my_jobs(
 
     return session.exec(statement).all()
 
+
+@router.post("/suggestions/refresh")
+def refresh_job_suggestions(
+    current_user: Annotated[User, Depends(get_current_applicant)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    rows = refresh_suggestions(session, current_user)
+    return {"count": len(rows), "generated_at": max((row.generated_at for row in rows), default=None)}
+
 @router.get("", response_model=JobListResponse)
 def list_jobs(
     session: Annotated[Session, Depends(get_session)],
@@ -169,6 +180,8 @@ def list_jobs(
     limit: int = Query(default=20, ge=1, le=100, description="Items per page"),
     sort_by: JobSortBy = Query(default=JobSortBy.POSTED_AT, description="Field to sort by (e.g. posted_at, salary)"),
     sort_order: JobSortOrder = Query(default=JobSortOrder.DESC, description="Sort order: asc or desc"),
+    ai_suggested: bool = Query(default=False),
+    refresh_suggestions: bool = Query(default=False),
     current_user: Annotated[User | None, Depends(get_optional_current_user)] = None,
 ):
     """
@@ -176,6 +189,14 @@ def list_jobs(
     Returns full job objects so clients can render listing cards without subsequent API calls.
     """
     conditions = [Job.is_active == True]
+    suggestion_by_job: dict[int, JobSuggestion] = {}
+    if sort_by == JobSortBy.SUGGESTION:
+        ai_suggested = True
+    if ai_suggested:
+        if current_user is None or current_user.is_recruiter:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sign in as an applicant to use AI suggestions.")
+        suggestion_by_job = get_cached_suggestions(session, current_user, refresh=refresh_suggestions)
+        conditions.append(Job.id.in_(list(suggestion_by_job) or [-1]))
 
     if keyword and keyword.strip():
         term = f"%{keyword.strip()}%"
@@ -237,28 +258,24 @@ def list_jobs(
         JobSortBy.HOURS_MAX: Job.max_hours_per_week,
     }
 
-    sort_column = sort_columns[sort_by]
-
-    # nullslast() ensures job without the selected field are pushed to the end
-    # The tie-breaker ensures jobs with the same criterias don't jump between pages
-    if sort_order == JobSortOrder.ASC:
-        primary_order = col(sort_column).asc().nullslast()
-        tie_breaker = col(Job.id).asc()
-    else:
-        primary_order = col(sort_column).desc().nullslast()
-        tie_breaker = col(Job.id).desc()
-
-    # Paginate only AFTER sorting
+    sort_column = sort_columns.get(sort_by)
     offset = (page - 1) * limit
-    jobs_statement = (
-        select(Job)
-        .where(*conditions)
-        .order_by(primary_order, tie_breaker)
-        .offset(offset)
-        .limit(limit)
-    )
-
-    jobs = session.exec(jobs_statement).all()
+    if ai_suggested:
+        all_jobs = session.exec(select(Job).where(*conditions)).all()
+        jobs = sorted(
+            all_jobs,
+            key=lambda item: (suggestion_by_job.get(item.id).score if suggestion_by_job.get(item.id) else 0.0, item.id or 0),
+            reverse=sort_order == JobSortOrder.DESC,
+        )[offset:offset + limit]
+    else:
+        if sort_column is None:
+            raise HTTPException(status_code=422, detail="Unsupported sort field")
+        primary_order = col(sort_column).asc().nullslast() if sort_order == JobSortOrder.ASC else col(sort_column).desc().nullslast()
+        tie_breaker = col(Job.id).asc() if sort_order == JobSortOrder.ASC else col(Job.id).desc()
+        jobs_statement = (
+            select(Job).where(*conditions).order_by(primary_order, tie_breaker).offset(offset).limit(limit)
+        )
+        jobs = session.exec(jobs_statement).all()
 
     total_pages = math.ceil(total_count / limit) if total_count > 0 else 0
 
@@ -278,8 +295,19 @@ def list_jobs(
             session.add(search_log)
             session.commit()
 
+    response_jobs = []
+    for job in jobs:
+        suggestion = suggestion_by_job.get(job.id)
+        data = {field: getattr(job, field) for field in (
+            "id", "recruiter_id", "title", "company_name", "description", "location", "category",
+            "job_type", "job_schedule", "min_hours_per_week", "max_hours_per_week", "salary_min",
+            "salary_max", "is_active", "posted_at", "deadline")}
+        data.update(ai_suggested=bool(suggestion), suggestion_score=suggestion.score if suggestion else None,
+                    suggestion_justification=suggestion.justification if suggestion else None)
+        response_jobs.append(JobResponse(**data))
+
     return JobListResponse(
-        jobs=list(jobs),
+        jobs=response_jobs,
         total=total_count,
         page=page,
         limit=limit,

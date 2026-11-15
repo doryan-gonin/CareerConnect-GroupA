@@ -1,6 +1,6 @@
 import { apiRequest } from './client'
 
-export function searchJobs(token, { keyword, location, category, jobType, jobSchedule, sortBy, sortOrder, page, limit } = {}) {
+export function searchJobs(token, { keyword, location, category, jobType, jobSchedule, sortBy, sortOrder, aiSuggested, refreshSuggestions, page, limit } = {}) {
   const params = new URLSearchParams()
   if (keyword) params.set('keyword', keyword)
   if (location) params.set('location', location)
@@ -9,6 +9,8 @@ export function searchJobs(token, { keyword, location, category, jobType, jobSch
   if (jobSchedule) params.set('job_schedule', jobSchedule)
   if (sortBy) params.set('sort_by', sortBy)
   if (sortOrder) params.set('sort_order', sortOrder)
+  if (aiSuggested) params.set('ai_suggested', 'true')
+  if (refreshSuggestions) params.set('refresh_suggestions', 'true')
   if (page) params.set('page', String(page))
   if (limit) params.set('limit', String(limit))
 
