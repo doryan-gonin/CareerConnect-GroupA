@@ -3,6 +3,12 @@ import { getProfile, updateProfile } from "../api/profiles";
 import { profileFormSchema } from "../api/schemas";
 import type { Profile } from "../api/types";
 import type { ChangeEvent, FormEvent } from "react";
+import { Alert, AlertDescription } from "./ui/alert";
+import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Field, FieldError, FieldGroup, FieldLabel } from "./ui/field";
+import { Input } from "./ui/input";
+import { Skeleton } from "./ui/skeleton";
 
 function ProfileSection({ token }: { token: string }) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -77,99 +83,112 @@ function ProfileSection({ token }: { token: string }) {
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-        <h2 className="text-lg font-medium text-gray-900">Profile Information</h2>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between border-b">
+        <CardTitle>Profile Information</CardTitle>
         {!isEditing && !isLoading && (
-          <button
+          <Button
             type="button"
+            variant="link"
             onClick={() => {
               setSuccess("");
               setError("");
               setIsEditing(true);
             }}
-            className="text-sm font-medium text-purple-600 hover:text-purple-700"
           >
             Edit
-          </button>
+          </Button>
         )}
-      </div>
+      </CardHeader>
 
-      {success && (
-        <p className="mt-4 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{success}</p>
-      )}
+      <CardContent className="flex flex-col gap-4">
+        {success && (
+          <Alert className="mt-4">
+            <AlertDescription>{success}</AlertDescription>
+          </Alert>
+        )}
 
-      {error && <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+        {error && (
+          <Alert className="mt-4" variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-      {isLoading ? (
-        <div className="py-8 text-center text-sm text-gray-500">Loading profile…</div>
-      ) : isEditing ? (
-        <form onSubmit={handleSave} className="mt-4 flex flex-col gap-4">
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-            First Name
-            <input
-              type="text"
-              value={firstName}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setFirstName(e.target.value)}
-              placeholder="e.g. Jane"
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-            Last Name
-            <input
-              type="text"
-              value={lastName}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setLastName(e.target.value)}
-              placeholder="e.g. Doe"
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-            />
-          </label>
-
-          <div className="flex items-center gap-3 pt-2">
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700 disabled:opacity-60"
-            >
-              {isSaving ? "Saving…" : "Save changes"}
-            </button>
-            <button
-              type="button"
-              onClick={handleCancel}
-              disabled={isSaving}
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-            >
-              Cancel
-            </button>
+        {isLoading ? (
+          <div className="flex flex-col gap-3 py-8">
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-4 w-1/2" />
           </div>
-        </form>
-      ) : (
-        <dl className="mt-4 flex flex-col gap-3 text-sm">
-          <div className="flex flex-col sm:flex-row sm:justify-between">
-            <dt className="text-gray-500">First Name</dt>
-            <dd className="font-medium text-gray-900">
-              {profile?.first_name || <span className="italic text-gray-400">Not provided</span>}
-            </dd>
-          </div>
+        ) : isEditing ? (
+          <form onSubmit={handleSave} className="mt-4">
+            <FieldGroup>
+              <Field data-invalid={Boolean(error)}>
+                <FieldLabel htmlFor="profile-first-name">First Name</FieldLabel>
+                <Input
+                  id="profile-first-name"
+                  type="text"
+                  value={firstName}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setFirstName(e.target.value)}
+                  placeholder="e.g. Jane"
+                  aria-invalid={Boolean(error)}
+                />
+              </Field>
 
-          <div className="flex flex-col sm:flex-row sm:justify-between">
-            <dt className="text-gray-500">Last Name</dt>
-            <dd className="font-medium text-gray-900">
-              {profile?.last_name || <span className="italic text-gray-400">Not provided</span>}
-            </dd>
-          </div>
+              <Field data-invalid={Boolean(error)}>
+                <FieldLabel htmlFor="profile-last-name">Last Name</FieldLabel>
+                <Input
+                  id="profile-last-name"
+                  type="text"
+                  value={lastName}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setLastName(e.target.value)}
+                  placeholder="e.g. Doe"
+                  aria-invalid={Boolean(error)}
+                />
+                {error && <FieldError>{error}</FieldError>}
+              </Field>
 
-          {profile?.last_updated && (
-            <div className="flex flex-col sm:flex-row sm:justify-between border-t border-gray-100 pt-3">
-              <dt className="text-gray-500">Last Updated</dt>
-              <dd className="text-gray-600">{new Date(profile.last_updated).toLocaleString()}</dd>
+              <div className="flex items-center gap-3 pt-2">
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? "Saving…" : "Save changes"}
+                </Button>
+                <Button type="button" variant="outline" onClick={handleCancel} disabled={isSaving}>
+                  Cancel
+                </Button>
+              </div>
+            </FieldGroup>
+          </form>
+        ) : (
+          <dl className="flex flex-col gap-3 text-sm">
+            <div className="flex flex-col sm:flex-row sm:justify-between">
+              <dt className="text-muted-foreground">First Name</dt>
+              <dd className="font-medium">
+                {profile?.first_name || (
+                  <span className="italic text-muted-foreground">Not provided</span>
+                )}
+              </dd>
             </div>
-          )}
-        </dl>
-      )}
-    </div>
+
+            <div className="flex flex-col sm:flex-row sm:justify-between">
+              <dt className="text-muted-foreground">Last Name</dt>
+              <dd className="font-medium">
+                {profile?.last_name || (
+                  <span className="italic text-muted-foreground">Not provided</span>
+                )}
+              </dd>
+            </div>
+
+            {profile?.last_updated && (
+              <div className="flex flex-col border-t pt-3 sm:flex-row sm:justify-between">
+                <dt className="text-muted-foreground">Last Updated</dt>
+                <dd className="text-muted-foreground">
+                  {new Date(profile.last_updated).toLocaleString()}
+                </dd>
+              </div>
+            )}
+          </dl>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

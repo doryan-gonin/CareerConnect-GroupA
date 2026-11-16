@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { AnalyticsGranularity } from "../api/types";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "./ui/empty";
 
 type ChartPoint = { period: string; [key: string]: string | number };
 type AnalyticsBarChartProps = {
@@ -35,9 +36,12 @@ function AnalyticsBarChart({ points, groupBy, valueKey, unit }: AnalyticsBarChar
 
   if (maxValue === 0) {
     return (
-      <div className="rounded-md bg-gray-50 py-12 text-center text-sm text-gray-500">
-        No {unit} in this period.
-      </div>
+      <Empty className="border">
+        <EmptyHeader>
+          <EmptyTitle>No {unit}</EmptyTitle>
+          <EmptyDescription>No {unit} in this period.</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
@@ -56,7 +60,7 @@ function AnalyticsBarChart({ points, groupBy, valueKey, unit }: AnalyticsBarChar
           {ticks.map((tick) => (
             <span
               key={tick}
-              className="absolute right-0 translate-y-1/2 text-xs text-gray-500"
+              className="absolute right-0 translate-y-1/2 text-xs text-muted-foreground"
               style={{ bottom: `${(tick / top) * 100}%` }}
             >
               {tick}
@@ -68,13 +72,13 @@ function AnalyticsBarChart({ points, groupBy, valueKey, unit }: AnalyticsBarChar
           <div
             role="img"
             aria-label={`Bar chart of ${unit} per ${groupBy}. The peak is ${maxValue}.`}
-            className="relative h-40 border-b border-gray-300"
+            className="relative h-40 border-b"
             onMouseLeave={() => setHovered(null)}
           >
             {ticks.slice(1).map((tick) => (
               <div
                 key={tick}
-                className="absolute w-full border-t border-gray-100"
+                className="absolute w-full border-t border-border/60"
                 style={{ bottom: `${(tick / top) * 100}%` }}
               />
             ))}
@@ -87,7 +91,7 @@ function AnalyticsBarChart({ points, groupBy, valueKey, unit }: AnalyticsBarChar
                   onMouseEnter={() => setHovered(index)}
                 >
                   <div
-                    className={`w-full max-w-10 rounded-t ${hovered === index ? "bg-purple-800" : "bg-purple-600"}`}
+                    className={`w-full max-w-10 rounded-t ${hovered === index ? "bg-primary/80" : "bg-primary"}`}
                     style={{ height: `${(Number(point[valueKey]) / top) * 100}%` }}
                   />
                 </div>
@@ -96,7 +100,7 @@ function AnalyticsBarChart({ points, groupBy, valueKey, unit }: AnalyticsBarChar
 
             {hoveredPoint && (
               <div
-                className="pointer-events-none absolute top-0 z-10 rounded bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white"
+                className="pointer-events-none absolute top-0 z-10 rounded bg-foreground px-2 py-1 text-xs whitespace-nowrap text-background"
                 style={{
                   left: `${((hoverIndex + 0.5) / count) * 100}%`,
                   transform: `translateX(${hoverIndex < count / 3 ? "0" : hoverIndex > (2 * count) / 3 ? "-100%" : "-50%"})`,
@@ -112,7 +116,7 @@ function AnalyticsBarChart({ points, groupBy, valueKey, unit }: AnalyticsBarChar
               index % labelStep === 0 ? (
                 <span
                   key={point.period}
-                  className="absolute text-xs whitespace-nowrap text-gray-500"
+                  className="absolute text-xs whitespace-nowrap text-muted-foreground"
                   style={
                     index === 0
                       ? { left: 0 }
@@ -127,19 +131,19 @@ function AnalyticsBarChart({ points, groupBy, valueKey, unit }: AnalyticsBarChar
         </div>
       </div>
 
-      <details className="text-sm text-gray-600">
-        <summary className="cursor-pointer text-xs font-medium text-purple-600">View data</summary>
+      <details className="text-sm text-muted-foreground">
+        <summary className="cursor-pointer text-xs font-medium text-primary">View data</summary>
         <div className="mt-2 max-h-48 overflow-y-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="text-gray-500">
+              <tr className="text-muted-foreground">
                 <th className="py-1 font-medium">Period</th>
                 <th className="py-1 font-medium capitalize">{unit}</th>
               </tr>
             </thead>
             <tbody>
               {points.map((point) => (
-                <tr key={point.period} className="border-t border-gray-100">
+                <tr key={point.period} className="border-t">
                   <td className="py-1">{formatTooltipPeriod(point.period, groupBy)}</td>
                   <td className="py-1">{point[valueKey]}</td>
                 </tr>

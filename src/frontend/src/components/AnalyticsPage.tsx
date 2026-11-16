@@ -1,6 +1,8 @@
 import AnalyticsBarChart from "./AnalyticsBarChart";
 import AnalyticsCard from "./AnalyticsCard";
 import ApplicationsSection from "./ApplicationsSection";
+import { Button } from "./ui/button";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "./ui/empty";
 import type {
   AnalyticsPoint,
   ApplicationAnalyticsResponse,
@@ -30,9 +32,12 @@ function formatSalary(value: number) {
 function SalaryDistribution({ data }: { data: SalaryDistributionResponse }) {
   if (data.salary_count === 0) {
     return (
-      <div className="rounded-md bg-gray-50 py-12 text-center text-sm text-gray-500">
-        No applications with a listed salary in this period.
-      </div>
+      <Empty className="border">
+        <EmptyHeader>
+          <EmptyTitle>No salary data</EmptyTitle>
+          <EmptyDescription>No applications with a listed salary in this period.</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
@@ -53,17 +58,17 @@ function SalaryDistribution({ data }: { data: SalaryDistributionResponse }) {
           aria-label={`Salaries range from ${formatSalary(min)} to ${formatSalary(max)}, averaging ${formatSalary(average)}.`}
           className="px-1 pt-6"
         >
-          <div className="relative h-2 rounded-full bg-gray-200">
+          <div className="relative h-2 rounded-full bg-muted">
             <div
-              className="absolute h-2 rounded-full bg-purple-300"
+              className="absolute h-2 rounded-full bg-primary/40"
               style={{ left: `${bandStart}%`, width: `${bandEnd - bandStart}%` }}
             />
             <div
-              className="absolute -top-1 h-4 w-1 -translate-x-1/2 rounded bg-purple-600"
+              className="absolute -top-1 h-4 w-1 -translate-x-1/2 rounded bg-primary"
               style={{ left: `${averagePosition}%` }}
             />
             <span
-              className="absolute -top-6 text-xs font-medium whitespace-nowrap text-gray-900"
+              className="absolute -top-6 text-xs font-medium whitespace-nowrap"
               style={{
                 left: `${averagePosition}%`,
                 transform: `translateX(${averagePosition < 20 ? "0" : averagePosition > 80 ? "-100%" : "-50%"})`,
@@ -72,18 +77,16 @@ function SalaryDistribution({ data }: { data: SalaryDistributionResponse }) {
               Average {formatSalary(average)}
             </span>
           </div>
-          <div className="mt-2 flex justify-between text-xs text-gray-500">
+          <div className="mt-2 flex justify-between text-xs text-muted-foreground">
             <span>{formatSalary(min)}</span>
             <span>{formatSalary(max)}</span>
           </div>
         </div>
       )}
 
-      {max === min && (
-        <p className="text-2xl font-semibold text-gray-900">{formatSalary(average)}</p>
-      )}
+      {max === min && <p className="text-2xl font-semibold">{formatSalary(average)}</p>}
 
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-muted-foreground">
         Based on the midpoint salary of {data.salary_count} application
         {data.salary_count === 1 ? "" : "s"}.
         {max > min &&
@@ -117,13 +120,11 @@ function SummaryStat({
   count: number;
 }) {
   return (
-    <div className="flex-1 rounded-md bg-gray-50 p-4">
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="mt-1 text-lg font-semibold break-words text-gray-900">
-        {value ?? "No applications"}
-      </p>
+    <div className="flex-1 rounded-md bg-muted/40 p-4">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 break-words text-lg font-semibold">{value ?? "No applications"}</p>
       {value && (
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted-foreground">
           {count} application{count === 1 ? "" : "s"}
         </p>
       )}
@@ -134,17 +135,18 @@ function SummaryStat({
 function AnalyticsPage({ token, onBack }: { token: string; onBack: () => void }) {
   return (
     <div className="flex flex-col gap-6">
-      <button
+      <Button
         type="button"
+        variant="link"
         onClick={onBack}
-        className="self-start text-sm font-medium text-purple-600 hover:underline"
+        className="self-start px-0 text-sm font-medium"
       >
         ← Back to dashboard
-      </button>
+      </Button>
 
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Analytics</h1>
-        <p className="text-sm text-gray-600">
+        <h1 className="text-2xl font-semibold">Analytics</h1>
+        <p className="text-sm text-muted-foreground">
           See how your job search is going. Each graph has its own period.
         </p>
       </div>

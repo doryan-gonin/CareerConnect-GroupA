@@ -13,6 +13,11 @@ import {
   SALARY_EXTREMUMS,
 } from "../constants/jobs";
 import { isJobSchedule, isJobType, type Job, type JobCreate } from "../api/types";
+import { Alert, AlertDescription } from "./ui/alert";
+import { Button } from "./ui/button";
+import { Field, FieldGroup, FieldLabel } from "./ui/field";
+import { Input } from "./ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 type Props = {
   token: string;
@@ -59,15 +64,8 @@ export default function CreateJobForm({ token, onCreated, onCancel }: Props) {
     setForm((previous) => ({ ...previous, [name]: value }));
   }
 
-  function handleScheduleChange(event: ChangeEvent<HTMLSelectElement>) {
-    const newSchedule = isJobSchedule(event.target.value) ? event.target.value : "Full-time";
-    const defaults = SCHEDULE_HOURS_MAP[newSchedule];
-    setForm((previous) => ({
-      ...previous,
-      job_schedule: newSchedule,
-      min_hours_per_week: defaults ? defaults.min : previous.min_hours_per_week,
-      max_hours_per_week: defaults ? defaults.max : previous.max_hours_per_week,
-    }));
+  function handleValueChange(name: keyof FormState, value: string) {
+    setForm((previous) => ({ ...previous, [name]: value }));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -141,91 +139,90 @@ export default function CreateJobForm({ token, onCreated, onCancel }: Props) {
       </h2>
 
       {/* Row 1: Title & Company */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium text-gray-700">Job Title</span>
-          <input
-            name="title"
-            value={form.title}
-            onChange={handleChange}
-            placeholder="e.g. Senior Frontend Developer"
-            required
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-          />
-        </label>
-
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium text-gray-700">Company Name</span>
-          <input
-            name="company_name"
-            value={form.company_name}
-            onChange={handleChange}
-            placeholder="e.g. Acme Corp"
-            required
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-          />
-        </label>
-      </div>
-
-      {/* Row 2: Location & Category */}
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <div>
-          <label
-            htmlFor="create-job-location"
-            className="mb-1 block text-xs font-medium text-gray-700"
-          >
-            Location
-          </label>
-          <LocationAutocomplete
-            id="create-job-location"
-            name="location"
-            value={form.location}
-            onChange={(val) => setForm((prev) => ({ ...prev, location: val }))}
-            placeholder="e.g. Montreal, QC or Remote"
-            required
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="create-job-category"
-            className="mb-1 block text-xs font-medium text-gray-700"
-          >
-            Category
-          </label>
-          <select
-            id="create-job-category"
-            value={categorySelect}
-            onChange={(e) => setCategorySelect(e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-          >
-            {PRESET_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-            <option value="Other">Other (specify below)</option>
-          </select>
-
-          {categorySelect === "Other" && (
-            <input
-              type="text"
-              placeholder="Enter category name"
-              value={customCategory}
-              onChange={(e) => setCustomCategory(e.target.value)}
+      <FieldGroup>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="create-job-title">Job Title</FieldLabel>
+            <Input
+              id="create-job-title"
+              name="title"
+              value={form.title}
+              onChange={handleChange}
+              placeholder="e.g. Senior Frontend Developer"
               required
-              className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+              className="w-full"
             />
-          )}
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="create-job-company">Company Name</FieldLabel>
+            <Input
+              id="create-job-company"
+              name="company_name"
+              value={form.company_name}
+              onChange={handleChange}
+              placeholder="e.g. Acme Corp"
+              required
+              className="w-full"
+            />
+          </Field>
         </div>
-      </div>
+
+        {/* Row 2: Location & Category */}
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="create-job-location">Location</FieldLabel>
+            <LocationAutocomplete
+              id="create-job-location"
+              name="location"
+              value={form.location}
+              onChange={(val) => setForm((prev) => ({ ...prev, location: val }))}
+              placeholder="e.g. Montreal, QC or Remote"
+              required
+            />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="create-job-category">Category</FieldLabel>
+            <Select
+              value={categorySelect}
+              onValueChange={(value) => setCategorySelect(String(value ?? ""))}
+            >
+              <SelectTrigger id="create-job-category" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PRESET_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+                <SelectItem value="Other">Other (specify below)</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {categorySelect === "Other" && (
+              <Input
+                type="text"
+                placeholder="Enter category name"
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                required
+                className="mt-2"
+              />
+            )}
+          </Field>
+        </div>
+      </FieldGroup>
 
       {/* Row 3: Description */}
       <div className="mt-4">
-        <label className="mb-1 block text-xs font-medium text-gray-700">
+        <p className="mb-1 text-xs font-medium text-foreground">
           Job Description{" "}
-          <span className="text-[11px] text-gray-400 font-normal">(Markdown supported)</span>
-        </label>
+          <span className="text-[11px] font-normal text-muted-foreground">
+            (Markdown supported)
+          </span>
+        </p>
         <MarkdownEditor
           value={form.description}
           onChange={(val) => setForm((prev) => ({ ...prev, description: val }))}
@@ -237,42 +234,58 @@ export default function CreateJobForm({ token, onCreated, onCancel }: Props) {
 
       {/* Row 4: Job Type & Schedule */}
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium text-gray-700">Job Type</span>
-          <select
-            name="job_type"
+        <Field>
+          <FieldLabel htmlFor="create-job-type">Job Type</FieldLabel>
+          <Select
             value={form.job_type}
-            onChange={handleChange}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+            onValueChange={(value) => handleValueChange("job_type", String(value ?? ""))}
           >
-            {JOB_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-        </label>
+            <SelectTrigger id="create-job-type" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {JOB_TYPES.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
 
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium text-gray-700">
+        <Field>
+          <FieldLabel htmlFor="create-job-schedule">
             Schedule{" "}
             <span className="text-[11px] text-gray-400 font-normal">
               (autofills standard hours)
             </span>
-          </span>
-          <select
-            name="job_schedule"
+          </FieldLabel>
+          <Select
             value={form.job_schedule}
-            onChange={handleScheduleChange}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+            onValueChange={(value) => {
+              const raw = String(value ?? "");
+              const next = isJobSchedule(raw) ? raw : "Full-time";
+              const defaults = SCHEDULE_HOURS_MAP[next];
+              setForm((previous) => ({
+                ...previous,
+                job_schedule: next,
+                min_hours_per_week: defaults?.min ?? previous.min_hours_per_week,
+                max_hours_per_week: defaults?.max ?? previous.max_hours_per_week,
+              }));
+            }}
           >
-            {JOB_SCHEDULES.map((sched) => (
-              <option key={sched} value={sched}>
-                {sched}
-              </option>
-            ))}
-          </select>
-        </label>
+            <SelectTrigger id="create-job-schedule" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {JOB_SCHEDULES.map((sched) => (
+                <SelectItem key={sched} value={sched}>
+                  {sched}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
       </div>
 
       {/* Row 5: Working Hours Sliders */}
@@ -350,27 +363,19 @@ export default function CreateJobForm({ token, onCreated, onCancel }: Props) {
       </div>
 
       {error && (
-        <p role="alert" className="mt-4 rounded-md bg-red-50 p-2.5 text-xs text-red-700">
-          {error}
-        </p>
+        <Alert className="mt-4" variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       <div className="mt-6 flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={saving}
-          className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700 disabled:opacity-50"
-        >
+        <Button type="submit" disabled={saving}>
           {saving ? "Creating…" : "Publish Job"}
-        </button>
+        </Button>
 
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-        >
+        <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );

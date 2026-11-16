@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { CANONICAL_LOCATIONS } from "../constants/jobs";
 import type { ChangeEvent, KeyboardEvent } from "react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 
 type LocationAutocompleteProps = {
   id?: string;
@@ -149,7 +151,7 @@ export default function LocationAutocomplete({
   return (
     <div ref={containerRef} className={`relative ${className}`}>
       <div className="relative">
-        <input
+        <Input
           ref={inputRef}
           id={id}
           name={name}
@@ -169,23 +171,23 @@ export default function LocationAutocomplete({
           aria-autocomplete="list"
           aria-expanded={isOpen}
           aria-controls={`${id}-suggestions`}
-          className={`w-full rounded-md border border-gray-300 bg-white pr-8 text-sm text-gray-900 outline-none transition focus:border-purple-500 focus:ring-1 focus:ring-purple-500 ${
-            compact ? "px-3 py-1.5" : "px-3 py-2"
-          }`}
+          className={`w-full bg-white pr-8 text-sm ${compact ? "px-3 py-1.5" : "px-3 py-2"}`}
         />
 
         {value && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-xs"
+            className="absolute inset-y-0 right-1 my-auto"
             onClick={() => {
               onChange("");
               inputRef.current?.focus();
             }}
             title="Clear location"
-            className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-xs text-gray-400 hover:text-gray-600 transition"
           >
             ✕
-          </button>
+          </Button>
         )}
       </div>
 

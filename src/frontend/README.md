@@ -71,6 +71,20 @@ and schemas remain in `types.ts` and `schemas.ts`. Components should call those
 feature APIs rather than issuing fetch requests directly. Preserve stable
 accessibility labels and test selectors when extracting markup.
 
+## shadcn/ui foundation
+
+The frontend uses shadcn/ui with the Base UI primitive library, the Nova style,
+Lucide icons, and Tailwind v4. Configuration lives in `components.json`.
+Generated primitives live in `src/components/ui/` and are imported through
+the `@/components/ui/*` alias. Shared class merging is provided by
+`@/lib/utils`.
+
+Use the generated primitives before adding bespoke controls. Prefer semantic
+tokens such as `bg-background`, `text-muted-foreground`, and `border-border`
+over raw color utilities. Compose forms from shadcn field primitives as they
+are migrated, keep dialog titles accessible, and preserve existing ARIA labels
+and test selectors.
+
 ## Browser E2E compatibility
 
 Playwright browser tests remain a separate tool because Vite+ does not replace

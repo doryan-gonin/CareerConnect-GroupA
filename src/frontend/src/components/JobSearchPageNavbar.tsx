@@ -3,6 +3,8 @@ import { searchJobs } from "../api/jobs";
 import LocationAutocomplete from "./LocationAutocomplete";
 import NotificationBell from "./NotificationBell";
 import type { Job } from "../api/types";
+import { Alert, AlertDescription } from "./ui/alert";
+import { Button } from "./ui/button";
 
 const CATEGORIES = [
   "Software Engineering",
@@ -250,7 +252,7 @@ function JobSearchPageNavbar({
                 onNavigateDashboard();
               }
             }}
-            className="text-xl font-bold text-gray-900"
+            className="text-xl font-bold text-foreground"
           >
             Career<span className="text-purple-600">Connect</span>
           </a>
@@ -259,41 +261,48 @@ function JobSearchPageNavbar({
         {/* User & Navigation */}
         <div className="flex items-center gap-4">
           {onNavigateDashboard && (
-            <a
-              href="/dashboard"
-              onClick={(e) => {
-                e.preventDefault();
-                onNavigateDashboard();
-              }}
-              className="text-sm font-medium text-purple-600 hover:underline cursor-pointer"
+            <Button
+              variant="link"
+              nativeButton={false}
+              role="link"
+              render={
+                <a
+                  href="/dashboard"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onNavigateDashboard();
+                  }}
+                />
+              }
             >
               Dashboard
-            </a>
+            </Button>
           )}
 
           {onNavigateSavedJobs && (
-            <a
-              href="/saved"
-              onClick={(e) => {
-                e.preventDefault();
-                onNavigateSavedJobs();
-              }}
-              className="text-sm font-medium text-purple-600 hover:underline cursor-pointer"
+            <Button
+              variant="link"
+              nativeButton={false}
+              role="link"
+              render={
+                <a
+                  href="/saved"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onNavigateSavedJobs();
+                  }}
+                />
+              }
             >
               Saved Jobs
-            </a>
+            </Button>
           )}
 
           <NotificationBell token={token} onNotificationClick={onNotificationClick} />
 
-          <button
-            type="button"
-            onClick={onLogout}
-            disabled={isLoggingOut}
-            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          <Button variant="outline" size="sm" onClick={onLogout} disabled={isLoggingOut}>
             {isLoggingOut ? "Logging out…" : "Log out"}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -577,9 +586,9 @@ function JobSearchPageNavbar({
           </div>
 
           {error && (
-            <p className="mt-2 w-full rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </p>
+            <Alert className="mt-2" variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
         </div>
       </div>
