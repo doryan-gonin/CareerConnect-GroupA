@@ -1,10 +1,11 @@
 import { getNotification, markNotificationAsRead, deleteNotification, markAllNotificationsAsRead, } from '../api/notification'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 export default function NotificationBell({ token }) {
     const [unreadCount, setUnreadCount] = useState(0)
     const [notifications, setNotifications] = useState([])
     const [isOpen, setIsOpen] = useState(false)
+    const notificationRef = useRef(null)
 
     const refreshNotifications = useCallback(async () => {
         if (!token) {
@@ -26,6 +27,17 @@ export default function NotificationBell({ token }) {
 
         return () => clearInterval(intervalId)
     }, [refreshNotifications])
+
+    useEffect(() => {
+        function handleOutsideClick(event) {
+            if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+                setIsOpen(false)
+            }
+        }
+
+        document.addEventListener('pointerdown', handleOutsideClick)
+        return () => document.removeEventListener('pointerdown', handleOutsideClick)
+    }, [])
 
     async function handleClick(){
         setIsOpen((wasOpen) => !wasOpen)
@@ -54,7 +66,7 @@ export default function NotificationBell({ token }) {
     }
 
     return(
-        <div className="relative flex items-center">
+        <div ref={notificationRef} className="relative flex items-center">
             <button
                 type="button"
                 onClick={handleClick}
