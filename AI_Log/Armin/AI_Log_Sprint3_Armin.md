@@ -25,8 +25,8 @@
 * **Task ID / Title**: Validate the AI Suggested Postings backend test suite.
 * **Purpose of AI Use**: Testing / Debugging.
 * **Chat Link or Prompt/Response**: Local coding-agent session.
-* **AI-Suggested Content**: Assisted with configuring temporary test environment values, including a randomly generated JWT secret of at least 32 bytes, the Shipyard OpenAI-compatible endpoint, the configured AI model, and live-provider test settings.
-* **Validation**: Ran the complete backend test suite with the live Shipyard provider configuration. The result was **87 passed**. No secrets were written to the repository.
+* **AI-Suggested Content**: Assisted with configuring temporary test environment values, including a randomly generated JWT secret of at least 32 bytes, an OpenAI-compatible endpoint, the configured AI model, and live-provider test settings.
+* **Validation**: Ran the complete backend test suite with the live OpenAI-compatible provider configuration. The result was **87 passed**. No secrets were written to the repository.
 * **Decision**: Accepted.
 * **Reflection**: Running the complete suite with a properly sized temporary JWT secret confirmed that the feature and existing backend behavior worked without configuration warnings.
 * **Responsible Person**: Armin Mohebbipour

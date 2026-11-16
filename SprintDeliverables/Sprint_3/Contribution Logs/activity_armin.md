@@ -23,13 +23,13 @@
 | **3** | **Authentication, refresh, and job-search integration**<br>Warmed the applicant suggestion cache after login, added `POST /api/jobs/suggestions/refresh`, protected suggestion access to applicants, added AI filtering and score-based sorting to `GET /api/jobs`, and exposed concise explanations in the response payload. | Included above | • Files: `src/backend/routers/auth.py`, `src/backend/routers/jobs.py`<br>• PR: [#222](https://github.com/doryan-gonin/CareerConnect-GroupA/pull/222) |
 | **4** | **Cache lifecycle improvement**<br>Added stale cache cleanup during refresh so suggestions for jobs outside the current cacheable active-job set are removed instead of accumulating indefinitely. | Included above | • Commit: [`249605a`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/249605a70a3fd89ef7c541a1dbccaf25390e32f9) |
 | **5** | **Automated acceptance tests**<br>Added tests covering login-time cache warming, AI-filtered job results with explanations, the applicant-only refresh endpoint, cache row creation, and unauthenticated access rejection. | Included above | • File: `tests/test_suggestions.py`<br>• Full suite: 87 tests passed |
-| **6** | **Live provider and manual API validation**<br>Validated the feature against the Shipyard OpenAI-compatible endpoint using `gpt-6.1-sol` with a proper 32-byte JWT test secret. Tested registration, recruiter job creation, applicant login warming, AI ranking, refresh, OpenAPI documentation, authorization failures, database persistence, and deterministic provider-failure fallback. | Included above | • Provider: `https://ai.joojoo-lab.xyz/v1`<br>• PR validation notes: [#222](https://github.com/doryan-gonin/CareerConnect-GroupA/pull/222) |
+| **6** | **Live provider and manual API validation**<br>Validated the feature against an OpenAI-compatible endpoint using `gpt-6.1-sol` with a proper 32-byte JWT test secret. Tested registration, recruiter job creation, applicant login warming, AI ranking, refresh, OpenAPI documentation, authorization failures, database persistence, and deterministic provider-failure fallback. | Included above | • Provider: OpenAI-compatible `/v1` endpoint<br>• PR validation notes: [#222](https://github.com/doryan-gonin/CareerConnect-GroupA/pull/222) |
 | **7** | **PR review and scope cleanup**<br>Kept the PR backend-only, removed frontend changes from the original feature transfer, updated the PR description with validation evidence, and incorporated reviewer feedback for cache cleanup and documentation placement. | Included above | • PR: [#222](https://github.com/doryan-gonin/CareerConnect-GroupA/pull/222)<br>• Review status: Approved |
 
 ## Validation Results
 
 - Automated backend suite: **87 passed** using a randomly generated JWT secret of at least 32 bytes.
-- Live Shipyard provider smoke test: `/v1/models` and `/v1/chat/completions` returned successful responses.
+- Live OpenAI-compatible provider smoke test: `/v1/models` and `/v1/chat/completions` returned successful responses.
 - Manual end-to-end flow passed with temporary SQLite data:
   - recruiter and applicant registration/login;
   - three job postings created;
