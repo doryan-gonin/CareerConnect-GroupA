@@ -4,7 +4,7 @@
 * **Role**: ScrumMaster - Documentation - Acceptance & Unit Testing - Backend - Deployment
 * **Project**: CareerConnect (SOEN 341 - Fall 2026)
 * **Sprint**: Sprint 3
-* **Time Spent**: ~43 hours
+* **Time Spent**: ~44 hours
 
 ---
 
@@ -50,3 +50,5 @@
 | **37** | **Sprint 3 scope alignment and coordination** <br> - Coordinated with team members <br> - Clarified Agile framework and policies <br> - Negotiated isolating unnaproved features to a staging branch (`MesterM/beta`) <br> - Re-explained Agile workflow and its importance <br> | 2.5 hr | | | | 15/11/26
 | **38** | **PR #222 review and fixes** <br> - Reviewed PR <br> - Manually tested new features <br> - Rolled `README` back for consistency <br> - Added cache clean up handling to prevent overflow <br> - Approved PR | 1 hr | [`b4ade3f`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/b4ade3f) <br> [`249605a`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/249605a) | #222 | #135 | 15/11/26
 | **39** | Updated submission documents and contribution logs | 1.5 hr | Project | | | 15/11/26
+| **40** | **PR #224 review and fixes** <br> - Reviewed PR <br> - Manually tested feature <br> - Merged `main` into branch to resolve conflicts <br> - Replaced plaintext by bell icon <br> - Added auto polling for notifications <br> - Added outside click handler <br> - Left PR comment <br> - Approved and merged PR | 45 min | [`058bf7d`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/058bf7d) <br> to <br> [`52b019e`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/52b019e) | #224 | #138 | 16/11/26
+| **41** | Updated submission report | 15 min | Project | | | 16/11/26
