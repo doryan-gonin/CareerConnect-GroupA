@@ -1,17 +1,35 @@
 import { getNotification, markNotificationAsRead, deleteNotification, markAllNotificationsAsRead, } from '../api/notification'
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 export default function NotificationBell({ token }) {
     const [unreadCount, setUnreadCount] = useState(0)
     const [notifications, setNotifications] = useState([])
     const [isOpen, setIsOpen] = useState(false)
 
+    const refreshNotifications = useCallback(async () => {
+        if (!token) {
+            return
+        }
+
+        try {
+            const data = await getNotification(token)
+            setUnreadCount(data.unread_count)
+            setNotifications(data.notifications)
+        } catch (error) {
+            console.error('Could not refresh notifications.', error)
+        }
+    }, [token])
+
+    useEffect(() => {
+        refreshNotifications()
+        const intervalId = setInterval(refreshNotifications, 60_000)
+
+        return () => clearInterval(intervalId)
+    }, [refreshNotifications])
+
     async function handleClick(){
         setIsOpen((wasOpen) => !wasOpen)
-        const data = await getNotification(token)
-        console.log(data)
-        setUnreadCount(data.unread_count)
-        setNotifications(data.notifications)
+        await refreshNotifications()
     }
 
     async function handleMarkAsRead(notificationId) {
