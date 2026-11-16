@@ -1,3 +1,5 @@
+import NotificationBell from './NotificationBell'
+
 function NavLink({ href, onClick, children }) {
   return (
     <a
@@ -20,6 +22,7 @@ function Navbar({
   onInterviewPrep,
   onDashboard,
   isRecruiter = false,
+    token,
 }) {
   return (
     <header className="border-b border-gray-200 bg-white">
@@ -50,7 +53,7 @@ function Navbar({
           {onDashboard && <NavLink href="/dashboard" onClick={onDashboard}>Dashboard</NavLink>}
           {onBrowseJobs && <NavLink href="/jobs" onClick={onBrowseJobs}>Browse Jobs</NavLink>}
           {!isRecruiter && onInterviewPrep && <NavLink href="/interview" onClick={onInterviewPrep}>Interview Prep</NavLink>}
-
+            <NotificationBell token={token}/>
           <button
             type="button"
             onClick={onLogout}
