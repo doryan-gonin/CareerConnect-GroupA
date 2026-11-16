@@ -4,7 +4,7 @@
 * **Role**: ScrumMaster - Documentation - Acceptance & Unit Testing - Backend - Deployment
 * **Project**: CareerConnect (SOEN 341 - Fall 2026)
 * **Sprint**: Sprint 3
-* **Time Spent**: ~33 hours
+* **Time Spent**: ~43 hours
 
 ---
 
@@ -40,3 +40,13 @@
 | **27** | Fix wrong date conversion to test PR | 30 min | [`f4e9207`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/f4e9207) | #147 | | 08/11/26
 | **28** | **PR Review & AI deploy** <br> - Reviewed urgent fixes <br> - Configured local `.env` for testing and reviewing <br> - Configured `.env` and AI path on Render for deployment <br> - Manual deploy <br> - Testing and validation on prod | 1 hr | | #148 | | 09/11/26  
 | **29** | **Last minute report changes** <br> - Added missing contribution logs (Vlad) <br> - Added missing entries in logs (Thomas & Doryan) <br> - Added missing information on AI feature <br> - Added personnal log entries <br> - Uploaded report on GitHub  | 1 hr | [`e3818f0`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/e3818f0) | | | 09/11/26 
+| **30** | **PR #151 review pt1** <br> - Reviewed PR <br> - Tested new features <br> - Documented [issues](https://github.com/doryan-gonin/CareerConnect-GroupA/pull/151#issuecomment-6757627230) to be addressed <br> - Left a review with advice <br> - Reported issues to @laripo (Thomas) <br> - Mentionned fixes and modifications to @EkoCandys24 <br> - Left PR open | 1.5 hr | | #151 | #122 | 09/11/26
+| **31** | **Board and PR cleanup** <br> - Went over PRs #143-#145 and documented all issues <br> - Re-opened wrongly closed issues <br> - Moved wrongly moved issues to the appropriate column <br> - Removed duplicate issues <br> - Unassign wrongly assigned issues <br> - Updated project board <br> | 1.5 hr | Project | | | 09/11/26
+| **32** | Post lab team point | 10 min | | | | 09/11/26
+| **33** | **PR #151 review pt2 & manual redeploy** <br> - Reviewed fixes <br> - Tested the fixes and feature <br> - Approved PR #151 <br> - Manually redeployed DB and backend to account for new schemas <br> - Manually modified DB entries to backfill missing data to allow for new schema to work (recruiter flag) | 1 hr | Deploy | #151 | #122 | 10/11/26
+| **34** | **PR #153 review** <br> - Reviewed PR <br> - Tested the fixes <br> - Approved PR | 10 min | | #153 | | 11/11/26
+| **35** | **Unplanned PR Audit & board triage** <br> - Audited 16 unplanned PRs (9000+ lines of code) for scope alignment <br> - Verified test suite modifications and CI integrity <br> - Converted PRs to `drafts` to protect `main` ahead of Sprint3 demo | 2 hr | Project | `untriaged` | `untriaged` | 15/11/26
+| **36** | Tagged 24 out-of-scope issues as `untriaged` and moved them in an appropriate temporary column to preserve board accuracy | 30 min | Project | | `untriaged` | 15/11/26
+| **37** | **Sprint 3 scope alignment and coordination** <br> - Coordinated with team members <br> - Clarified Agile framework and policies <br> - Negotiated isolating unnaproved features to a staging branch (`MesterM/beta`) <br> - Re-explained Agile workflow and its importance <br> | 2.5 hr | | | | 15/11/26
+| **38** | **PR #222 review and fixes** <br> - Reviewed PR <br> - Manually tested new features <br> - Rolled `README` back for consistency <br> - Added cache clean up handling to prevent overflow <br> - Approved PR | 1 hr | [`b4ade3f`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/b4ade3f) <br> [`249605a`](https://github.com/doryan-gonin/CareerConnect-GroupA/commit/249605a) | #222 | #135 | 15/11/26
+| **39** | Updated submission documents and contribution logs | 1.5 hr | Project | | | 15/11/26
