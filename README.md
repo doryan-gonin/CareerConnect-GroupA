@@ -17,12 +17,12 @@ The platform aims to centralize job-search activities and help users stay organi
 journey
 
 ## Who are we ?
-- **Armin Mohebbipour** - Frontend
+- **Armin Mohebbipour** - Backend, Testing
 - **Candys Eko** - Frontend
 - **Ron Rozenberg** - Frontend
 - **Vlad Shkuratov** - Frontend
 - **Thomas Martel** - Backend, Database, Testing, Frontend
-- **Doryan Gonin** - Scrum Master, Documentation, Backend, CI, Testing
+- **Doryan Gonin** - Scrum Master, Documentation, Backend, CI/CD, Testing
 
 Our team's workflow is detailed in our [Wiki Page](../../../wiki)
 

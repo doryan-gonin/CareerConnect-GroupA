@@ -27,6 +27,7 @@ class JobSortBy(str, Enum):
     SALARY_MAX = "salary_max"
     SALARY_MIN = "salary_min"
     HOURS_MAX = "max_hours_per_week"
+    SUGGESTION = "suggestion"
 
 class JobSortOrder(str, Enum):
     ASC = "asc"
@@ -152,6 +153,17 @@ class JobViewLog(SQLModel, table=True):
     job_id: int = Field(foreign_key="job.id", index=True)
     viewed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
 
+class JobSuggestion(SQLModel, table=True):
+    """Per-user cached recommendation and the explanation shown to the user."""
+    __table_args__ = (UniqueConstraint("user_id", "job_id", name="uq_job_suggestion_user_job"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True, nullable=False)
+    job_id: int = Field(foreign_key="job.id", index=True, nullable=False)
+    score: float = Field(default=0.0, nullable=False)
+    justification: str = Field(default="", nullable=False)
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+
 class Notification(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", index=True, nullable=False)
@@ -270,6 +282,9 @@ class JobResponse(SQLModel):
     salary_max: int | None = None
     is_active: bool
     posted_at: datetime
+    ai_suggested: bool = False
+    suggestion_score: float | None = None
+    suggestion_justification: str | None = None
 
 class JobListResponse(SQLModel):
     jobs: List[JobResponse]

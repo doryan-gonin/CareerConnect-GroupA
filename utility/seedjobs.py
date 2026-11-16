@@ -32,6 +32,7 @@ def get_or_create_demo_recruiter(session: Session) -> User:
         recruiter = User(
             email_address=DEMO_RECRUITER_EMAIL.casefold(),
             password_hash=pw_hashed,
+            is_recruiter=True,
         )
         session.add(recruiter)
         session.commit()
@@ -47,6 +48,10 @@ def get_or_create_demo_recruiter(session: Session) -> User:
         session.commit()
         print(f"Created demo recruiter account: {DEMO_RECRUITER_EMAIL} (Password: {DEMO_RECRUITER_PASSWORD})")
     else:
+        if not recruiter.is_recruiter:
+            recruiter.is_recruiter = True
+            session.commit()
+            print(f"Marked existing account as recruiter: {DEMO_RECRUITER_EMAIL}")
         print(f"Using existing demo recruiter account: {DEMO_RECRUITER_EMAIL}")
 
     return recruiter
