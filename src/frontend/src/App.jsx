@@ -268,6 +268,7 @@ function App() {
     return (
       <div className="min-h-screen bg-gray-50 text-gray-900">
         <Navbar
+            token={token}
           onLogout={handleLogout}
           isLoggingOut={isLoggingOut}
           onBrowseJobs={() => navigate('/jobs')}
