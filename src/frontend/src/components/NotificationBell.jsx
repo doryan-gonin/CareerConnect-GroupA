@@ -40,9 +40,26 @@ export default function NotificationBell({ token }) {
             <button
                 type="button"
                 onClick={handleClick}
-                className="text-sm font-medium text-purple-600 hover:underline cursor-pointer"
+                aria-label={`Notifications (${unreadCount} unread)`}
+                title={`${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`}
+                className="relative cursor-pointer text-purple-600 transition hover:text-purple-800"
             >
-                Notifications({unreadCount})
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    className="h-6 w-6"
+                    aria-hidden="true"
+                >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9a6 6 0 0 0-12 0v.75a8.967 8.967 0 0 1-2.31 6.022 23.848 23.848 0 0 0 5.454 1.31m5.713 0a24.255 24.255 0 0 1-5.713 0m5.713 0a3 3 0 1 1-5.713 0" />
+                </svg>
+                {unreadCount > 0 && (
+                    <span className="absolute -right-2 -top-2 min-w-5 rounded-full bg-red-600 px-1 text-center text-xs font-semibold leading-5 text-white">
+                        {unreadCount}
+                    </span>
+                )}
             </button>
             {isOpen && (<ul className="absolute right-0 top-full z-10 mt-2 w-72 rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
                 <li>
