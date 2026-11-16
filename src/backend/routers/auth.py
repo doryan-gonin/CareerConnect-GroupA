@@ -18,6 +18,7 @@ from backend.config import (
     MAX_FAILED_ATTEMPTS,
     LOCKOUT_DURATION_MINUTES,
 )
+from backend.services.suggestion_service import refresh_suggestions
 
 router = APIRouter(tags=["Authentication"])
 
@@ -148,6 +149,14 @@ def login_user(payload: UserLogin, session: Annotated[Session, Depends(get_sessi
     access_token = create_access_token(
         data={"sub": str(user.id), "is_recruiter": user.is_recruiter}, # We use the ID as the email might change AND is PII
         expires_delta=access_token_expires)
+
+    # Warm the applicant's recommendation cache at login. Provider failures are
+    # intentionally non-fatal; browsing can refresh it on demand or use mock mode.
+    if not user.is_recruiter:
+        try:
+            refresh_suggestions(session, user)
+        except Exception:
+            session.rollback()
     
     return {"access_token": access_token, "token_type": "bearer", "is_recruiter": user.is_recruiter}
 
