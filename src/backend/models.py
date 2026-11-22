@@ -71,6 +71,7 @@ class User(SQLModel, table=True):
     posted_jobs: List["Job"] = Relationship(back_populates="recruiter")
     applications: List["Application"] = Relationship(back_populates="applicant")
     notifications: List["Notification"] = Relationship(back_populates="user")
+    saved_jobs: List["SavedJob"] = Relationship(back_populates="user")
 
 
 class Profile(SQLModel, table=True):
@@ -134,6 +135,18 @@ class Application(SQLModel, table=True):
     job: Job | None = Relationship(back_populates="applications")
     applicant: User | None = Relationship(back_populates="applications")
     resume: Resume | None = Relationship()
+
+class SavedJob(SQLModel, table=True):
+    """Bookmark linking a user to a job posting they want to revisit later."""
+    __table_args__ = (UniqueConstraint("user_id", "job_id", name="uq_saved_job_user_job"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True, nullable=False)
+    job_id: int = Field(foreign_key="job.id", index=True, nullable=False)
+    saved_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+
+    user: User | None = Relationship(back_populates="saved_jobs")
+    job: Job | None = Relationship()
 
 class SearchLog(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -329,6 +342,18 @@ class ApplicationDetailResponse(SQLModel):
 
 class ApplicationStatusUpdate(SQLModel):
     status: ApplicationStatus
+
+# SAVED JOB CLASSES
+
+class SavedJobResponse(SQLModel):
+    id: int
+    job_id: int
+    saved_at: datetime
+    job: JobResponse
+
+class SavedJobListResponse(SQLModel):
+    total: int
+    saved_jobs: List[SavedJobResponse]
 
 # ANALYTICS CLASSES
 

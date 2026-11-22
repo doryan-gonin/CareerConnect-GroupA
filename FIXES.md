@@ -25,6 +25,8 @@ Issues that impact feature usability, cause HTTP 503 errors on unconfigured depl
 - [4.9 Interview Conversation History Truncation by Turn [FIXED]](#49-interview-conversation-history-truncation-by-turn-fixed) — Slicing by raw message count can start prompt context with an assistant response rather than an alternating user turn.
 - [4.10 Chat Plaintext vs. Markdown Formatting Mismatch [FIXED]](#410-chat-plaintext-vs-markdown-formatting-mismatch-fixed) — The backend only strips `#` and `**`, leaving lists and italics, while the frontend displays unparsed raw text in a plain `<div>`.
 - [3.1 Test Suite Lifespan Modifying Development Database [FIXED]](#31-test-suite-lifespan-modifying-development-database-fixed) — `TestClient(app)` triggers `init_db()` against the physical disk database `careerconnect_test.db` during test runs.
+- [6.4 `getCurrentUser` Bypasses `API_BASE_URL`](#64-getcurrentuser-bypasses-api_base_url) — `/api/auth/me` is fetched with a relative URL, so it only works through the Vite dev proxy and misses the real backend in production.
+- [6.1 No Bookmark on the Full Job Posting Page](#61-no-bookmark-on-the-full-job-posting-page) — Jobs can only be saved from the job browsing page, not from `/jobs/:id`.
 
 ### Tier 3: Test Architecture, Quality & Data Integrity Edge Cases
 Deficits that prevent thorough regression verification or affect edge-case integrity:
@@ -35,6 +37,9 @@ Deficits that prevent thorough regression verification or affect edge-case integ
 - [4.6 Recruiter Inactive Job Visibility & Reactivation](#46-recruiter-inactive-job-visibility--reactivation) — Recruiters cannot view or reactivate their own closed job postings.
 - [1.1 File Validation Bypass & Filename Sanitization](#11-file-validation-bypass--filename-sanitization) — Missing magic-byte checks and potential `NoneType` crash on filename.
 - [2.4 Non-Atomic File Operations & Orphaned Files](#24-non-atomic-file-operations--orphaned-files) — Disk files saved before database commit without cleanup on rollback.
+- [6.2 Saved Jobs E2E Tests Not Run in CI](#62-saved-jobs-e2e-tests-not-run-in-ci) — Playwright tests only run locally with `make e2e`.
+- [6.3 Saved Jobs Not Verified Against PostgreSQL](#63-saved-jobs-not-verified-against-postgresql) — All tests use SQLite; production uses Neon PostgreSQL.
+- [6.5 `make seed-reset` Fails Once Jobs Have Applications](#65-make-seed-reset-fails-once-jobs-have-applications) — Hard-deleting jobs violates foreign keys from applications, view logs, suggestions, and interview sessions.
 
 ### Tier 4: Quality of Life, Long-Term Scalability & Minor Cleanups
 Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
@@ -46,6 +51,7 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
 - [2.1 Timezone Inconsistencies (Naive vs. UTC Datetimes)](#21-timezone-inconsistencies-naive-vs-utc-datetimes) — Standardizing timestamps across all models.
 - [2.3 Relative Working Directory Dependencies (DB & Uploads)](#23-relative-working-directory-dependencies-db--uploads) — Anchoring relative paths to root.
 - [2.5 Race Conditions in Resume Count & Default Status](#25-race-conditions-in-resume-count--default-status) — Concurrent resume updates.
+- [6.6 Saved Jobs Design Decisions to Confirm](#66-saved-jobs-design-decisions-to-confirm) — Applicant-only saving, closed jobs, and where the Saved Jobs tab lives.
 
 ---
 
@@ -91,6 +97,13 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
    - [5.9 Top Navbar Layout & UI Consistency [FIXED]](#59-top-navbar-layout--ui-consistency-fixed)
    - [5.10 Pagination & Multi-Page Search Results [FIXED]](#510-pagination--multi-page-search-results-fixed)
    - [5.11 Page Separation & URL-Based Routing (/dashboard, /jobs) [FIXED]](#511-page-separation--url-based-routing-dashboard-jobs-fixed)
+6. [Saved Jobs (US-05) Known Gaps](#6-saved-jobs-us-05-known-gaps)
+   - [6.1 No Bookmark on the Full Job Posting Page](#61-no-bookmark-on-the-full-job-posting-page)
+   - [6.2 Saved Jobs E2E Tests Not Run in CI](#62-saved-jobs-e2e-tests-not-run-in-ci)
+   - [6.3 Saved Jobs Not Verified Against PostgreSQL](#63-saved-jobs-not-verified-against-postgresql)
+   - [6.4 `getCurrentUser` Bypasses `API_BASE_URL`](#64-getcurrentuser-bypasses-api_base_url)
+   - [6.5 `make seed-reset` Fails Once Jobs Have Applications](#65-make-seed-reset-fails-once-jobs-have-applications)
+   - [6.6 Saved Jobs Design Decisions to Confirm](#66-saved-jobs-design-decisions-to-confirm)
 
 ---
 
@@ -734,3 +747,83 @@ Non-blocking improvements, defense-in-depth enhancements, and codebase hygiene:
   Routing was managed via internal state without updating browser URLs, breaking back/forward buttons, sharing, and bookmarking.
 - **Where to fix**:
   - Resolved in `src/frontend/src/App.jsx`, `Navbar.jsx`, and `JobSearchPageNavbar.jsx`
+
+---
+
+## 6. Saved Jobs (US-05) Known Gaps
+
+Saved Jobs shipped in Sprint 4 as three tasks: #237 (US-05.01 Backend & DB), #238 (US-05.02 Testing), and #239 (US-05.03 Frontend). Every acceptance criterion and listed task in those issues is done. The items below are outside what the issues asked for, or are things found while building the feature.
+
+### 6.1 No Bookmark on the Full Job Posting Page
+- **Task**: #239 (US-05.03)
+- **Issue**:
+  The bookmark icon appears on job cards and in the preview panel of the job browsing page (`/jobs`), as #239 requires. The full posting page (`/jobs/:id`) has no bookmark, so a user who opens a job from the Saved Jobs tab cannot unsave it from there.
+- **Where to fix**:
+  - `src/frontend/src/components/JobDetailPage.jsx`
+- **The Fix**:
+  1. Load the saved state with `getSavedJobIds` (or check a single job) from `src/frontend/src/api/savedJobs.js`.
+  2. Render `BookmarkButton` next to the job title for applicants only, using `saveJob` / `unsaveJob` the same way `JobSearchPage.jsx` does.
+
+---
+
+### 6.2 Saved Jobs E2E Tests Not Run in CI
+- **Task**: #238 (US-05.02)
+- **Issue**:
+  The Playwright tests in `src/frontend/e2e/saved-jobs.spec.js` only run locally (`make e2e`). The CI pipeline runs PyTest and the frontend build but not E2E tests, so a pull request can break the saved-jobs UI without CI noticing.
+- **Where to fix**:
+  - `.github/workflows/ci.yml`
+- **The Fix**:
+  1. Add an `e2e` job that installs uv, Python, and Node, then runs `uv sync`, `npm ci`, and `npx playwright install --with-deps chromium` in `src/frontend`.
+  2. Run `npm run test:e2e` with `CI=true` and `JWT_SECRET_KEY` set. `playwright.config.js` already starts its own backend (port 8010, throwaway SQLite DB, `AI_MOCK_MODE=true`) and frontend (port 5180).
+  3. Upload `src/frontend/playwright-report/` as an artifact when the job fails.
+
+---
+
+### 6.3 Saved Jobs Not Verified Against PostgreSQL
+- **Task**: #237 (US-05.01)
+- **Issue**:
+  The `SavedJob` table, its `uq_saved_job_user_job` unique constraint, and the duplicate-save handling (`IntegrityError` → HTTP 409) were only tested on SQLite. Production uses Neon PostgreSQL. The table is created by `SQLModel.metadata.create_all` on startup, so no migration is needed, but nobody has run it against PostgreSQL yet.
+- **Where to fix**:
+  - Deployment check; optionally `tests/conftest.py` to allow a PostgreSQL `DATABASE_URL` in CI.
+- **The Fix**:
+  1. After deploying, confirm the `savedjob` table exists and save/unsave a job in production.
+  2. Optionally add a CI job with a PostgreSQL service container that runs `tests/test_saved_jobs.py`.
+
+---
+
+### 6.4 `getCurrentUser` Bypasses `API_BASE_URL`
+- **Task**: Pre-existing; found during #238 (US-05.02)
+- **Issue**:
+  `getCurrentUser` in `src/frontend/src/api/auth.js` calls `fetch('/api/auth/me')` with a relative URL, while every other API call uses `API_BASE_URL`. Locally this only works because the Vite dev proxy forwards `/api` to port 8000. In production (Vercel) there is no proxy, so the request goes to the frontend origin and fails. The failure is swallowed, so the user's recruiter flag is never re-synced from the server.
+  During E2E runs the same call reached the dev backend instead of the test backend. As a workaround, the proxy target in `src/frontend/vite.config.js` now follows `VITE_API_BASE_URL` when it is set.
+- **Where to fix**:
+  - `src/frontend/src/api/auth.js` (`getCurrentUser`)
+- **The Fix**:
+  1. Change the call to ``fetch(`${API_BASE_URL}/api/auth/me`, ...)``, matching the other API modules.
+  2. The proxy override in `vite.config.js` can stay; it is harmless once all calls use `API_BASE_URL`.
+
+---
+
+### 6.5 `make seed-reset` Fails Once Jobs Have Applications
+- **Task**: Pre-existing; found during #237 (US-05.01)
+- **Issue**:
+  `utility/seedjobs.py --reset` hard-deletes every `Job`. As part of #237 it now deletes `SavedJob` rows first, so bookmarks no longer block it. But it still crashes with an `IntegrityError` as soon as any job has an `Application` (reproduced locally). `JobViewLog`, `JobSuggestion`, and `InterviewSession` rows that reference jobs block it in the same way.
+- **Where to fix**:
+  - `utility/seedjobs.py` (`seed_jobs`)
+- **The Fix**:
+  1. Before deleting jobs, delete rows from every table with a foreign key to `job.id`. Delete `InterviewSessionMessage` before `InterviewSession`, then `Application`, `JobViewLog`, `JobSuggestion`, and `SavedJob`.
+  2. Alternatively, have `--reset` drop and recreate all tables, since it is a development-only tool.
+
+---
+
+### 6.6 Saved Jobs Design Decisions to Confirm
+- **Task**: #237 (US-05.01), #239 (US-05.03)
+- **Issue**:
+  These choices were made where the issues did not say exactly what to do. Each one meets the acceptance criteria as written, but the team should confirm them:
+  1. **Only applicants can save jobs.** #237 says "users can bookmark any job posting". Recruiters get `403 Forbidden` from `/api/saved-jobs`, matching how applying to jobs works, and see no bookmark icons.
+  2. **Closed jobs cannot be newly saved.** `POST /api/saved-jobs/{job_id}` returns `404` for inactive postings. A job closed after it was saved stays in the list with a "Closed" badge and can still be removed.
+  3. **The Saved Jobs tab is on the dashboard.** #239 says "a 'Saved Jobs' tab in the user's profile". The app has no separate profile page; the profile section lives on `/dashboard`, so the tab sits there next to "My Applications".
+- **Where to fix** (if the team decides otherwise):
+  - Point 1: swap `get_current_applicant` for `get_current_user` in `src/backend/routers/saved_jobs.py`, and drop the `!isRecruiter` checks in `JobSearchPage.jsx`.
+  - Point 2: remove the `is_active` check in `save_job` in `src/backend/routers/saved_jobs.py`.
+  - Point 3: move `SavedJobsSection` into whichever page becomes the profile page.

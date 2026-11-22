@@ -261,6 +261,8 @@ function App() {
           token={token}
           onLogout={handleLogout}
           onViewAnalytics={() => navigate('/analytics')}
+          onViewJob={(jobId) => navigate(`/jobs/${jobId}`)}
+          onBrowseJobs={() => navigate('/jobs')}
         />
       )
     }
