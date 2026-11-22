@@ -15,7 +15,7 @@ if str(SRC_DIR) not in sys.path:
 import bcrypt
 from sqlmodel import Session, select
 from backend.database import engine, init_db
-from backend.models import User, Profile, Job, JobType, JobSchedule
+from backend.models import User, Profile, Job, JobType, JobSchedule, SavedJob
 
 DEMO_RECRUITER_EMAIL = "recruiter@careerconnect.com"
 DEMO_RECRUITER_PASSWORD = "Password123!"
@@ -318,6 +318,9 @@ def seed_jobs(reset: bool = False):
     with Session(engine) as session:
         if reset:
             print("Resetting existing job postings...")
+            # Saved-job bookmarks reference jobs, so clear them first
+            for saved in session.exec(select(SavedJob)).all():
+                session.delete(saved)
             existing_jobs = session.exec(select(Job)).all()
             for job in existing_jobs:
                 session.delete(job)

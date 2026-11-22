@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: dev backend-dev backend frontend-dev frontend test tests seed seed-reset
+.PHONY: dev backend-dev backend frontend-dev frontend test tests e2e seed seed-reset
 
 # Run both backend and frontend concurrently
 dev:
@@ -23,6 +23,11 @@ test:
 	uv run pytest tests/ -v
 
 tests: test
+
+# Run frontend end-to-end tests (Playwright starts its own backend + frontend on ports 8010 / 5180)
+# First time only: npx --prefix src/frontend playwright install chromium
+e2e:
+	npm --prefix src/frontend run test:e2e
 
 # Seed database
 seed:

@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import JobSearchPageNavbar from './JobSearchPageNavbar'
 import ApplicationStatusBadge from './ApplicationStatusBadge'
 import MarkdownView from './MarkdownView'
+import BookmarkButton from './BookmarkButton'
 import { getMyApplications } from '../api/applications'
 import { recordJobView } from '../api/jobs'
+import { getSavedJobIds, saveJob, unsaveJob } from '../api/savedJobs'
 
 function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onViewJob, onApplyJob, isRecruiter = false }) {
     const [jobs, setJobs] = useState([])
@@ -11,6 +13,9 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
     const [selectedJob, setSelectedJob] = useState(null)
     const [pagination, setPagination] = useState(null)
     const [statusByJobId, setStatusByJobId] = useState({})
+    const [savedJobIds, setSavedJobIds] = useState(() => new Set())
+    const [pendingSaveIds, setPendingSaveIds] = useState(() => new Set())
+    const [saveError, setSaveError] = useState('')
     const selectedStatus = selectedJob ? statusByJobId[selectedJob.id] : null
 
     useEffect(() => {
@@ -25,10 +30,44 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
             })
             .catch(() => {})
 
+        getSavedJobIds(token)
+            .then((ids) => {
+                if (active) setSavedJobIds(new Set(ids))
+            })
+            .catch(() => {})
+
         return () => {
             active = false
         }
     }, [token, isRecruiter])
+
+    function setIdInSet(setter, id, present) {
+        setter((prev) => {
+            const next = new Set(prev)
+            if (present) next.add(id)
+            else next.delete(id)
+            return next
+        })
+    }
+
+    async function handleToggleSaved(jobId) {
+        if (pendingSaveIds.has(jobId)) return
+        const wasSaved = savedJobIds.has(jobId)
+
+        // Optimistic update, rolled back if the request fails
+        setSaveError('')
+        setIdInSet(setSavedJobIds, jobId, !wasSaved)
+        setIdInSet(setPendingSaveIds, jobId, true)
+        try {
+            if (wasSaved) await unsaveJob(token, jobId)
+            else await saveJob(token, jobId)
+        } catch (err) {
+            setIdInSet(setSavedJobIds, jobId, wasSaved)
+            setSaveError(err.message)
+        } finally {
+            setIdInSet(setPendingSaveIds, jobId, false)
+        }
+    }
 
     function handleSelectJob(job) {
         setSelectedJob(job)
@@ -67,6 +106,9 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
             />
             <div className="mx-auto flex max-w-5xl gap-6 px-4 py-8">
                 <div className="flex flex-col gap-3">
+                    {saveError && (
+                        <p role="alert" className="w-100 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{saveError}</p>
+                    )}
                     {!hasLoaded && (
                         <p className="text-sm text-gray-500">Loading jobs…</p>
                     )}
@@ -74,11 +116,11 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
                         <p className="text-sm text-gray-500">No jobs found matching your search.</p>
                     )}
                     {jobs.map((job) => (
+                        <div key={job.id} className="relative" data-testid="job-card">
                         <button
-                            key={job.id}
                             type="button"
                             onClick={() => handleSelectJob(job)}
-                            className={`group block w-100 rounded-xl border p-4 text-left transition hover:border-purple-300 hover:shadow-xs ${
+                            className={`group block w-100 rounded-xl border p-4 pr-12 text-left transition hover:border-purple-300 hover:shadow-xs ${
                                 selectedJob?.id === job.id
                                     ? 'border-purple-500 bg-purple-50/30'
                                     : 'border-gray-200 bg-white'
@@ -94,6 +136,15 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
                                 </div>
                             )}
                         </button>
+                        {!isRecruiter && (
+                            <BookmarkButton
+                                isSaved={savedJobIds.has(job.id)}
+                                disabled={pendingSaveIds.has(job.id)}
+                                onToggle={() => handleToggleSaved(job.id)}
+                                className="absolute right-3 top-3"
+                            />
+                        )}
+                        </div>
                     ))}
 
                     {/* Pagination Controls */}
@@ -178,6 +229,14 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
                                         </div>
                                     )}
                                 </div>
+                                <div className="flex shrink-0 items-center gap-1">
+                                {!isRecruiter && (
+                                    <BookmarkButton
+                                        isSaved={savedJobIds.has(selectedJob.id)}
+                                        disabled={pendingSaveIds.has(selectedJob.id)}
+                                        onToggle={() => handleToggleSaved(selectedJob.id)}
+                                    />
+                                )}
                                 <a
                                     href={`/jobs/${selectedJob.id}`}
                                     onClick={(e) => {
@@ -192,6 +251,7 @@ function JobSearchPage({ token, onLogout, isLoggingOut, onNavigateDashboard, onV
                                     </svg>
                                     Expand
                                 </a>
+                                </div>
                             </div>
                             <p className="mt-2 text-sm text-gray-600">{selectedJob.location}</p>
                             <p className="text-sm text-gray-600">Category: {selectedJob.category}</p>
