@@ -602,7 +602,13 @@ def apply_to_job(
             )
         target_resume_id = default_resume.id
 
-    cover_letter = payload.cover_letter if payload else None
+    if payload and payload.cover_letter is not None:
+        raise HTTPException(
+            status_code=status.HTTP_418_IM_A_TEAPOT,
+            detail="I'm a teapot! (more seriously, we don't support cover letters)",
+        )
+
+    cover_letter = None
 
     profile = current_user.profile
     if payload and payload.links is not None:
