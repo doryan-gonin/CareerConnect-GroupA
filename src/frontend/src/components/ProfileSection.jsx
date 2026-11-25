@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import MarkdownEditor from './MarkdownEditor'
+import MarkdownView from './MarkdownView'
 import {
   getProfile,
   updateProfile,
@@ -37,6 +39,10 @@ function ProfileSection({ token }) {
   const [fluencyLevel, setFluencyLevel] = useState('Fluent')
   const [eduForm, setEduForm] = useState({ institution: '', degree: '', field_of_study: '', start_date: '', end_date: '', description: '' })
   const [expForm, setExpForm] = useState({ company_name: '', job_title: '', start_date: '', end_date: '', description: '' })
+  const [showAddLink, setShowAddLink] = useState(false)
+  const [showAddLanguage, setShowAddLanguage] = useState(false)
+  const [showAddEducation, setShowAddEducation] = useState(false)
+  const [showAddExperience, setShowAddExperience] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -107,6 +113,7 @@ function ProfileSection({ token }) {
     try {
       await addProfileLink(token, { link_type: linkType, url: linkUrl })
       setLinkUrl('')
+      setShowAddLink(false)
       await refreshProfile()
       setSuccess('Link added.')
     } catch (err) {
@@ -131,6 +138,7 @@ function ProfileSection({ token }) {
     try {
       await addProfileLanguage(token, { language: languageName, fluency_level: fluencyLevel })
       setLanguageName('')
+      setShowAddLanguage(false)
       await refreshProfile()
       setSuccess('Language added.')
     } catch (err) {
@@ -161,6 +169,7 @@ function ProfileSection({ token }) {
         description: eduForm.description || null,
       })
       setEduForm({ institution: '', degree: '', field_of_study: '', start_date: '', end_date: '', description: '' })
+      setShowAddEducation(false)
       await refreshProfile()
       setSuccess('Education added.')
     } catch (err) {
@@ -190,6 +199,7 @@ function ProfileSection({ token }) {
         description: expForm.description || null,
       })
       setExpForm({ company_name: '', job_title: '', start_date: '', end_date: '', description: '' })
+      setShowAddExperience(false)
       await refreshProfile()
       setSuccess('Experience added.')
     } catch (err) {
@@ -313,7 +323,18 @@ function ProfileSection({ token }) {
         <div className="mt-6 space-y-6 border-t border-gray-100 pt-6 text-sm">
           {/* Professional Links */}
           <div>
-            <h3 className="font-medium text-gray-900">Professional Links</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium text-gray-900">Professional Links</h3>
+              {(profile.links || []).length < 3 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAddLink((prev) => !prev)}
+                  className="text-xs font-medium text-purple-600 hover:text-purple-700"
+                >
+                  {showAddLink ? 'Cancel' : '+ Add'}
+                </button>
+              )}
+            </div>
             <ul className="mt-2 space-y-2">
               {(profile.links || []).map((link) => (
                 <li key={link.id} className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2">
@@ -329,7 +350,7 @@ function ProfileSection({ token }) {
                 </li>
               ))}
             </ul>
-            {(profile.links || []).length < 3 && (
+            {showAddLink && (profile.links || []).length < 3 && (
               <form onSubmit={handleAddLink} className="mt-2 flex flex-wrap gap-2">
                 <select
                   value={linkType}
@@ -362,7 +383,16 @@ function ProfileSection({ token }) {
 
           {/* Languages */}
           <div>
-            <h3 className="font-medium text-gray-900">Languages</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium text-gray-900">Languages</h3>
+              <button
+                type="button"
+                onClick={() => setShowAddLanguage((prev) => !prev)}
+                className="text-xs font-medium text-purple-600 hover:text-purple-700"
+              >
+                {showAddLanguage ? 'Cancel' : '+ Add'}
+              </button>
+            </div>
             <ul className="mt-2 space-y-2">
               {(profile.languages || []).map((lang) => (
                 <li key={lang.id} className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2">
@@ -375,7 +405,8 @@ function ProfileSection({ token }) {
                 </li>
               ))}
             </ul>
-            <form onSubmit={handleAddLanguage} className="mt-2 flex flex-wrap gap-2">
+            {showAddLanguage && (
+              <form onSubmit={handleAddLanguage} className="mt-2 flex flex-wrap gap-2">
               <input
                 type="text"
                 required
@@ -397,11 +428,21 @@ function ProfileSection({ token }) {
                 Add Language
               </button>
             </form>
+            )}
           </div>
 
           {/* Education */}
           <div>
-            <h3 className="font-medium text-gray-900">Education & Diplomas</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium text-gray-900">Education & Diplomas</h3>
+              <button
+                type="button"
+                onClick={() => setShowAddEducation((prev) => !prev)}
+                className="text-xs font-medium text-purple-600 hover:text-purple-700"
+              >
+                {showAddEducation ? 'Cancel' : '+ Add'}
+              </button>
+            </div>
             <ul className="mt-2 space-y-2">
               {(profile.education || []).map((edu) => (
                 <li key={edu.id} className="flex items-start justify-between rounded-md bg-gray-50 px-3 py-2">
@@ -415,7 +456,8 @@ function ProfileSection({ token }) {
                 </li>
               ))}
             </ul>
-            <form onSubmit={handleAddEducation} className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {showAddEducation && (
+              <form onSubmit={handleAddEducation} className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <input
                 type="text"
                 required
@@ -457,17 +499,32 @@ function ProfileSection({ token }) {
                 Add Education
               </button>
             </form>
+            )}
           </div>
 
           {/* Work Experience */}
           <div>
-            <h3 className="font-medium text-gray-900">Work Experience</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium text-gray-900">Work Experience</h3>
+              <button
+                type="button"
+                onClick={() => setShowAddExperience((prev) => !prev)}
+                className="text-xs font-medium text-purple-600 hover:text-purple-700"
+              >
+                {showAddExperience ? 'Cancel' : '+ Add'}
+              </button>
+            </div>
             <ul className="mt-2 space-y-2">
               {(profile.experience || []).map((exp) => (
                 <li key={exp.id} className="flex items-start justify-between rounded-md bg-gray-50 px-3 py-2">
-                  <div>
+                  <div className="space-y-1">
                     <p className="font-medium text-gray-800">{exp.job_title} at {exp.company_name}</p>
                     <p className="text-xs text-gray-600">{exp.start_date || '?'} – {exp.end_date || 'Present'}</p>
+                    {exp.description && (
+                      <div className="text-xs text-gray-700">
+                        <MarkdownView content={exp.description} />
+                      </div>
+                    )}
                   </div>
                   <button type="button" onClick={() => handleDeleteExperience(exp.id)} className="text-xs text-red-600 hover:underline">
                     Remove
@@ -475,7 +532,8 @@ function ProfileSection({ token }) {
                 </li>
               ))}
             </ul>
-            <form onSubmit={handleAddExperience} className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {showAddExperience && (
+              <form onSubmit={handleAddExperience} className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <input
                 type="text"
                 required
@@ -506,10 +564,18 @@ function ProfileSection({ token }) {
                   className="w-1/2 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
                 />
               </div>
+              <div className="sm:col-span-2">
+                <MarkdownEditor
+                  value={expForm.description}
+                  onChange={(val) => setExpForm({ ...expForm, description: val })}
+                  placeholder="Describe your responsibilities and achievements (Markdown supported)..."
+                />
+              </div>
               <button type="submit" className="sm:col-span-2 rounded-md bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700">
                 Add Experience
               </button>
             </form>
+            )}
           </div>
         </div>
       )}
