@@ -443,6 +443,9 @@ useEffect(() => {
           )}
         </div>
 
+        
+        )}
+
         <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3 text-sm">
           <h3 className="font-medium text-gray-900">Autofilled Profile Details (for this application)</h3>
           <div>
@@ -482,9 +485,6 @@ useEffect(() => {
             ))}
           </div>
         </div>
-
-        
-        )}
 {checkingApplication ? (
   <p className="text-center text-sm text-gray-500">
     Checking application status...
