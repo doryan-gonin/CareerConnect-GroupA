@@ -94,7 +94,7 @@ class TestNotificationTriggers:
         # Applicant applies to job
         apply_res = client.post(
             f"/api/jobs/{job.id}/apply",
-            json={"resume_id": resume_id, "cover_letter": "I would love to join!"},
+            json={"resume_id": resume_id},
             headers=applicant_headers,
         )
         assert apply_res.status_code == 201
