@@ -1,6 +1,7 @@
 import { getMyApplications } from '../api/applications'
 import { getCurrentUser } from '../api/auth'
 import { useEffect, useRef, useState } from 'react'
+import MarkdownEditor from './MarkdownEditor'
 import {
   getProfile,
   getResumes,
@@ -637,17 +638,17 @@ useEffect(() => {
                   placeholder="Company Name"
                   className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
                 />
-                <textarea
-                  rows={2}
-                  value={ex.description || ''}
-                  onChange={(e) => {
-                    const next = [...appExperience]
-                    next[idx] = { ...next[idx], description: e.target.value }
-                    setAppExperience(next)
-                  }}
-                  placeholder="Description (optional)"
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none sm:col-span-2"
-                />
+                <div className="sm:col-span-2">
+                  <MarkdownEditor
+                    value={ex.description || ''}
+                    onChange={(val) => {
+                      const next = [...appExperience]
+                      next[idx] = { ...next[idx], description: val }
+                      setAppExperience(next)
+                    }}
+                    placeholder="Description (optional, Markdown supported)"
+                  />
+                </div>
                 <div className="flex items-center justify-between sm:col-span-2">
                   <span className="text-xs text-gray-500">{ex.start_date || '?'} – {ex.end_date || 'Present'}</span>
                   <button
