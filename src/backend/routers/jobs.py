@@ -604,11 +604,66 @@ def apply_to_job(
 
     cover_letter = payload.cover_letter if payload else None
 
+    profile = current_user.profile
+    if payload and payload.links is not None:
+        links_snapshot = payload.links
+    elif profile:
+        links_snapshot = [{"link_type": l.link_type.value, "url": l.url} for l in profile.links]
+    else:
+        links_snapshot = []
+
+    if payload and payload.languages is not None:
+        languages_snapshot = payload.languages
+    elif profile:
+        languages_snapshot = [
+            {"language": l.language, "fluency_level": l.fluency_level.value}
+            for l in profile.languages
+        ]
+    else:
+        languages_snapshot = []
+
+    if payload and payload.education is not None:
+        education_snapshot = payload.education
+    elif profile:
+        education_snapshot = [
+            {
+                "institution": e.institution,
+                "degree": e.degree,
+                "field_of_study": e.field_of_study,
+                "start_date": e.start_date.isoformat() if e.start_date else None,
+                "end_date": e.end_date.isoformat() if e.end_date else None,
+                "description": e.description,
+            }
+            for e in profile.education
+        ]
+    else:
+        education_snapshot = []
+
+    if payload and payload.experience is not None:
+        experience_snapshot = payload.experience
+    elif profile:
+        experience_snapshot = [
+            {
+                "company_name": ex.company_name,
+                "job_title": ex.job_title,
+                "start_date": ex.start_date.isoformat() if ex.start_date else None,
+                "end_date": ex.end_date.isoformat() if ex.end_date else None,
+                "description": ex.description,
+            }
+            for ex in profile.experience
+        ]
+    else:
+        experience_snapshot = []
+
     application = Application(
         job_id=job_id,
         applicant_id=current_user.id,
         resume_id=target_resume_id,
         cover_letter=cover_letter,
+        links=links_snapshot,
+        languages=languages_snapshot,
+        education=education_snapshot,
+        experience=experience_snapshot,
         status=ApplicationStatus.APPLIED,
     )
     session.add(application)
@@ -630,6 +685,10 @@ def apply_to_job(
         applicant_id=application.applicant_id,
         resume_id=application.resume_id,
         cover_letter=application.cover_letter,
+        links=application.links,
+        languages=application.languages,
+        education=application.education,
+        experience=application.experience,
         status=application.status,
         applied_at=application.applied_at,
         updated_at=application.updated_at,
