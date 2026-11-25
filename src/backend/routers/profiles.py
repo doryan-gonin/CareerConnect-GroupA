@@ -11,7 +11,26 @@ from fastapi.responses import FileResponse
 from sqlmodel import Session, select
 
 from backend.database import get_session
-from backend.models import User, Profile, Resume, ProfileUpdate, ProfileResponse, ResumeReponse
+from backend.models import (
+    User,
+    Profile,
+    ProfileLink,
+    ProfileLanguage,
+    ProfileEducation,
+    ProfileExperience,
+    Resume,
+    ProfileUpdate,
+    ProfileResponse,
+    ProfileLinkCreate,
+    ProfileLinkResponse,
+    ProfileLanguageCreate,
+    ProfileLanguageResponse,
+    ProfileEducationCreate,
+    ProfileEducationResponse,
+    ProfileExperienceCreate,
+    ProfileExperienceResponse,
+    ResumeReponse,
+)
 from backend.dependencies import get_current_user, get_current_applicant
 from backend.config import UPLOAD_DIR
 
@@ -48,6 +67,190 @@ def update_profile(payload: ProfileUpdate, current_user: Annotated[User, Depends
     session.commit()
     session.refresh(profile)
     return profile
+
+
+# ----------------
+# PROFILE LINKS, LANGUAGES, EDUCATION, EXPERIENCE
+# ----------------
+
+@router.post("/me/links", response_model=ProfileLinkResponse, status_code=status.HTTP_201_CREATED)
+def add_profile_link(
+    payload: ProfileLinkCreate,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    profile = get_or_create_profile(current_user.id, session)
+    existing = session.exec(
+        select(ProfileLink).where(
+            ProfileLink.profile_id == profile.id,
+            ProfileLink.link_type == payload.link_type,
+        )
+    ).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"A {payload.link_type.value} link already exists on this profile.",
+        )
+
+    link = ProfileLink(profile_id=profile.id, link_type=payload.link_type, url=payload.url)
+    profile.last_updated = datetime.now(timezone.utc)
+    session.add(link)
+    session.add(profile)
+    session.commit()
+    session.refresh(link)
+    return link
+
+
+@router.delete("/me/links/{link_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_profile_link(
+    link_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    profile = get_or_create_profile(current_user.id, session)
+    link = session.exec(
+        select(ProfileLink).where(ProfileLink.id == link_id, ProfileLink.profile_id == profile.id)
+    ).first()
+    if not link:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Link not found.")
+
+    profile.last_updated = datetime.now(timezone.utc)
+    session.delete(link)
+    session.add(profile)
+    session.commit()
+
+
+@router.post("/me/languages", response_model=ProfileLanguageResponse, status_code=status.HTTP_201_CREATED)
+def add_profile_language(
+    payload: ProfileLanguageCreate,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    profile = get_or_create_profile(current_user.id, session)
+    lang = ProfileLanguage(
+        profile_id=profile.id,
+        language=payload.language,
+        fluency_level=payload.fluency_level,
+    )
+    profile.last_updated = datetime.now(timezone.utc)
+    session.add(lang)
+    session.add(profile)
+    session.commit()
+    session.refresh(lang)
+    return lang
+
+
+@router.delete("/me/languages/{language_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_profile_language(
+    language_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    profile = get_or_create_profile(current_user.id, session)
+    lang = session.exec(
+        select(ProfileLanguage).where(
+            ProfileLanguage.id == language_id,
+            ProfileLanguage.profile_id == profile.id,
+        )
+    ).first()
+    if not lang:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Language not found.")
+
+    profile.last_updated = datetime.now(timezone.utc)
+    session.delete(lang)
+    session.add(profile)
+    session.commit()
+
+
+@router.post("/me/education", response_model=ProfileEducationResponse, status_code=status.HTTP_201_CREATED)
+def add_profile_education(
+    payload: ProfileEducationCreate,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    profile = get_or_create_profile(current_user.id, session)
+    edu = ProfileEducation(
+        profile_id=profile.id,
+        institution=payload.institution,
+        degree=payload.degree,
+        field_of_study=payload.field_of_study,
+        start_date=payload.start_date,
+        end_date=payload.end_date,
+        description=payload.description,
+    )
+    profile.last_updated = datetime.now(timezone.utc)
+    session.add(edu)
+    session.add(profile)
+    session.commit()
+    session.refresh(edu)
+    return edu
+
+
+@router.delete("/me/education/{education_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_profile_education(
+    education_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    profile = get_or_create_profile(current_user.id, session)
+    edu = session.exec(
+        select(ProfileEducation).where(
+            ProfileEducation.id == education_id,
+            ProfileEducation.profile_id == profile.id,
+        )
+    ).first()
+    if not edu:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Education entry not found.")
+
+    profile.last_updated = datetime.now(timezone.utc)
+    session.delete(edu)
+    session.add(profile)
+    session.commit()
+
+
+@router.post("/me/experience", response_model=ProfileExperienceResponse, status_code=status.HTTP_201_CREATED)
+def add_profile_experience(
+    payload: ProfileExperienceCreate,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    profile = get_or_create_profile(current_user.id, session)
+    exp = ProfileExperience(
+        profile_id=profile.id,
+        company_name=payload.company_name,
+        job_title=payload.job_title,
+        start_date=payload.start_date,
+        end_date=payload.end_date,
+        description=payload.description,
+    )
+    profile.last_updated = datetime.now(timezone.utc)
+    session.add(exp)
+    session.add(profile)
+    session.commit()
+    session.refresh(exp)
+    return exp
+
+
+@router.delete("/me/experience/{experience_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_profile_experience(
+    experience_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    profile = get_or_create_profile(current_user.id, session)
+    exp = session.exec(
+        select(ProfileExperience).where(
+            ProfileExperience.id == experience_id,
+            ProfileExperience.profile_id == profile.id,
+        )
+    ).first()
+    if not exp:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Experience entry not found.")
+
+    profile.last_updated = datetime.now(timezone.utc)
+    session.delete(exp)
+    session.add(profile)
+    session.commit()
 
 
 # ----------------
