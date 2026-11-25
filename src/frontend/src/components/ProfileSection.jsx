@@ -43,6 +43,7 @@ function ProfileSection({ token }) {
   const [showAddLanguage, setShowAddLanguage] = useState(false)
   const [showAddEducation, setShowAddEducation] = useState(false)
   const [showAddExperience, setShowAddExperience] = useState(false)
+  const [expandedExpIds, setExpandedExpIds] = useState({})
 
   useEffect(() => {
     let isMounted = true
@@ -521,8 +522,21 @@ function ProfileSection({ token }) {
                     <p className="font-medium text-gray-800">{exp.job_title} at {exp.company_name}</p>
                     <p className="text-xs text-gray-600">{exp.start_date || '?'} – {exp.end_date || 'Present'}</p>
                     {exp.description && (
-                      <div className="text-xs text-gray-700">
-                        <MarkdownView content={exp.description} />
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedExpIds((prev) => ({ ...prev, [exp.id]: !prev[exp.id] }))
+                          }
+                          className="text-xs font-medium text-purple-600 hover:underline"
+                        >
+                          {expandedExpIds[exp.id] ? 'Hide description' : 'Show description'}
+                        </button>
+                        {expandedExpIds[exp.id] && (
+                          <div className="mt-1 text-xs text-gray-700">
+                            <MarkdownView content={exp.description} />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
