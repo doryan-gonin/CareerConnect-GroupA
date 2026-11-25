@@ -69,6 +69,89 @@ export async function updateProfile(token, { firstName, lastName }) {
   return body
 }
 
+async function profileSubResourceRequest(path, token, options = {}, fallbackError = 'Request failed.') {
+  let response
+  try {
+    response = await fetch(`${API_BASE_URL}/api/profiles/me${path}`, {
+      ...options,
+      headers: {
+        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+        Authorization: `Bearer ${token}`,
+        ...options.headers,
+      },
+    })
+  } catch {
+    throw new Error('Could not reach the server. Is the backend running?')
+  }
+
+  if (response.status === 204) return null
+
+  let body = null
+  try {
+    body = await response.json()
+  } catch {
+    // ignore
+  }
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(body, fallbackError))
+  }
+
+  return body
+}
+
+export function addProfileLink(token, { link_type, url }) {
+  return profileSubResourceRequest(
+    '/links',
+    token,
+    { method: 'POST', body: JSON.stringify({ link_type, url }) },
+    'Failed to add link.'
+  )
+}
+
+export function deleteProfileLink(token, linkId) {
+  return profileSubResourceRequest(`/links/${linkId}`, token, { method: 'DELETE' }, 'Failed to delete link.')
+}
+
+export function addProfileLanguage(token, { language, fluency_level }) {
+  return profileSubResourceRequest(
+    '/languages',
+    token,
+    { method: 'POST', body: JSON.stringify({ language, fluency_level }) },
+    'Failed to add language.'
+  )
+}
+
+export function deleteProfileLanguage(token, languageId) {
+  return profileSubResourceRequest(`/languages/${languageId}`, token, { method: 'DELETE' }, 'Failed to delete language.')
+}
+
+export function addProfileEducation(token, payload) {
+  return profileSubResourceRequest(
+    '/education',
+    token,
+    { method: 'POST', body: JSON.stringify(payload) },
+    'Failed to add education.'
+  )
+}
+
+export function deleteProfileEducation(token, educationId) {
+  return profileSubResourceRequest(`/education/${educationId}`, token, { method: 'DELETE' }, 'Failed to delete education.')
+}
+
+export function addProfileExperience(token, payload) {
+  return profileSubResourceRequest(
+    '/experience',
+    token,
+    { method: 'POST', body: JSON.stringify(payload) },
+    'Failed to add experience.'
+  )
+}
+
+export function deleteProfileExperience(token, experienceId) {
+  return profileSubResourceRequest(`/experience/${experienceId}`, token, { method: 'DELETE' }, 'Failed to delete experience.')
+}
+
 export async function getResumes(token) {
   let response
   try {

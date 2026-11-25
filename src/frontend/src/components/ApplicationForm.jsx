@@ -29,6 +29,10 @@ function ApplicationForm({ token, job, onBack, onSubmitApplication }) {
   const [accountLoading, setAccountLoading] = useState(true)
   const [alreadyApplied, setAlreadyApplied] = useState(false)
   const [checkingApplication, setCheckingApplication] = useState(true)
+  const [appLinks, setAppLinks] = useState([])
+  const [appLanguages, setAppLanguages] = useState([])
+  const [appEducation, setAppEducation] = useState([])
+  const [appExperience, setAppExperience] = useState([])
 
   const profileName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ')
 
@@ -78,6 +82,10 @@ useEffect(() => {
 
       if (active) {
         setProfile(data)
+        setAppLinks(data.links || [])
+        setAppLanguages(data.languages || [])
+        setAppEducation(data.education || [])
+        setAppExperience(data.experience || [])
       }
     } catch (err) {
       if (active) {
@@ -250,6 +258,10 @@ useEffect(() => {
       await onSubmitApplication({
         job_id: job.id,
         resume_id: Number(selectedResumeId),
+        links: appLinks,
+        languages: appLanguages,
+        education: appEducation,
+        experience: appExperience,
       })
 
       setSuccess('Your application was submitted successfully!')
@@ -429,6 +441,46 @@ useEffect(() => {
               )}
             </div>
           )}
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3 text-sm">
+          <h3 className="font-medium text-gray-900">Autofilled Profile Details (for this application)</h3>
+          <div>
+            <p className="text-xs font-medium text-gray-600">Links ({appLinks.length})</p>
+            {appLinks.map((l, idx) => (
+              <div key={idx} className="mt-1 flex items-center justify-between gap-2">
+                <span className="truncate text-gray-800">{l.link_type}: {l.url}</span>
+                <button type="button" onClick={() => setAppLinks(appLinks.filter((_, i) => i !== idx))} className="text-xs text-red-600 hover:underline">Remove</button>
+              </div>
+            ))}
+          </div>
+          <div>
+            <p className="text-xs font-medium text-gray-600">Languages ({appLanguages.length})</p>
+            {appLanguages.map((l, idx) => (
+              <div key={idx} className="mt-1 flex items-center justify-between gap-2">
+                <span className="text-gray-800">{l.language} ({l.fluency_level})</span>
+                <button type="button" onClick={() => setAppLanguages(appLanguages.filter((_, i) => i !== idx))} className="text-xs text-red-600 hover:underline">Remove</button>
+              </div>
+            ))}
+          </div>
+          <div>
+            <p className="text-xs font-medium text-gray-600">Education ({appEducation.length})</p>
+            {appEducation.map((e, idx) => (
+              <div key={idx} className="mt-1 flex items-center justify-between gap-2">
+                <span className="text-gray-800">{e.degree} — {e.institution}</span>
+                <button type="button" onClick={() => setAppEducation(appEducation.filter((_, i) => i !== idx))} className="text-xs text-red-600 hover:underline">Remove</button>
+              </div>
+            ))}
+          </div>
+          <div>
+            <p className="text-xs font-medium text-gray-600">Experience ({appExperience.length})</p>
+            {appExperience.map((ex, idx) => (
+              <div key={idx} className="mt-1 flex items-center justify-between gap-2">
+                <span className="text-gray-800">{ex.job_title} at {ex.company_name}</span>
+                <button type="button" onClick={() => setAppExperience(appExperience.filter((_, i) => i !== idx))} className="text-xs text-red-600 hover:underline">Remove</button>
+              </div>
+            ))}
+          </div>
         </div>
 
         

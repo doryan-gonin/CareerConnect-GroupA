@@ -1,5 +1,24 @@
 import { useState, useEffect } from 'react'
-import { getProfile, updateProfile } from '../api/profiles'
+import {
+  getProfile,
+  updateProfile,
+  addProfileLink,
+  deleteProfileLink,
+  addProfileLanguage,
+  deleteProfileLanguage,
+  addProfileEducation,
+  deleteProfileEducation,
+  addProfileExperience,
+  deleteProfileExperience,
+} from '../api/profiles'
+
+const LINK_TYPES = [
+  { value: 'github', label: 'GitHub' },
+  { value: 'linkedin', label: 'LinkedIn' },
+  { value: 'personal_website', label: 'Personal Website' },
+]
+
+const FLUENCY_LEVELS = ['Basic', 'Intermediate', 'Fluent', 'Native']
 
 function ProfileSection({ token }) {
   const [profile, setProfile] = useState(null)
@@ -10,6 +29,14 @@ function ProfileSection({ token }) {
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  // Sub-resource form states
+  const [linkType, setLinkType] = useState('github')
+  const [linkUrl, setLinkUrl] = useState('')
+  const [languageName, setLanguageName] = useState('')
+  const [fluencyLevel, setFluencyLevel] = useState('Fluent')
+  const [eduForm, setEduForm] = useState({ institution: '', degree: '', field_of_study: '', start_date: '', end_date: '', description: '' })
+  const [expForm, setExpForm] = useState({ company_name: '', job_title: '', start_date: '', end_date: '', description: '' })
 
   useEffect(() => {
     let isMounted = true
@@ -66,6 +93,118 @@ function ProfileSection({ token }) {
     setLastName(profile?.last_name || '')
     setIsEditing(false)
     setError('')
+  }
+
+  async function refreshProfile() {
+    const data = await getProfile(token)
+    setProfile(data)
+  }
+
+  async function handleAddLink(e) {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+    try {
+      await addProfileLink(token, { link_type: linkType, url: linkUrl })
+      setLinkUrl('')
+      await refreshProfile()
+      setSuccess('Link added.')
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function handleDeleteLink(id) {
+    setError('')
+    try {
+      await deleteProfileLink(token, id)
+      await refreshProfile()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function handleAddLanguage(e) {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+    try {
+      await addProfileLanguage(token, { language: languageName, fluency_level: fluencyLevel })
+      setLanguageName('')
+      await refreshProfile()
+      setSuccess('Language added.')
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function handleDeleteLanguage(id) {
+    setError('')
+    try {
+      await deleteProfileLanguage(token, id)
+      await refreshProfile()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function handleAddEducation(e) {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+    try {
+      await addProfileEducation(token, {
+        ...eduForm,
+        field_of_study: eduForm.field_of_study || null,
+        start_date: eduForm.start_date || null,
+        end_date: eduForm.end_date || null,
+        description: eduForm.description || null,
+      })
+      setEduForm({ institution: '', degree: '', field_of_study: '', start_date: '', end_date: '', description: '' })
+      await refreshProfile()
+      setSuccess('Education added.')
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function handleDeleteEducation(id) {
+    setError('')
+    try {
+      await deleteProfileEducation(token, id)
+      await refreshProfile()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function handleAddExperience(e) {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+    try {
+      await addProfileExperience(token, {
+        ...expForm,
+        start_date: expForm.start_date || null,
+        end_date: expForm.end_date || null,
+        description: expForm.description || null,
+      })
+      setExpForm({ company_name: '', job_title: '', start_date: '', end_date: '', description: '' })
+      await refreshProfile()
+      setSuccess('Experience added.')
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function handleDeleteExperience(id) {
+    setError('')
+    try {
+      await deleteProfileExperience(token, id)
+      await refreshProfile()
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   return (
@@ -168,6 +307,211 @@ function ProfileSection({ token }) {
             </div>
           )}
         </dl>
+      )}
+
+      {!isLoading && profile && (
+        <div className="mt-6 space-y-6 border-t border-gray-100 pt-6 text-sm">
+          {/* Professional Links */}
+          <div>
+            <h3 className="font-medium text-gray-900">Professional Links</h3>
+            <ul className="mt-2 space-y-2">
+              {(profile.links || []).map((link) => (
+                <li key={link.id} className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2">
+                  <div>
+                    <span className="font-medium text-gray-700 capitalize">{link.link_type.replace('_', ' ')}: </span>
+                    <a href={link.url} target="_blank" rel="noreferrer" className="text-purple-600 hover:underline">
+                      {link.url}
+                    </a>
+                  </div>
+                  <button type="button" onClick={() => handleDeleteLink(link.id)} className="text-xs text-red-600 hover:underline">
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {(profile.links || []).length < 3 && (
+              <form onSubmit={handleAddLink} className="mt-2 flex flex-wrap gap-2">
+                <select
+                  value={linkType}
+                  onChange={(e) => setLinkType(e.target.value)}
+                  className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+                >
+                  {LINK_TYPES.map((lt) => {
+                    const taken = (profile.links || []).some((l) => l.link_type === lt.value)
+                    return (
+                      <option key={lt.value} value={lt.value} disabled={taken}>
+                        {lt.label}{taken ? ' (Added)' : ''}
+                      </option>
+                    )
+                  })}
+                </select>
+                <input
+                  type="url"
+                  required
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+                />
+                <button type="submit" className="rounded-md bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700">
+                  Add Link
+                </button>
+              </form>
+            )}
+          </div>
+
+          {/* Languages */}
+          <div>
+            <h3 className="font-medium text-gray-900">Languages</h3>
+            <ul className="mt-2 space-y-2">
+              {(profile.languages || []).map((lang) => (
+                <li key={lang.id} className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2">
+                  <span>
+                    <span className="font-medium text-gray-800">{lang.language}</span> — {lang.fluency_level}
+                  </span>
+                  <button type="button" onClick={() => handleDeleteLanguage(lang.id)} className="text-xs text-red-600 hover:underline">
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <form onSubmit={handleAddLanguage} className="mt-2 flex flex-wrap gap-2">
+              <input
+                type="text"
+                required
+                value={languageName}
+                onChange={(e) => setLanguageName(e.target.value)}
+                placeholder="e.g. English"
+                className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+              />
+              <select
+                value={fluencyLevel}
+                onChange={(e) => setFluencyLevel(e.target.value)}
+                className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+              >
+                {FLUENCY_LEVELS.map((lvl) => (
+                  <option key={lvl} value={lvl}>{lvl}</option>
+                ))}
+              </select>
+              <button type="submit" className="rounded-md bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700">
+                Add Language
+              </button>
+            </form>
+          </div>
+
+          {/* Education */}
+          <div>
+            <h3 className="font-medium text-gray-900">Education & Diplomas</h3>
+            <ul className="mt-2 space-y-2">
+              {(profile.education || []).map((edu) => (
+                <li key={edu.id} className="flex items-start justify-between rounded-md bg-gray-50 px-3 py-2">
+                  <div>
+                    <p className="font-medium text-gray-800">{edu.degree}{edu.field_of_study ? ` in ${edu.field_of_study}` : ''}</p>
+                    <p className="text-xs text-gray-600">{edu.institution} ({edu.start_date || '?'} – {edu.end_date || 'Present'})</p>
+                  </div>
+                  <button type="button" onClick={() => handleDeleteEducation(edu.id)} className="text-xs text-red-600 hover:underline">
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <form onSubmit={handleAddEducation} className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <input
+                type="text"
+                required
+                value={eduForm.institution}
+                onChange={(e) => setEduForm({ ...eduForm, institution: e.target.value })}
+                placeholder="Institution"
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+              />
+              <input
+                type="text"
+                required
+                value={eduForm.degree}
+                onChange={(e) => setEduForm({ ...eduForm, degree: e.target.value })}
+                placeholder="Degree / Diploma"
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+              />
+              <input
+                type="text"
+                value={eduForm.field_of_study}
+                onChange={(e) => setEduForm({ ...eduForm, field_of_study: e.target.value })}
+                placeholder="Field of study (optional)"
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+              />
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={eduForm.start_date}
+                  onChange={(e) => setEduForm({ ...eduForm, start_date: e.target.value })}
+                  className="w-1/2 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+                />
+                <input
+                  type="date"
+                  value={eduForm.end_date}
+                  onChange={(e) => setEduForm({ ...eduForm, end_date: e.target.value })}
+                  className="w-1/2 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+                />
+              </div>
+              <button type="submit" className="sm:col-span-2 rounded-md bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700">
+                Add Education
+              </button>
+            </form>
+          </div>
+
+          {/* Work Experience */}
+          <div>
+            <h3 className="font-medium text-gray-900">Work Experience</h3>
+            <ul className="mt-2 space-y-2">
+              {(profile.experience || []).map((exp) => (
+                <li key={exp.id} className="flex items-start justify-between rounded-md bg-gray-50 px-3 py-2">
+                  <div>
+                    <p className="font-medium text-gray-800">{exp.job_title} at {exp.company_name}</p>
+                    <p className="text-xs text-gray-600">{exp.start_date || '?'} – {exp.end_date || 'Present'}</p>
+                  </div>
+                  <button type="button" onClick={() => handleDeleteExperience(exp.id)} className="text-xs text-red-600 hover:underline">
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <form onSubmit={handleAddExperience} className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <input
+                type="text"
+                required
+                value={expForm.company_name}
+                onChange={(e) => setExpForm({ ...expForm, company_name: e.target.value })}
+                placeholder="Company Name"
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+              />
+              <input
+                type="text"
+                required
+                value={expForm.job_title}
+                onChange={(e) => setExpForm({ ...expForm, job_title: e.target.value })}
+                placeholder="Job Title"
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+              />
+              <div className="flex gap-2 sm:col-span-2">
+                <input
+                  type="date"
+                  value={expForm.start_date}
+                  onChange={(e) => setExpForm({ ...expForm, start_date: e.target.value })}
+                  className="w-1/2 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+                />
+                <input
+                  type="date"
+                  value={expForm.end_date}
+                  onChange={(e) => setExpForm({ ...expForm, end_date: e.target.value })}
+                  className="w-1/2 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+                />
+              </div>
+              <button type="submit" className="sm:col-span-2 rounded-md bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700">
+                Add Experience
+              </button>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   )
