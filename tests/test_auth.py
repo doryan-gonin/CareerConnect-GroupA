@@ -270,7 +270,7 @@ class TestRolePermissions:
         # Recruiter cannot apply to a job
         rec_apply = client.post(
             f"/api/jobs/{job_id}/apply",
-            json={"cover_letter": "I want to apply"},
+            json={},
             headers={"Authorization": f"Bearer {rec_token}"},
         )
         assert rec_apply.status_code == 403
@@ -289,7 +289,7 @@ class TestRolePermissions:
 
         app_apply = client.post(
             f"/api/jobs/{job_id}/apply",
-            json={"cover_letter": "I am a candidate"},
+            json={},
             headers={"Authorization": f"Bearer {app_token}"},
         )
         assert app_apply.status_code == 201

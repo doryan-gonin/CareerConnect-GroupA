@@ -33,6 +33,10 @@ class TestProfile:
         profile_data = profile_response.json()
         assert profile_data["first_name"] == ""
         assert profile_data["last_name"] == ""
+        assert profile_data["links"] == []
+        assert profile_data["languages"] == []
+        assert profile_data["education"] == []
+        assert profile_data["experience"] == []
 
     def test_set_success(self, test_user, client):
         # Log in to get the token
@@ -53,6 +57,42 @@ class TestProfile:
         updated_profile = update_response.json()
         assert updated_profile["first_name"] == "John"
         assert updated_profile["last_name"] == "Doe"
+
+    def test_links_add_duplicate_and_delete(self, test_user, client):
+        access_token = login_and_get_token(client, test_user["email_address"], test_user["password"])
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        res = client.post("/api/profiles/me/links", json={"link_type": "github", "url": "https://github.com/jdoe"}, headers=headers)
+        assert res.status_code == 201
+        link_id = res.json()["id"]
+
+        dup = client.post("/api/profiles/me/links", json={"link_type": "github", "url": "https://github.com/other"}, headers=headers)
+        assert dup.status_code == 409
+
+        delete_res = client.delete(f"/api/profiles/me/links/{link_id}", headers=headers)
+        assert delete_res.status_code == 204
+
+    def test_languages_education_experience(self, test_user, client):
+        access_token = login_and_get_token(client, test_user["email_address"], test_user["password"])
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        lang_res = client.post("/api/profiles/me/languages", json={"language": "French", "fluency_level": "Native"}, headers=headers)
+        assert lang_res.status_code == 201
+
+        edu_res = client.post("/api/profiles/me/education", json={"institution": "McGill", "degree": "B.Eng"}, headers=headers)
+        assert edu_res.status_code == 201
+
+        exp_res = client.post("/api/profiles/me/experience", json={"company_name": "Acme", "job_title": "Developer", "description": "Built **APIs**"}, headers=headers)
+        assert exp_res.status_code == 201
+
+        profile = client.get("/api/profiles/me", headers=headers).json()
+        assert len(profile["languages"]) == 1
+        assert len(profile["education"]) == 1
+        assert len(profile["experience"]) == 1
+
+        assert client.delete(f"/api/profiles/me/languages/{lang_res.json()['id']}", headers=headers).status_code == 204
+        assert client.delete(f"/api/profiles/me/education/{edu_res.json()['id']}", headers=headers).status_code == 204
+        assert client.delete(f"/api/profiles/me/experience/{exp_res.json()['id']}", headers=headers).status_code == 204
 
 # ==============================================================================
 # Test Cases for the resumes endpoint

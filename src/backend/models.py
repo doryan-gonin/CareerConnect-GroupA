@@ -4,7 +4,7 @@ from pyclbr import Class # Unnecessary import, leaving it in for now
 
 from enum import Enum
 from pydantic import EmailStr
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import Column, JSON, UniqueConstraint
 from sqlmodel import SQLModel, Field, Relationship
 from typing import List, Optional
 from datetime import date, datetime, timezone
@@ -55,6 +55,17 @@ class AnalyticsGranularity(str, Enum):
     WEEK = "week"
     MONTH = "month"
 
+class LinkType(str, Enum):
+    GITHUB = "github"
+    LINKEDIN = "linkedin"
+    PERSONAL_WEBSITE = "personal_website"
+
+class FluencyLevel(str, Enum):
+    BASIC = "Basic"
+    INTERMEDIATE = "Intermediate"
+    FLUENT = "Fluent"
+    NATIVE = "Native"
+
 # TABLES
 
 class User(SQLModel, table=True):
@@ -82,6 +93,51 @@ class Profile(SQLModel, table=True):
     last_updated: datetime | None = Field(default=None)
 
     user: User | None = Relationship(back_populates="profile")
+    links: List["ProfileLink"] = Relationship(back_populates="profile")
+    languages: List["ProfileLanguage"] = Relationship(back_populates="profile")
+    education: List["ProfileEducation"] = Relationship(back_populates="profile")
+    experience: List["ProfileExperience"] = Relationship(back_populates="profile")
+
+class ProfileLink(SQLModel, table=True):
+    __table_args__ = (UniqueConstraint("profile_id", "link_type", name="uq_profile_link_type"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    profile_id: int = Field(foreign_key="profile.id", index=True, nullable=False)
+    link_type: LinkType = Field(nullable=False)
+    url: str = Field(nullable=False)
+
+    profile: Profile | None = Relationship(back_populates="links")
+
+class ProfileLanguage(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    profile_id: int = Field(foreign_key="profile.id", index=True, nullable=False)
+    language: str = Field(nullable=False)
+    fluency_level: FluencyLevel = Field(nullable=False)
+
+    profile: Profile | None = Relationship(back_populates="languages")
+
+class ProfileEducation(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    profile_id: int = Field(foreign_key="profile.id", index=True, nullable=False)
+    institution: str = Field(nullable=False)
+    degree: str = Field(nullable=False)
+    field_of_study: str | None = Field(default=None)
+    start_date: date | None = Field(default=None)
+    end_date: date | None = Field(default=None)
+    description: str | None = Field(default=None)
+
+    profile: Profile | None = Relationship(back_populates="education")
+
+class ProfileExperience(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    profile_id: int = Field(foreign_key="profile.id", index=True, nullable=False)
+    company_name: str = Field(nullable=False)
+    job_title: str = Field(nullable=False)
+    start_date: date | None = Field(default=None)
+    end_date: date | None = Field(default=None)
+    description: str | None = Field(default=None)
+
+    profile: Profile | None = Relationship(back_populates="experience")
 
 class RevokedToken(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -128,6 +184,10 @@ class Application(SQLModel, table=True):
     applicant_id: int = Field(foreign_key="user.id", index=True, nullable=False)
     resume_id: int | None = Field(default=None, foreign_key="resume.id", index=True)
     cover_letter: str | None = Field(default=None)
+    links: list[dict] | None = Field(default=None, sa_column=Column(JSON))
+    languages: list[dict] | None = Field(default=None, sa_column=Column(JSON))
+    education: list[dict] | None = Field(default=None, sa_column=Column(JSON))
+    experience: list[dict] | None = Field(default=None, sa_column=Column(JSON))
     status: ApplicationStatus = Field(default=ApplicationStatus.APPLIED, index=True, nullable=False)
     applied_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime | None = Field(default=None)
@@ -240,6 +300,56 @@ class TokenData(SQLModel):
     id: str | None = None
 
 # PROFILE CLASSES
+class ProfileLinkCreate(SQLModel):
+    link_type: LinkType
+    url: str
+
+class ProfileLinkResponse(SQLModel):
+    id: int
+    link_type: LinkType
+    url: str
+
+class ProfileLanguageCreate(SQLModel):
+    language: str
+    fluency_level: FluencyLevel
+
+class ProfileLanguageResponse(SQLModel):
+    id: int
+    language: str
+    fluency_level: FluencyLevel
+
+class ProfileEducationCreate(SQLModel):
+    institution: str
+    degree: str
+    field_of_study: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    description: str | None = None
+
+class ProfileEducationResponse(SQLModel):
+    id: int
+    institution: str
+    degree: str
+    field_of_study: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    description: str | None = None
+
+class ProfileExperienceCreate(SQLModel):
+    company_name: str
+    job_title: str
+    start_date: date | None = None
+    end_date: date | None = None
+    description: str | None = None
+
+class ProfileExperienceResponse(SQLModel):
+    id: int
+    company_name: str
+    job_title: str
+    start_date: date | None = None
+    end_date: date | None = None
+    description: str | None = None
+
 class ProfileUpdate(SQLModel):
     first_name: str | None = None
     last_name: str | None = None
@@ -250,6 +360,10 @@ class ProfileResponse(SQLModel):
     first_name: str
     last_name: str
     last_updated: datetime | None = None
+    links: List[ProfileLinkResponse] = []
+    languages: List[ProfileLanguageResponse] = []
+    education: List[ProfileEducationResponse] = []
+    experience: List[ProfileExperienceResponse] = []
 
 # JOB CLASSES
 class JobCreate(SQLModel):
@@ -311,6 +425,10 @@ class JobListResponse(SQLModel):
 class ApplicationCreate(SQLModel):
     resume_id: int | None = None
     cover_letter: str | None = None
+    links: list[dict] | None = None
+    languages: list[dict] | None = None
+    education: list[dict] | None = None
+    experience: list[dict] | None = None
 
 class ApplicationResponse(SQLModel):
     id: int
@@ -318,6 +436,10 @@ class ApplicationResponse(SQLModel):
     applicant_id: int
     resume_id: int | None = None
     cover_letter: str | None = None
+    links: list[dict] | None = None
+    languages: list[dict] | None = None
+    education: list[dict] | None = None
+    experience: list[dict] | None = None
     status: ApplicationStatus
     applied_at: datetime
     updated_at: datetime | None = None
@@ -330,6 +452,10 @@ class ApplicationDetailResponse(SQLModel):
     resume_id: int | None = None
     resume_name: str | None = None
     cover_letter: str | None = None
+    links: list[dict] | None = None
+    languages: list[dict] | None = None
+    education: list[dict] | None = None
+    experience: list[dict] | None = None
     status: ApplicationStatus
     applied_at: datetime
     updated_at: datetime | None = None

@@ -1,6 +1,7 @@
 import { getMyApplications } from '../api/applications'
 import { getCurrentUser } from '../api/auth'
 import { useEffect, useRef, useState } from 'react'
+import MarkdownEditor from './MarkdownEditor'
 import {
   getProfile,
   getResumes,
@@ -29,6 +30,10 @@ function ApplicationForm({ token, job, onBack, onSubmitApplication }) {
   const [accountLoading, setAccountLoading] = useState(true)
   const [alreadyApplied, setAlreadyApplied] = useState(false)
   const [checkingApplication, setCheckingApplication] = useState(true)
+  const [appLinks, setAppLinks] = useState([])
+  const [appLanguages, setAppLanguages] = useState([])
+  const [appEducation, setAppEducation] = useState([])
+  const [appExperience, setAppExperience] = useState([])
 
   const profileName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ')
 
@@ -78,6 +83,10 @@ useEffect(() => {
 
       if (active) {
         setProfile(data)
+        setAppLinks(data.links || [])
+        setAppLanguages(data.languages || [])
+        setAppEducation(data.education || [])
+        setAppExperience(data.experience || [])
       }
     } catch (err) {
       if (active) {
@@ -250,6 +259,10 @@ useEffect(() => {
       await onSubmitApplication({
         job_id: job.id,
         resume_id: Number(selectedResumeId),
+        links: appLinks,
+        languages: appLanguages,
+        education: appEducation,
+        experience: appExperience,
       })
 
       setSuccess('Your application was submitted successfully!')
@@ -433,6 +446,223 @@ useEffect(() => {
 
         
         )}
+
+        <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-5">
+          <div>
+            <h3 className="text-base font-semibold text-gray-900">Profile Details for This Application</h3>
+            <p className="text-xs text-gray-500">Autofilled from your profile. Changes here only apply to this application.</p>
+          </div>
+
+          {/* Links */}
+          <div className="space-y-2 border-t border-gray-100 pt-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Professional Links</span>
+              <button
+                type="button"
+                onClick={() => setAppLinks([...appLinks, { link_type: 'github', url: '' }])}
+                className="text-xs font-medium text-purple-600 hover:text-purple-700"
+              >
+                + Add Link
+              </button>
+            </div>
+            {appLinks.map((l, idx) => (
+              <div key={idx} className="flex flex-wrap items-center gap-2">
+                <select
+                  value={l.link_type}
+                  onChange={(e) => {
+                    const next = [...appLinks]
+                    next[idx] = { ...next[idx], link_type: e.target.value }
+                    setAppLinks(next)
+                  }}
+                  className="rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
+                >
+                  <option value="github">GitHub</option>
+                  <option value="linkedin">LinkedIn</option>
+                  <option value="personal_website">Personal Website</option>
+                </select>
+                <input
+                  type="url"
+                  value={l.url}
+                  onChange={(e) => {
+                    const next = [...appLinks]
+                    next[idx] = { ...next[idx], url: e.target.value }
+                    setAppLinks(next)
+                  }}
+                  placeholder="https://..."
+                  className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setAppLinks(appLinks.filter((_, i) => i !== idx))}
+                  className="text-xs font-medium text-red-600 hover:underline"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Languages */}
+          <div className="space-y-2 border-t border-gray-100 pt-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Languages</span>
+              <button
+                type="button"
+                onClick={() => setAppLanguages([...appLanguages, { language: '', fluency_level: 'Fluent' }])}
+                className="text-xs font-medium text-purple-600 hover:text-purple-700"
+              >
+                + Add Language
+              </button>
+            </div>
+            {appLanguages.map((l, idx) => (
+              <div key={idx} className="flex flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  value={l.language}
+                  onChange={(e) => {
+                    const next = [...appLanguages]
+                    next[idx] = { ...next[idx], language: e.target.value }
+                    setAppLanguages(next)
+                  }}
+                  placeholder="Language"
+                  className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
+                />
+                <select
+                  value={l.fluency_level}
+                  onChange={(e) => {
+                    const next = [...appLanguages]
+                    next[idx] = { ...next[idx], fluency_level: e.target.value }
+                    setAppLanguages(next)
+                  }}
+                  className="rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
+                >
+                  <option value="Basic">Basic</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Fluent">Fluent</option>
+                  <option value="Native">Native</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setAppLanguages(appLanguages.filter((_, i) => i !== idx))}
+                  className="text-xs font-medium text-red-600 hover:underline"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Education */}
+          <div className="space-y-2 border-t border-gray-100 pt-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Education & Diplomas</span>
+              <button
+                type="button"
+                onClick={() => setAppEducation([...appEducation, { institution: '', degree: '', field_of_study: '' }])}
+                className="text-xs font-medium text-purple-600 hover:text-purple-700"
+              >
+                + Add Education
+              </button>
+            </div>
+            {appEducation.map((edu, idx) => (
+              <div key={idx} className="grid grid-cols-1 gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 sm:grid-cols-2">
+                <input
+                  type="text"
+                  value={edu.institution}
+                  onChange={(e) => {
+                    const next = [...appEducation]
+                    next[idx] = { ...next[idx], institution: e.target.value }
+                    setAppEducation(next)
+                  }}
+                  placeholder="Institution"
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
+                />
+                <input
+                  type="text"
+                  value={edu.degree}
+                  onChange={(e) => {
+                    const next = [...appEducation]
+                    next[idx] = { ...next[idx], degree: e.target.value }
+                    setAppEducation(next)
+                  }}
+                  placeholder="Degree / Diploma"
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
+                />
+                <div className="flex items-center justify-between sm:col-span-2">
+                  <span className="text-xs text-gray-500">{edu.start_date || '?'} – {edu.end_date || 'Present'}</span>
+                  <button
+                    type="button"
+                    onClick={() => setAppEducation(appEducation.filter((_, i) => i !== idx))}
+                    className="text-xs font-medium text-red-600 hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Experience */}
+          <div className="space-y-2 border-t border-gray-100 pt-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Work Experience</span>
+              <button
+                type="button"
+                onClick={() => setAppExperience([...appExperience, { company_name: '', job_title: '', description: '' }])}
+                className="text-xs font-medium text-purple-600 hover:text-purple-700"
+              >
+                + Add Experience
+              </button>
+            </div>
+            {appExperience.map((ex, idx) => (
+              <div key={idx} className="grid grid-cols-1 gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 sm:grid-cols-2">
+                <input
+                  type="text"
+                  value={ex.job_title}
+                  onChange={(e) => {
+                    const next = [...appExperience]
+                    next[idx] = { ...next[idx], job_title: e.target.value }
+                    setAppExperience(next)
+                  }}
+                  placeholder="Job Title"
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
+                />
+                <input
+                  type="text"
+                  value={ex.company_name}
+                  onChange={(e) => {
+                    const next = [...appExperience]
+                    next[idx] = { ...next[idx], company_name: e.target.value }
+                    setAppExperience(next)
+                  }}
+                  placeholder="Company Name"
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
+                />
+                <div className="sm:col-span-2">
+                  <MarkdownEditor
+                    value={ex.description || ''}
+                    onChange={(val) => {
+                      const next = [...appExperience]
+                      next[idx] = { ...next[idx], description: val }
+                      setAppExperience(next)
+                    }}
+                    placeholder="Description (optional, Markdown supported)"
+                  />
+                </div>
+                <div className="flex items-center justify-between sm:col-span-2">
+                  <span className="text-xs text-gray-500">{ex.start_date || '?'} – {ex.end_date || 'Present'}</span>
+                  <button
+                    type="button"
+                    onClick={() => setAppExperience(appExperience.filter((_, i) => i !== idx))}
+                    className="text-xs font-medium text-red-600 hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 {checkingApplication ? (
   <p className="text-center text-sm text-gray-500">
     Checking application status...
