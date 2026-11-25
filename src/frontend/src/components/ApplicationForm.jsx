@@ -446,41 +446,218 @@ useEffect(() => {
         
         )}
 
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3 text-sm">
-          <h3 className="font-medium text-gray-900">Autofilled Profile Details (for this application)</h3>
+        <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-5">
           <div>
-            <p className="text-xs font-medium text-gray-600">Links ({appLinks.length})</p>
+            <h3 className="text-base font-semibold text-gray-900">Profile Details for This Application</h3>
+            <p className="text-xs text-gray-500">Autofilled from your profile. Changes here only apply to this application.</p>
+          </div>
+
+          {/* Links */}
+          <div className="space-y-2 border-t border-gray-100 pt-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Professional Links</span>
+              <button
+                type="button"
+                onClick={() => setAppLinks([...appLinks, { link_type: 'github', url: '' }])}
+                className="text-xs font-medium text-purple-600 hover:text-purple-700"
+              >
+                + Add Link
+              </button>
+            </div>
             {appLinks.map((l, idx) => (
-              <div key={idx} className="mt-1 flex items-center justify-between gap-2">
-                <span className="truncate text-gray-800">{l.link_type}: {l.url}</span>
-                <button type="button" onClick={() => setAppLinks(appLinks.filter((_, i) => i !== idx))} className="text-xs text-red-600 hover:underline">Remove</button>
+              <div key={idx} className="flex flex-wrap items-center gap-2">
+                <select
+                  value={l.link_type}
+                  onChange={(e) => {
+                    const next = [...appLinks]
+                    next[idx] = { ...next[idx], link_type: e.target.value }
+                    setAppLinks(next)
+                  }}
+                  className="rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
+                >
+                  <option value="github">GitHub</option>
+                  <option value="linkedin">LinkedIn</option>
+                  <option value="personal_website">Personal Website</option>
+                </select>
+                <input
+                  type="url"
+                  value={l.url}
+                  onChange={(e) => {
+                    const next = [...appLinks]
+                    next[idx] = { ...next[idx], url: e.target.value }
+                    setAppLinks(next)
+                  }}
+                  placeholder="https://..."
+                  className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setAppLinks(appLinks.filter((_, i) => i !== idx))}
+                  className="text-xs font-medium text-red-600 hover:underline"
+                >
+                  Remove
+                </button>
               </div>
             ))}
           </div>
-          <div>
-            <p className="text-xs font-medium text-gray-600">Languages ({appLanguages.length})</p>
+
+          {/* Languages */}
+          <div className="space-y-2 border-t border-gray-100 pt-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Languages</span>
+              <button
+                type="button"
+                onClick={() => setAppLanguages([...appLanguages, { language: '', fluency_level: 'Fluent' }])}
+                className="text-xs font-medium text-purple-600 hover:text-purple-700"
+              >
+                + Add Language
+              </button>
+            </div>
             {appLanguages.map((l, idx) => (
-              <div key={idx} className="mt-1 flex items-center justify-between gap-2">
-                <span className="text-gray-800">{l.language} ({l.fluency_level})</span>
-                <button type="button" onClick={() => setAppLanguages(appLanguages.filter((_, i) => i !== idx))} className="text-xs text-red-600 hover:underline">Remove</button>
+              <div key={idx} className="flex flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  value={l.language}
+                  onChange={(e) => {
+                    const next = [...appLanguages]
+                    next[idx] = { ...next[idx], language: e.target.value }
+                    setAppLanguages(next)
+                  }}
+                  placeholder="Language"
+                  className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
+                />
+                <select
+                  value={l.fluency_level}
+                  onChange={(e) => {
+                    const next = [...appLanguages]
+                    next[idx] = { ...next[idx], fluency_level: e.target.value }
+                    setAppLanguages(next)
+                  }}
+                  className="rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
+                >
+                  <option value="Basic">Basic</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Fluent">Fluent</option>
+                  <option value="Native">Native</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setAppLanguages(appLanguages.filter((_, i) => i !== idx))}
+                  className="text-xs font-medium text-red-600 hover:underline"
+                >
+                  Remove
+                </button>
               </div>
             ))}
           </div>
-          <div>
-            <p className="text-xs font-medium text-gray-600">Education ({appEducation.length})</p>
-            {appEducation.map((e, idx) => (
-              <div key={idx} className="mt-1 flex items-center justify-between gap-2">
-                <span className="text-gray-800">{e.degree} — {e.institution}</span>
-                <button type="button" onClick={() => setAppEducation(appEducation.filter((_, i) => i !== idx))} className="text-xs text-red-600 hover:underline">Remove</button>
+
+          {/* Education */}
+          <div className="space-y-2 border-t border-gray-100 pt-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Education & Diplomas</span>
+              <button
+                type="button"
+                onClick={() => setAppEducation([...appEducation, { institution: '', degree: '', field_of_study: '' }])}
+                className="text-xs font-medium text-purple-600 hover:text-purple-700"
+              >
+                + Add Education
+              </button>
+            </div>
+            {appEducation.map((edu, idx) => (
+              <div key={idx} className="grid grid-cols-1 gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 sm:grid-cols-2">
+                <input
+                  type="text"
+                  value={edu.institution}
+                  onChange={(e) => {
+                    const next = [...appEducation]
+                    next[idx] = { ...next[idx], institution: e.target.value }
+                    setAppEducation(next)
+                  }}
+                  placeholder="Institution"
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
+                />
+                <input
+                  type="text"
+                  value={edu.degree}
+                  onChange={(e) => {
+                    const next = [...appEducation]
+                    next[idx] = { ...next[idx], degree: e.target.value }
+                    setAppEducation(next)
+                  }}
+                  placeholder="Degree / Diploma"
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
+                />
+                <div className="flex items-center justify-between sm:col-span-2">
+                  <span className="text-xs text-gray-500">{edu.start_date || '?'} – {edu.end_date || 'Present'}</span>
+                  <button
+                    type="button"
+                    onClick={() => setAppEducation(appEducation.filter((_, i) => i !== idx))}
+                    className="text-xs font-medium text-red-600 hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
             ))}
           </div>
-          <div>
-            <p className="text-xs font-medium text-gray-600">Experience ({appExperience.length})</p>
+
+          {/* Experience */}
+          <div className="space-y-2 border-t border-gray-100 pt-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Work Experience</span>
+              <button
+                type="button"
+                onClick={() => setAppExperience([...appExperience, { company_name: '', job_title: '', description: '' }])}
+                className="text-xs font-medium text-purple-600 hover:text-purple-700"
+              >
+                + Add Experience
+              </button>
+            </div>
             {appExperience.map((ex, idx) => (
-              <div key={idx} className="mt-1 flex items-center justify-between gap-2">
-                <span className="text-gray-800">{ex.job_title} at {ex.company_name}</span>
-                <button type="button" onClick={() => setAppExperience(appExperience.filter((_, i) => i !== idx))} className="text-xs text-red-600 hover:underline">Remove</button>
+              <div key={idx} className="grid grid-cols-1 gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 sm:grid-cols-2">
+                <input
+                  type="text"
+                  value={ex.job_title}
+                  onChange={(e) => {
+                    const next = [...appExperience]
+                    next[idx] = { ...next[idx], job_title: e.target.value }
+                    setAppExperience(next)
+                  }}
+                  placeholder="Job Title"
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
+                />
+                <input
+                  type="text"
+                  value={ex.company_name}
+                  onChange={(e) => {
+                    const next = [...appExperience]
+                    next[idx] = { ...next[idx], company_name: e.target.value }
+                    setAppExperience(next)
+                  }}
+                  placeholder="Company Name"
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
+                />
+                <textarea
+                  rows={2}
+                  value={ex.description || ''}
+                  onChange={(e) => {
+                    const next = [...appExperience]
+                    next[idx] = { ...next[idx], description: e.target.value }
+                    setAppExperience(next)
+                  }}
+                  placeholder="Description (optional)"
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none sm:col-span-2"
+                />
+                <div className="flex items-center justify-between sm:col-span-2">
+                  <span className="text-xs text-gray-500">{ex.start_date || '?'} – {ex.end_date || 'Present'}</span>
+                  <button
+                    type="button"
+                    onClick={() => setAppExperience(appExperience.filter((_, i) => i !== idx))}
+                    className="text-xs font-medium text-red-600 hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
             ))}
           </div>
