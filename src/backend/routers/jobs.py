@@ -14,6 +14,7 @@ from backend.models import (
     JobSchedule,
     JobSortBy,
     JobSortOrder,
+    ApplicantSortBy,
     JobCreate,
     JobUpdate,
     JobResponse,
@@ -224,6 +225,48 @@ def list_jobs(
         total_pages=total_pages,
     )
 
+
+
+STATUS_PIPELINE_ORDER = {
+    ApplicationStatus.APPLIED: 0,
+    ApplicationStatus.UNDER_REVIEW: 1,
+    ApplicationStatus.INTERVIEW: 2,
+    ApplicationStatus.OFFERED: 3,
+    ApplicationStatus.REJECTED: 4,
+}
+
+
+def _filter_and_sort_applications(
+    applications: list[Application],
+    language: str | None,
+    sort_by: ApplicantSortBy,
+    sort_order: JobSortOrder,
+) -> list[Application]:
+    """Filter applications by language and sort by applied_at or pipeline status."""
+    filtered = applications
+    if language and language.strip():
+        lang_query = language.strip().lower()
+        filtered = [
+            app
+            for app in filtered
+            if any(
+                lang_query in (entry.get("language") or "").lower()
+                for entry in (app.languages or [])
+            )
+        ]
+
+    reverse = sort_order == JobSortOrder.DESC
+    if sort_by == ApplicantSortBy.STATUS:
+        return sorted(
+            filtered,
+            key=lambda app: (
+                STATUS_PIPELINE_ORDER.get(app.status, 99),
+                app.applied_at,
+            ),
+            reverse=reverse,
+        )
+
+    return sorted(filtered, key=lambda app: app.applied_at, reverse=reverse)
 
 
 @router.get("/{job_id}/applications")
