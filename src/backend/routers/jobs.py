@@ -274,6 +274,10 @@ def get_job_applications(
     job_id: int,
     current_user: Annotated[User, Depends(get_current_recruiter)],
     session: Annotated[Session, Depends(get_session)],
+    status: Annotated[list[ApplicationStatus] | None, Query()] = None,
+    language: str | None = None,
+    sort_by: ApplicantSortBy = ApplicantSortBy.APPLIED_AT,
+    sort_order: JobSortOrder = JobSortOrder.DESC,
 ):
     # Verify that the job exists.
     job = session.get(Job, job_id)
@@ -291,11 +295,16 @@ def get_job_applications(
             detail="You can only view applicants for your own jobs."
         )
 
-    applications = session.exec(
-        select(Application)
-        .where(Application.job_id == job_id)
-        .order_by(Application.applied_at.desc())
-    ).all()
+    query = select(Application).where(Application.job_id == job_id)
+    if status:
+        query = query.where(col(Application.status).in_(status))
+
+    applications = _filter_and_sort_applications(
+        list(session.exec(query).all()),
+        language=language,
+        sort_by=sort_by,
+        sort_order=sort_order,
+    )
 
     results = []
 
@@ -335,6 +344,7 @@ def get_job_applications(
             "resume_id": resume.id if resume else None,
             "resume_name": resume.file_name if resume else None,
             "cover_letter": application.cover_letter,
+            "languages": application.languages or [],
             "status": application.status,
             "applied_at": application.applied_at,
             "updated_at": application.updated_at,
