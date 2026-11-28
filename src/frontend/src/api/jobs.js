@@ -226,18 +226,28 @@ export async function closeJob(token, jobId) {
   return body
 }
 
-export async function getJobApplicants(token, jobId) {
+export async function getJobApplicants(
+  token,
+  jobId,
+  { statuses = [], language = '', sortBy = 'applied_at', sortOrder = 'desc' } = {}
+) {
+  const params = new URLSearchParams()
+  statuses.forEach((status) => params.append('status', status))
+  if (language && language.trim()) params.set('language', language.trim())
+  if (sortBy) params.set('sort_by', sortBy)
+  if (sortOrder) params.set('sort_order', sortOrder)
+
+  const queryString = params.toString()
+  const url = `${API_BASE_URL}/api/jobs/${jobId}/applications${queryString ? `?${queryString}` : ''}`
+
   let response
 
   try {
-    response = await fetch(
-      `${API_BASE_URL}/api/jobs/${jobId}/applications`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    )
+    response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
   } catch {
     throw new Error(
       'Could not reach the server. Is the backend running?'

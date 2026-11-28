@@ -33,6 +33,10 @@ class JobSortOrder(str, Enum):
     ASC = "asc"
     DESC = "desc"
 
+class ApplicantSortBy(str, Enum):
+    APPLIED_AT = "applied_at"
+    STATUS = "status"
+
 class ApplicationStatus(str, Enum):
     APPLIED = "Applied"
     UNDER_REVIEW = "Under Review"

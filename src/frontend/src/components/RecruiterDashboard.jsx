@@ -30,8 +30,17 @@ export default function RecruiterDashboard({ token }) {
   const [applicantsLoading, setApplicantsLoading] = useState(false)
   const [applicantsError, setApplicantsError] = useState('')
 
+  // Applicant filtering & sorting state
+  const [selectedStatuses, setSelectedStatuses] = useState([])
+  const [languageFilter, setLanguageFilter] = useState('')
+  const [applicantSortBy, setApplicantSortBy] = useState('applied_at')
+  const [applicantSortOrder, setApplicantSortOrder] = useState('desc')
+  const [statusCounts, setStatusCounts] = useState({})
+  const [totalApplicantsCount, setTotalApplicantsCount] = useState(0)
+
   const [closingJobId, setClosingJobId] = useState(null)
   const applicantRequestId = useRef(0)
+  const languageDebounceTimer = useRef(null)
 
   // Status feedback scoped per application: { [applicationId]: { type: 'success' | 'error', message: string } }
   const [statusFeedback, setStatusFeedback] = useState({})
@@ -54,11 +63,14 @@ export default function RecruiterDashboard({ token }) {
     error: '',
   })
 
-  // Clean up feedback timers on unmount
+  // Clean up feedback & debounce timers on unmount
   useEffect(() => {
     const timers = feedbackTimers.current
     return () => {
       Object.values(timers).forEach(clearTimeout)
+      if (languageDebounceTimer.current) {
+        clearTimeout(languageDebounceTimer.current)
+      }
     }
   }, [])
 
@@ -203,39 +215,142 @@ async function handleReopenJob(job) {
 
 
   // Open the applicants list for the selected job.
-
-async function handleViewApplicants(jobId) {
-  const requestId = ++applicantRequestId.current
-
-  if (selectedJobId === jobId) {
-    setSelectedJobId(null)
-    setApplicants([])
+  async function fetchApplicants(jobId, filters) {
+    const requestId = ++applicantRequestId.current
     setApplicantsError('')
-    setApplicantsLoading(false)
-    return
+    setApplicantsLoading(true)
+
+    try {
+      const data = await getJobApplicants(token, jobId, filters)
+
+      if (requestId === applicantRequestId.current) {
+        setApplicants(data)
+        const isUnfiltered =
+          (!filters.statuses || filters.statuses.length === 0) &&
+          !(filters.language && filters.language.trim())
+        if (isUnfiltered) {
+          const counts = {}
+          for (const app of data) {
+            counts[app.status] = (counts[app.status] || 0) + 1
+          }
+          setStatusCounts(counts)
+          setTotalApplicantsCount(data.length)
+        }
+      }
+    } catch (err) {
+      if (requestId === applicantRequestId.current) {
+        setApplicantsError(err.message)
+      }
+    } finally {
+      if (requestId === applicantRequestId.current) {
+        setApplicantsLoading(false)
+      }
+    }
   }
 
-  setSelectedJobId(jobId)
-  setApplicants([])
-  setApplicantsError('')
-  setApplicantsLoading(true)
-
-  try {
-    const data = await getJobApplicants(token, jobId)
-
-    if (requestId === applicantRequestId.current) {
-      setApplicants(data)
-    }
-  } catch (err) {
-    if (requestId === applicantRequestId.current) {
-      setApplicantsError(err.message)
-    }
-  } finally {
-    if (requestId === applicantRequestId.current) {
+  async function handleViewApplicants(jobId) {
+    if (selectedJobId === jobId) {
+      applicantRequestId.current++
+      setSelectedJobId(null)
+      setApplicants([])
+      setApplicantsError('')
       setApplicantsLoading(false)
+      return
+    }
+
+    setSelectedJobId(jobId)
+    setApplicants([])
+    setSelectedStatuses([])
+    setLanguageFilter('')
+    setApplicantSortBy('applied_at')
+    setApplicantSortOrder('desc')
+    setStatusCounts({})
+    setTotalApplicantsCount(0)
+
+    await fetchApplicants(jobId, {
+      statuses: [],
+      language: '',
+      sortBy: 'applied_at',
+      sortOrder: 'desc',
+    })
+  }
+
+  function handleToggleStatusFilter(status) {
+    const nextStatuses = selectedStatuses.includes(status)
+      ? selectedStatuses.filter((s) => s !== status)
+      : [...selectedStatuses, status]
+    setSelectedStatuses(nextStatuses)
+    fetchApplicants(selectedJobId, {
+      statuses: nextStatuses,
+      language: languageFilter,
+      sortBy: applicantSortBy,
+      sortOrder: applicantSortOrder,
+    })
+  }
+
+  function handleClearStatusFilter() {
+    setSelectedStatuses([])
+    fetchApplicants(selectedJobId, {
+      statuses: [],
+      language: languageFilter,
+      sortBy: applicantSortBy,
+      sortOrder: applicantSortOrder,
+    })
+  }
+
+  function handleLanguageFilterChange(value) {
+    setLanguageFilter(value)
+    if (languageDebounceTimer.current) {
+      clearTimeout(languageDebounceTimer.current)
+    }
+
+    const runFetch = () =>
+      fetchApplicants(selectedJobId, {
+        statuses: selectedStatuses,
+        language: value,
+        sortBy: applicantSortBy,
+        sortOrder: applicantSortOrder,
+      })
+
+    if (!value.trim()) {
+      runFetch()
+    } else {
+      languageDebounceTimer.current = setTimeout(runFetch, 300)
     }
   }
-}
+
+  function handleSortByChange(value) {
+    setApplicantSortBy(value)
+    fetchApplicants(selectedJobId, {
+      statuses: selectedStatuses,
+      language: languageFilter,
+      sortBy: value,
+      sortOrder: applicantSortOrder,
+    })
+  }
+
+  function handleSortOrderChange(value) {
+    setApplicantSortOrder(value)
+    fetchApplicants(selectedJobId, {
+      statuses: selectedStatuses,
+      language: languageFilter,
+      sortBy: applicantSortBy,
+      sortOrder: value,
+    })
+  }
+
+  function handleClearAllApplicantFilters() {
+    setSelectedStatuses([])
+    setLanguageFilter('')
+    setApplicantSortBy('applied_at')
+    setApplicantSortOrder('desc')
+    fetchApplicants(selectedJobId, {
+      statuses: [],
+      language: '',
+      sortBy: 'applied_at',
+      sortOrder: 'desc',
+    })
+  }
 
 
   async function handleOpenResumeModal(jobId, application) {
@@ -621,7 +736,99 @@ async function handleViewApplicants(jobId) {
                   </h4>
                 </div>
 
-                {applicantsLoading && (
+                {/* Filter & Sort Toolbar */}
+                {totalApplicantsCount > 0 && (
+                  <div className="mb-3 space-y-2.5 rounded-md border border-gray-200 bg-gray-50/70 p-3">
+                    {/* Status Pills with Counts */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={handleClearStatusFilter}
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                          selectedStatuses.length === 0
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+                        }`}
+                      >
+                        All ({totalApplicantsCount})
+                      </button>
+                      {['Applied', 'Under Review', 'Interview', 'Offered', 'Rejected'].map((status) => {
+                        const count = statusCounts[status] || 0
+                        const isSelected = selectedStatuses.includes(status)
+                        return (
+                          <button
+                            key={status}
+                            type="button"
+                            onClick={() => handleToggleStatusFilter(status)}
+                            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                              isSelected
+                                ? 'bg-purple-600 text-white'
+                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+                            }`}
+                          >
+                            {status} ({count})
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    {/* Language Filter & Sort Controls */}
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="relative flex-1 min-w-[180px] max-w-xs">
+                        <input
+                          type="text"
+                          value={languageFilter}
+                          onChange={(e) => handleLanguageFilterChange(e.target.value)}
+                          placeholder="Filter by language (e.g. English)..."
+                          aria-label="Filter applicants by language"
+                          className="w-full rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                        />
+                        {languageFilter && (
+                          <button
+                            type="button"
+                            onClick={() => handleLanguageFilterChange('')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600"
+                            aria-label="Clear language filter"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <label htmlFor={`sort-by-${job.id}`} className="text-xs text-gray-500">
+                          Sort:
+                        </label>
+                        <select
+                          id={`sort-by-${job.id}`}
+                          value={applicantSortBy}
+                          onChange={(e) => handleSortByChange(e.target.value)}
+                          className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                        >
+                          <option value="applied_at">Application Date</option>
+                          <option value="status">Pipeline Status</option>
+                        </select>
+
+                        <select
+                          id={`sort-order-${job.id}`}
+                          aria-label="Sort order"
+                          value={applicantSortOrder}
+                          onChange={(e) => handleSortOrderChange(e.target.value)}
+                          className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                        >
+                          <option value="desc">
+                            {applicantSortBy === 'applied_at' ? 'Newest First' : 'Descending'}
+                          </option>
+                          <option value="asc">
+                            {applicantSortBy === 'applied_at' ? 'Oldest First' : 'Ascending'}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {applicantsLoading && applicants.length === 0 && (
                   <div className="py-4 text-center text-xs text-gray-500">
                     Loading applicants…
                   </div>
@@ -639,15 +846,31 @@ async function handleViewApplicants(jobId) {
                 {!applicantsLoading &&
                   !applicantsError &&
                   applicants.length === 0 && (
-                    <p className="rounded-md bg-gray-50 p-3 text-xs text-gray-500">
-                      No applicants yet.
-                    </p>
+                    <div className="flex items-center justify-between rounded-md bg-gray-50 p-3 text-xs text-gray-500">
+                      <span>
+                        {totalApplicantsCount === 0
+                          ? 'No applicants yet.'
+                          : 'No applicants match your filters.'}
+                      </span>
+                      {totalApplicantsCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleClearAllApplicantFilters}
+                          className="font-medium text-purple-600 hover:text-purple-700"
+                        >
+                          Clear filters
+                        </button>
+                      )}
+                    </div>
                   )}
 
-                {!applicantsLoading &&
-                  !applicantsError &&
+                {!applicantsError &&
                   applicants.length > 0 && (
-                    <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 rounded-md border border-gray-200 bg-white">
+                    <div
+                      className={`max-h-80 overflow-y-auto divide-y divide-gray-100 rounded-md border border-gray-200 bg-white transition-opacity ${
+                        applicantsLoading ? 'opacity-60' : 'opacity-100'
+                      }`}
+                    >
                       {applicants.map((application) => (
                         <div
                           key={application.id}
@@ -672,6 +895,19 @@ async function handleViewApplicants(jobId) {
                               <span className="text-xs text-gray-400">
                                 · {new Date(application.applied_at).toLocaleDateString()}
                               </span>
+                              {application.languages?.length > 0 && (
+                                <div className="flex flex-wrap items-center gap-1 ml-1">
+                                  {application.languages.map((lang, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="rounded bg-blue-50 px-1.5 py-0.5 text-[11px] font-medium text-blue-700"
+                                    >
+                                      {lang.language}
+                                      {lang.fluency_level ? ` (${lang.fluency_level})` : ''}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
 
                             {/* Right: Actions & Status */}

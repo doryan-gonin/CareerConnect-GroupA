@@ -14,6 +14,7 @@ from backend.models import (
     JobSchedule,
     JobSortBy,
     JobSortOrder,
+    ApplicantSortBy,
     JobCreate,
     JobUpdate,
     JobResponse,
@@ -226,11 +227,57 @@ def list_jobs(
 
 
 
+STATUS_PIPELINE_ORDER = {
+    ApplicationStatus.APPLIED: 0,
+    ApplicationStatus.UNDER_REVIEW: 1,
+    ApplicationStatus.INTERVIEW: 2,
+    ApplicationStatus.OFFERED: 3,
+    ApplicationStatus.REJECTED: 4,
+}
+
+
+def _filter_and_sort_applications(
+    applications: list[Application],
+    language: str | None,
+    sort_by: ApplicantSortBy,
+    sort_order: JobSortOrder,
+) -> list[Application]:
+    """Filter applications by language and sort by applied_at or pipeline status."""
+    filtered = applications
+    if language and language.strip():
+        lang_query = language.strip().lower()
+        filtered = [
+            app
+            for app in filtered
+            if any(
+                lang_query in (entry.get("language") or "").lower()
+                for entry in (app.languages or [])
+            )
+        ]
+
+    reverse = sort_order == JobSortOrder.DESC
+    if sort_by == ApplicantSortBy.STATUS:
+        return sorted(
+            filtered,
+            key=lambda app: (
+                STATUS_PIPELINE_ORDER.get(app.status, 99),
+                app.applied_at,
+            ),
+            reverse=reverse,
+        )
+
+    return sorted(filtered, key=lambda app: app.applied_at, reverse=reverse)
+
+
 @router.get("/{job_id}/applications")
 def get_job_applications(
     job_id: int,
     current_user: Annotated[User, Depends(get_current_recruiter)],
     session: Annotated[Session, Depends(get_session)],
+    status: Annotated[list[ApplicationStatus] | None, Query()] = None,
+    language: str | None = None,
+    sort_by: ApplicantSortBy = ApplicantSortBy.APPLIED_AT,
+    sort_order: JobSortOrder = JobSortOrder.DESC,
 ):
     # Verify that the job exists.
     job = session.get(Job, job_id)
@@ -248,11 +295,16 @@ def get_job_applications(
             detail="You can only view applicants for your own jobs."
         )
 
-    applications = session.exec(
-        select(Application)
-        .where(Application.job_id == job_id)
-        .order_by(Application.applied_at.desc())
-    ).all()
+    query = select(Application).where(Application.job_id == job_id)
+    if status:
+        query = query.where(col(Application.status).in_(status))
+
+    applications = _filter_and_sort_applications(
+        list(session.exec(query).all()),
+        language=language,
+        sort_by=sort_by,
+        sort_order=sort_order,
+    )
 
     results = []
 
@@ -292,6 +344,7 @@ def get_job_applications(
             "resume_id": resume.id if resume else None,
             "resume_name": resume.file_name if resume else None,
             "cover_letter": application.cover_letter,
+            "languages": application.languages or [],
             "status": application.status,
             "applied_at": application.applied_at,
             "updated_at": application.updated_at,
