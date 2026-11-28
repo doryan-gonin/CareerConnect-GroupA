@@ -40,3 +40,13 @@
 * **Responsible Person**: Doryan Gonin
 
 ---
+
+### Entry 2: Planning and code template generation for applicant filtering (frontend & seeding) (#242)
+* **Task ID / Title**: Planning and code template generation for applicant filtering (frontend & seeding) (#242)
+* **Purpose of AI Use**: Brainstorming / Requirements Analysis / Coding
+* **Chat Link or Prompt/Response**: Local Antigravity session
+* **AI-Suggested Content**: Suggested a code template for the frontend changes and a seeding script to add job applicants to job #1
+* **Validation**: Manual review
+* **Decision**: Plan was taken into account / Code template was validated / Seeding script was extensively modified to align with our other seed scripts
+* **Reflection**: Overall successful. The AI overly complicated the seeding script so it was modified.
+* **Responsible Person**: Doryan Gonin
